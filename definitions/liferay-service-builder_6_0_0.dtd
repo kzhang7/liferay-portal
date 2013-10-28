@@ -209,14 +209,14 @@ For example:
 
 <column
 	name="id"
-	type="Integer"
+	type="int"
 	primary="true"
 	id-type="class"
 	id-param="com.liferay.counter.service.persistence.IDGenerator"
 />
 
 In this implementation, the class specified in the id-param value will be called
-to retrieve a unique identifier (in the example above, an Integer) that will be
+to retrieve a unique identifier (in the example above, an int) that will be
 used as the primary key for the new record. This implementation works for all
 supported databases.
 
@@ -229,7 +229,7 @@ For example:
 
 <column
 	name="id"
-	type="Integer"
+	type="int"
 	primary="true"
 	id-type="increment"
 />
@@ -240,7 +240,7 @@ For example:
 
 <column
 	name="id"
-	type="Integer"
+	type="int"
 	primary="true"
 	id-type="identity"
 />
@@ -256,7 +256,7 @@ For example:
 
 <column
 	name="id"
-	type="Integer"
+	type="int"
 	primary="true"
 	id-type="sequence"
 	id-param="id_sequence"
