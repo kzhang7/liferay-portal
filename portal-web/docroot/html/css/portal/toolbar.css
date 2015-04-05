@@ -3,7 +3,7 @@
 
 	&:after {
 		clear: both;
-		content: ".";
+		content: '';
 		display: block;
 		height: 0;
 		visibility: hidden;
@@ -46,58 +46,11 @@
 
 .lfr-emoticon-container {
 	border: 1px solid transparent;
-	padding-top: 5px;
 	overflow: hidden;
+	padding-top: 5px;
 	width: 180px;
 
 	.lfr-button {
 		margin: 0;
 	}
-}
-
-.ie .lfr-toolbar {
-	height: 1%;
-
-	select {
-		margin-top: 3px;
-	}
-}
-
-.ie6 .lfr-toolbar {
-	width: 750px;
-}
-
-/* Skin */
-
-.lfr-toolbar {
-	background-color: #e5e4e8;
-
-	.lfr-button {
-		&:focus {
-			border-color: #000;
-		}
-
-		&:hover {
-			border-color: #ccc;
-			border-bottom-color: #777;
-			border-right-color: #777;
-		}
-	}
-
-	.lfr-separator {
-		border-left-color: #fff;
-		border-right-color: #ccc;
-		font-size: 12px;
-	}
-}
-
-.lfr-toolbar, .lfr-emoticon-container {
-	.lfr-button {
-		border-color: #e5e4e8;
-	}
-}
-
-.lfr-emoticon-container {
-	background: #e5e4e8;
-	border-color: #ccc;
 }

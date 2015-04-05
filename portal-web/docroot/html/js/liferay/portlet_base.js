@@ -2,36 +2,44 @@ AUI.add(
 	'liferay-portlet-base',
 	function(A) {
 		var Lang = A.Lang;
+		var LString = Lang.String;
 
-		var prefix = Lang.String.prefix;
+		var prefix = LString.prefix;
+		var startsWith = LString.startsWith;
 
 		var PortletBase = function(config) {
 			var instance = this;
 
-			var namespace = config.namespace;
+			var namespace;
+
+			if ('namespace' in config) {
+				namespace = config.namespace;
+			}
+			else {
+				namespace = A.guid();
+			}
 
 			instance.NS = namespace;
 			instance.ID = namespace.replace(/^_(.*)_$/, '$1');
 
-			instance.rootNode = A.one('#p_p_id' + namespace);
-
-			instance.ns = A.cached(
-				function(str) {
-					var value = instance.NS;
-
-					if (!Lang.isUndefined(str)) {
-						value = prefix(value, str);
-					}
-
-					return value;
-				}
-			);
+			if (config.rootNode) {
+				instance._setRootNode(config.rootNode);
+			}
 		};
 
 		PortletBase.ATTRS = {
 			namespace: {
 				getter: '_getNS',
 				writeOnce: true
+			},
+			rootNode: {
+				getter: '_getRootNode',
+				setter: '_setRootNode',
+				valueFn: function() {
+					var instance = this;
+
+					return A.one('#p_p_id' + instance.NS);
+				}
 			}
 		};
 
@@ -50,6 +58,12 @@ AUI.add(
 				return A.byIdNS(instance.NS, id);
 			},
 
+			ns: function(str) {
+				var instance = this;
+
+				return Liferay.Util.ns(instance.NS, str);
+			},
+
 			one: function(selector, root) {
 				var instance = this;
 
@@ -62,6 +76,22 @@ AUI.add(
 				var instance = this;
 
 				return instance.NS;
+			},
+
+			_getRootNode: function(value) {
+				var instance = this;
+
+				return instance.rootNode;
+			},
+
+			_setRootNode: function(value) {
+				var instance = this;
+
+				var rootNode = A.one(value);
+
+				instance.rootNode = rootNode;
+
+				return rootNode;
 			}
 		};
 
@@ -69,6 +99,6 @@ AUI.add(
 	},
 	'',
 	{
-		requires: ['aui-base']
+		requires: ['aui-base', 'liferay-node']
 	}
 );

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,12 +16,12 @@ package com.liferay.portlet.messageboards.action;
 
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.RSSUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.messageboards.service.MBMessageServiceUtil;
-import com.liferay.util.RSSUtil;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -44,11 +44,11 @@ public class RSSAction extends com.liferay.portal.struts.RSSAction {
 		int max = ParamUtil.getInteger(
 			request, "max", SearchContainer.DEFAULT_DELTA);
 		String type = ParamUtil.getString(
-			request, "type", RSSUtil.TYPE_DEFAULT);
+			request, "type", RSSUtil.FORMAT_DEFAULT);
 		double version = ParamUtil.getDouble(
 			request, "version", RSSUtil.VERSION_DEFAULT);
 		String displayStyle = ParamUtil.getString(
-			request, "displayStyle", RSSUtil.DISPLAY_STYLE_FULL_CONTENT);
+			request, "displayStyle", RSSUtil.DISPLAY_STYLE_DEFAULT);
 
 		String entryURL =
 			themeDisplay.getPortalURL() + themeDisplay.getPathMain() +

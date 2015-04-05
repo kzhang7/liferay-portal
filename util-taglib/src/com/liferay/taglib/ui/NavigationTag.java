@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * @author Brian Wing Shun Chan
  * @author Jorge Ferrer
+ * @author Tibor Lipusz
  */
 public class NavigationTag extends IncludeTag {
 
@@ -28,8 +29,8 @@ public class NavigationTag extends IncludeTag {
 		_bulletStyle = bulletStyle;
 	}
 
-	public void setDisplayStyle(String displayStyle) {
-		_displayStyle = displayStyle;
+	public void setDisplayStyleDefinition(String[] displayStyleDefinition) {
+		_displayStyleDefinition = displayStyleDefinition;
 	}
 
 	public void setHeaderType(String headerType) {
@@ -44,6 +45,10 @@ public class NavigationTag extends IncludeTag {
 		_nestedChildren = nestedChildren;
 	}
 
+	public void setPreview(boolean preview) {
+		_preview = preview;
+	}
+
 	public void setRootLayoutLevel(int rootLayoutLevel) {
 		_rootLayoutLevel = rootLayoutLevel;
 	}
@@ -55,10 +60,11 @@ public class NavigationTag extends IncludeTag {
 	@Override
 	protected void cleanUp() {
 		_bulletStyle = "1";
-		_displayStyle = "1";
+		_displayStyleDefinition = null;
 		_headerType = "none";
 		_includedLayouts = "auto";
 		_nestedChildren = true;
+		_preview = false;
 		_rootLayoutLevel = 1;
 		_rootLayoutType = "absolute";
 	}
@@ -72,13 +78,16 @@ public class NavigationTag extends IncludeTag {
 	protected void setAttributes(HttpServletRequest request) {
 		request.setAttribute("liferay-ui:navigation:bulletStyle", _bulletStyle);
 		request.setAttribute(
-			"liferay-ui:navigation:displayStyle", _displayStyle);
+			"liferay-ui:navigation:displayStyleDefinition",
+			_displayStyleDefinition);
 		request.setAttribute("liferay-ui:navigation:headerType", _headerType);
 		request.setAttribute(
 			"liferay-ui:navigation:includedLayouts", _includedLayouts);
 		request.setAttribute(
 			"liferay-ui:navigation:nestedChildren",
 			String.valueOf(_nestedChildren));
+		request.setAttribute(
+			"liferay-ui:navigation:preview", String.valueOf(_preview));
 		request.setAttribute(
 			"liferay-ui:navigation:rootLayoutLevel",
 			String.valueOf(_rootLayoutLevel));
@@ -89,10 +98,11 @@ public class NavigationTag extends IncludeTag {
 	private static final String _PAGE = "/html/taglib/ui/navigation/page.jsp";
 
 	private String _bulletStyle = "1";
-	private String _displayStyle = "1";
+	private String[] _displayStyleDefinition;
 	private String _headerType = "none";
 	private String _includedLayouts = "auto";
 	private boolean _nestedChildren = true;
+	private boolean _preview;
 	private int _rootLayoutLevel = 1;
 	private String _rootLayoutType = "absolute";
 

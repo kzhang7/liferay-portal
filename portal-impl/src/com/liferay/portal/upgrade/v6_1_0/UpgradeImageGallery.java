@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,10 +18,14 @@ import com.liferay.portal.image.DLHook;
 import com.liferay.portal.image.DatabaseHook;
 import com.liferay.portal.image.FileSystemHook;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
+import com.liferay.portal.kernel.dao.shard.ShardUtil;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.image.Hook;
+import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.upgrade.UpgradeProcess;
+import com.liferay.portal.kernel.util.Base64;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.MimeTypesUtil;
 import com.liferay.portal.kernel.util.StringBundler;
@@ -30,8 +34,8 @@ import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.uuid.PortalUUIDUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.Image;
-import com.liferay.portal.security.pacl.PACLClassLoaderUtil;
 import com.liferay.portal.service.ImageLocalServiceUtil;
+import com.liferay.portal.util.ClassLoaderUtil;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.portlet.documentlibrary.model.DLFileEntry;
@@ -41,34 +45,42 @@ import com.liferay.portlet.documentlibrary.model.DLFolderConstants;
 import com.liferay.portlet.documentlibrary.store.DLStoreUtil;
 import com.liferay.portlet.documentlibrary.util.ImageProcessorUtil;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * @author Sergio González
  * @author Miguel Pastor
+ * @author Vilmos Papp
  */
 public class UpgradeImageGallery extends UpgradeProcess {
 
 	public UpgradeImageGallery() throws Exception {
-		ClassLoader classLoader = PACLClassLoaderUtil.getPortalClassLoader();
-
-		_sourceHookClassName = FileSystemHook.class.getName();
+		ClassLoader classLoader = ClassLoaderUtil.getPortalClassLoader();
 
 		if (Validator.isNotNull(PropsValues.IMAGE_HOOK_IMPL)) {
 			_sourceHookClassName = PropsValues.IMAGE_HOOK_IMPL;
 		}
+		else {
+			_sourceHookClassName = FileSystemHook.class.getName();
+		}
 
-		_sourceHook = (Hook)classLoader.loadClass(
-			_sourceHookClassName).newInstance();
+		Class<?> clazz = classLoader.loadClass(_sourceHookClassName);
+
+		_sourceHook = (Hook)clazz.newInstance();
 	}
 
 	protected void addDLFileEntry(
@@ -398,6 +410,65 @@ public class UpgradeImageGallery extends UpgradeProcess {
 		upgradeDocumentLibrary.updateSyncs();
 	}
 
+	protected long getBitwiseValue(
+		Map<String, Long> bitwiseValues, List<String> actionIds) {
+
+		long bitwiseValue = 0;
+
+		for (String actionId : actionIds) {
+			Long actionIdBitwiseValue = bitwiseValues.get(actionId);
+
+			if (actionIdBitwiseValue == null) {
+				continue;
+			}
+
+			bitwiseValue |= actionIdBitwiseValue;
+		}
+
+		return bitwiseValue;
+	}
+
+	protected Map<String, Long> getBitwiseValues(String name) throws Exception {
+		Connection con = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		String currentShardName = null;
+
+		try {
+			currentShardName = ShardUtil.setTargetSource(
+				PropsValues.SHARD_DEFAULT_NAME);
+
+			con = DataAccess.getUpgradeOptimizedConnection();
+
+			ps = con.prepareStatement(
+				"select actionId, bitwiseValue from ResourceAction " +
+					"where name = ?");
+
+			ps.setString(1, name);
+
+			rs = ps.executeQuery();
+
+			Map<String, Long> bitwiseValues = new HashMap<>();
+
+			while (rs.next()) {
+				String actionId = rs.getString("actionId");
+				long bitwiseValue = rs.getLong("bitwiseValue");
+
+				bitwiseValues.put(actionId, bitwiseValue);
+			}
+
+			return bitwiseValues;
+		}
+		finally {
+			if (Validator.isNotNull(currentShardName)) {
+				ShardUtil.setTargetSource(currentShardName);
+			}
+
+			DataAccess.cleanUp(con, ps, rs);
+		}
+	}
+
 	protected long getCompanyGroupId(long companyId) throws Exception {
 		Connection con = null;
 		PreparedStatement ps = null;
@@ -424,6 +495,39 @@ public class UpgradeImageGallery extends UpgradeProcess {
 		finally {
 			DataAccess.cleanUp(con, ps, rs);
 		}
+	}
+
+	protected byte[] getDatabaseImageAsBytes(Image image) throws SQLException {
+		Connection con = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			con = DataAccess.getUpgradeOptimizedConnection();
+
+			ps = con.prepareStatement(
+				"select text_ from Image where imageId = ?");
+
+			ps.setLong(1, image.getImageId());
+
+			rs = ps.executeQuery();
+
+			if (rs.next()) {
+				String getTextObj = rs.getString("text_");
+
+				return (byte[])Base64.stringToObject(getTextObj);
+			}
+
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Image " + image.getImageId() + " is not in the database");
+			}
+		}
+		finally {
+			DataAccess.cleanUp(con, ps, rs);
+		}
+
+		return new byte[0];
 	}
 
 	protected long getDefaultUserId(long companyId) throws Exception {
@@ -454,6 +558,31 @@ public class UpgradeImageGallery extends UpgradeProcess {
 		}
 	}
 
+	protected byte[] getHookImageAsBytes(Image image)
+		throws IOException, PortalException, SQLException {
+
+		InputStream is = getHookImageAsStream(image);
+
+		return FileUtil.getBytes(is);
+	}
+
+	protected InputStream getHookImageAsStream(Image image)
+		throws PortalException, SQLException {
+
+		InputStream is = null;
+
+		if (_sourceHook instanceof DatabaseHook) {
+			byte[] bytes = getDatabaseImageAsBytes(image);
+
+			is = new UnsyncByteArrayInputStream(bytes);
+		}
+		else {
+			is = _sourceHook.getImageAsStream(image);
+		}
+
+		return is;
+	}
+
 	protected Object[] getImage(long imageId) throws Exception {
 		Connection con = null;
 		PreparedStatement ps = null;
@@ -481,13 +610,27 @@ public class UpgradeImageGallery extends UpgradeProcess {
 		}
 	}
 
+	protected List<String> getResourceActionIds(
+		Map<String, Long> bitwiseValues, long actionIdsLong) {
+
+		List<String> actionIds = new ArrayList<>();
+
+		for (String actionId : bitwiseValues.keySet()) {
+			long bitwiseValue = bitwiseValues.get(actionId);
+
+			if ((actionIdsLong & bitwiseValue) == bitwiseValue) {
+				actionIds.add(actionId);
+			}
+		}
+
+		return actionIds;
+	}
+
 	protected void migrateFile(
 			long repositoryId, long companyId, String name, Image image)
 		throws Exception {
 
-		InputStream is = _sourceHook.getImageAsStream(image);
-
-		byte[] bytes = FileUtil.getBytes(is);
+		byte[] bytes = getHookImageAsBytes(image);
 
 		if (name == null) {
 			name = image.getImageId() + StringPool.PERIOD + image.getType();
@@ -564,8 +707,6 @@ public class UpgradeImageGallery extends UpgradeProcess {
 			ResultSet rs = null;
 
 			try {
-				InputStream is = _sourceHook.getImageAsStream(thumbnailImage);
-
 				con = DataAccess.getUpgradeOptimizedConnection();
 
 				ps = con.prepareStatement(
@@ -576,6 +717,8 @@ public class UpgradeImageGallery extends UpgradeProcess {
 
 				if (rs.next()) {
 					long fileVersionId = rs.getLong(1);
+
+					InputStream is = getHookImageAsStream(thumbnailImage);
 
 					ImageProcessorUtil.storeThumbnail(
 						companyId, groupId, fileEntryId, fileVersionId,
@@ -650,27 +793,29 @@ public class UpgradeImageGallery extends UpgradeProcess {
 			DataAccess.cleanUp(con, ps, rs);
 		}
 
-		if (!_sourceHookClassName.equals(DLHook.class.getName())) {
-			try {
-				con = DataAccess.getUpgradeOptimizedConnection();
+		if (_sourceHookClassName.equals(DLHook.class.getName())) {
+			return;
+		}
 
-				ps = con.prepareStatement("select imageId from Image");
+		try {
+			con = DataAccess.getUpgradeOptimizedConnection();
 
-				rs = ps.executeQuery();
+			ps = con.prepareStatement("select imageId from Image");
 
-				while (rs.next()) {
-					long imageId = rs.getLong("imageId");
+			rs = ps.executeQuery();
 
-					migrateImage(imageId);
-				}
+			while (rs.next()) {
+				long imageId = rs.getLong("imageId");
+
+				migrateImage(imageId);
 			}
-			finally {
-				DataAccess.cleanUp(con, ps, rs);
-			}
+		}
+		finally {
+			DataAccess.cleanUp(con, ps, rs);
+		}
 
-			if (_sourceHookClassName.equals(DatabaseHook.class.getName())) {
-				runSQL("update Image set text_ = ''");
-			}
+		if (_sourceHookClassName.equals(DatabaseHook.class.getName())) {
+			runSQL("update Image set text_ = ''");
 		}
 	}
 
@@ -687,7 +832,7 @@ public class UpgradeImageGallery extends UpgradeProcess {
 
 			rs = ps.executeQuery();
 
-			Map<Long, Long> folderIds = new HashMap<Long, Long>();
+			Map<Long, Long> folderIds = new HashMap<>();
 
 			while (rs.next()) {
 				String uuid = rs.getString("uuid_");
@@ -728,9 +873,8 @@ public class UpgradeImageGallery extends UpgradeProcess {
 		deleteConflictingIGPermissions(
 			_IG_FOLDER_CLASS_NAME, DLFolder.class.getName());
 
-		runSQL("update ResourcePermission set name = '" +
-			DLFolder.class.getName() +
-				"' where name = '" + _IG_FOLDER_CLASS_NAME + "'");
+		updateIGtoDLPermissions(
+			_IG_FOLDER_CLASS_NAME, DLFolder.class.getName());
 	}
 
 	protected void updateIGImageEntries() throws Exception {
@@ -820,8 +964,8 @@ public class UpgradeImageGallery extends UpgradeProcess {
 
 				String extension = (String)image[0];
 
-				String mimeType = MimeTypesUtil.getContentType(
-					"A." + extension);
+				String mimeType = MimeTypesUtil.getExtensionContentType(
+					extension);
 
 				String name = String.valueOf(
 					increment(DLFileEntry.class.getName()));
@@ -907,10 +1051,59 @@ public class UpgradeImageGallery extends UpgradeProcess {
 		deleteConflictingIGPermissions(
 			_IG_IMAGE_CLASS_NAME, DLFileEntry.class.getName());
 
-		runSQL(
-			"update ResourcePermission set name = '" +
-				DLFileEntry.class.getName() + "' where name = '" +
-					_IG_IMAGE_CLASS_NAME + "'");
+		updateIGtoDLPermissions(
+			_IG_IMAGE_CLASS_NAME, DLFileEntry.class.getName());
+	}
+
+	protected void updateIGtoDLPermissions(
+			String igResourceName, String dlResourceName)
+		throws Exception {
+
+		Map<String, Long> igBitwiseValues = getBitwiseValues(igResourceName);
+
+		if (igBitwiseValues.isEmpty()) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Resource actions do not exist for " + igResourceName);
+			}
+
+			return;
+		}
+
+		Map<String, Long> dlBitwiseValues = getBitwiseValues(dlResourceName);
+
+		if (dlBitwiseValues.isEmpty()) {
+			if (_log.isWarnEnabled()) {
+				_log.warn(
+					"Resource actions do not exist for " + dlResourceName);
+			}
+
+			return;
+		}
+
+		// The size of igBitwiseValues is based on the number of actions defined
+		// in resource actions which was 7 and 4 for IGFolder and IGImage
+		// respectively. This means the loop will execute at most 2^7 (128)
+		// times. If we were to check before update, we would still have to
+		// perform 128 queries, so we may as well just update 128 times even if
+		// no candidates exist for a given value.
+
+		for (int i = 0; i < Math.pow(2, igBitwiseValues.size()); i++) {
+			List<String> igActionIds = getResourceActionIds(igBitwiseValues, i);
+
+			if (igResourceName.equals(_IG_FOLDER_CLASS_NAME)) {
+				Collections.replaceAll(
+					igActionIds, "ADD_IMAGE", "ADD_DOCUMENT");
+			}
+
+			long dlActionIdsLong = getBitwiseValue(
+				dlBitwiseValues, igActionIds);
+
+			runSQL(
+				"update ResourcePermission set name = '" + dlResourceName +
+					"', actionIds = " + dlActionIdsLong + " where name = '" +
+						igResourceName + "'" + " and actionIds = " + i);
+		}
 	}
 
 	private static final String _IG_FOLDER_CLASS_NAME =
@@ -919,9 +1112,10 @@ public class UpgradeImageGallery extends UpgradeProcess {
 	private static final String _IG_IMAGE_CLASS_NAME =
 		"com.liferay.portlet.imagegallery.model.IGImage";
 
-	private static Log _log = LogFactoryUtil.getLog(UpgradeImageGallery.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		UpgradeImageGallery.class);
 
-	private Hook _sourceHook;
-	private String _sourceHookClassName;
+	private final Hook _sourceHook;
+	private final String _sourceHookClassName;
 
 }

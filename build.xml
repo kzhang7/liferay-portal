@@ -1,157 +1,297 @@
 <?xml version="1.0"?>
 
 <project name="portal" basedir="." default="compile" xmlns:antelope="antlib:ise.antelope.tasks">
-	<property name="project.dir" value="." />
-
 	<import file="build-common.xml" />
+
+	<macrodef name="setup-jrebel">
+		<sequential>
+			<echo file="${app.server.lib.global.dir}/rebel.xml"><![CDATA[<?xml version="1.0"?>
+
+<application
+	xmlns="http://www.zeroturnaround.com"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.zeroturnaround.com http://www.zeroturnaround.com/alderaan/rebel-2_0.xsd"
+>
+	<classpath>
+		<dir name="${basedir}/portal-service/classes" />
+	</classpath>
+</application>]]></echo>
+
+		<echo file="${app.server.classes.portal.dir}/rebel.xml"><![CDATA[<?xml version="1.0"?>
+
+<application
+	xmlns="http://www.zeroturnaround.com"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.zeroturnaround.com http://www.zeroturnaround.com/alderaan/rebel-2_0.xsd"
+>
+	<classpath>
+		<dir name="${basedir}/portal-impl/classes" />
+		<dir name="${basedir}/portal-pacl/classes" />
+		<dir name="${basedir}/util-java/classes" />
+		<dir name="${basedir}/util-bridges/classes" />
+		<dir name="${basedir}/util-taglib/classes" />
+		<dir name="${basedir}/util-slf4j/classes" />
+	</classpath>
+	<web>
+		<link target="/">
+			<dir name="${basedir}/portal-web/docroot/" />
+		</link>
+	</web>
+</application>]]></echo>
+
+			<if>
+				<not>
+					<resourcecontains
+						resource="portal-impl/src/system-ext.properties"
+						substring="liferay.lib.portal.dir"
+					/>
+				</not>
+				<then>
+					<echo
+						append="true"
+						file="portal-impl/src/system-ext.properties"
+					>
+						liferay.lib.portal.dir=${app.server.lib.portal.dir}
+					</echo>
+
+					<copy
+						file="portal-impl/src/system-ext.properties"
+						overwrite="true"
+						tofile="portal-impl/classes/system-ext.properties"
+					/>
+				</then>
+			</if>
+		</sequential>
+	</macrodef>
 
 	<target name="all">
 		<antcall target="clean" />
-		<antcall target="start" />
+		<antcall target="compile" />
 		<antcall target="deploy" />
 	</target>
 
 	<target name="clean">
-		<ant dir="classes" target="clean" inheritAll="false" />
+		<parallel failonany="true" threadcount="${parallel.thread.count}">
+			<ant dir="benchmarks" target="clean" inheritAll="false" />
 
-		<ant dir="portal-service" target="clean" inheritAll="false" />
+			<ant dir="classes" target="clean" inheritAll="false" />
 
-		<ant dir="util-bridges" target="clean" inheritAll="false" />
-		<ant dir="util-java" target="clean" inheritAll="false" />
-		<ant dir="util-taglib" target="clean" inheritAll="false" />
+			<ant dir="portal-service" target="clean" inheritAll="false" />
 
-		<ant dir="portal-impl" target="clean" inheritAll="false" />
+			<ant dir="util-bridges" target="clean" inheritAll="false" />
+			<ant dir="util-java" target="clean" inheritAll="false" />
+			<ant dir="util-slf4j" target="clean" inheritAll="false" />
+			<ant dir="util-taglib" target="clean" inheritAll="false" />
+
+			<ant dir="portal-impl" target="clean" inheritAll="false" />
+			<ant dir="portal-pacl" target="clean" inheritAll="false" />
+			<ant dir="portal-test" target="clean" inheritAll="false" />
+			<ant dir="portal-test-internal" target="clean" inheritAll="false" />
+
+			<ant dir="sql" target="clean" inheritAll="false" />
+
+			<delete dir="tools/sdk" />
+
+			<delete dir="${doc.dir}" />
+
+			<delete>
+				<fileset dir="." includes="*.ear,*.jar,*.war,*.zip" />
+			</delete>
+
+			<delete failonerror="false" includeemptydirs="true">
+				<fileset
+					dir="${app.server.bin.dir}"
+					includes="*.log*"
+				/>
+			</delete>
+
+			<delete dir="${liferay.home}/data/elasticsearch" />
+
+			<delete failonerror="false">
+				<fileset
+					dir="${liferay.home}/data/hsql"
+					includes="${database.name}.*"
+				/>
+			</delete>
+
+			<delete dir="${liferay.home}/osgi" />
+
+			<delete dir="test-coverage" />
+			<delete dir="test-results" />
+
+			<if>
+				<equals arg1="${app.server.type}" arg2="resin" />
+				<then>
+					<ant dir="support-resin" target="clean" inheritAll="false" />
+				</then>
+			</if>
+
+			<if>
+				<equals arg1="${app.server.type}" arg2="tomcat" />
+				<then>
+					<delete failonerror="false">
+						<fileset
+							dir="${app.server.dir}/conf/Catalina/localhost"
+							includes="*-hook.xml,*-portlet.xml"
+						/>
+					</delete>
+
+					<ant dir="support-tomcat" target="clean" inheritAll="false" />
+				</then>
+			</if>
+
+			<if>
+				<equals arg1="${app.server.type}" arg2="websphere" />
+				<then>
+					<ant dir="support-websphere" target="clean" inheritAll="false" />
+				</then>
+			</if>
+
+			<delete failonerror="false">
+				<fileset
+					dir="${app.server.classes.portal.dir}"
+					includes="portal-*.properties,system-*.properties"
+				/>
+			</delete>
+
+			<delete failonerror="false" includeemptydirs="true">
+				<fileset
+					dir="${app.server.deploy.dir}"
+					includes="*-ext/**,*-ext.war/**,*-hook/**,*-hook.war/**,*-layouttpl/**,*-layouttpl.war/**,*-portlet/**,*-portlet.war/**,*-theme/**,*-theme.war/**,*-web/**,*-web.war/**"
+				/>
+			</delete>
+
+			<delete failonerror="false">
+				<fileset
+					dir="${app.server.lib.global.dir}"
+					excludes="${jdbc.drivers}"
+				/>
+			</delete>
+
+			<if>
+				<equals arg1="${clean.log.dir}" arg2="true" />
+				<then>
+					<delete dir="${app.server.log.dir}" />
+				</then>
+			</if>
+
+			<if>
+				<not>
+					<and>
+						<equals arg1="${app.server.type}" arg2="tomcat" />
+						<antelope:endswith string="${app.server.portal.dir}" with="/portal-web/docroot" />
+					</and>
+				</not>
+				<then>
+					<delete dir="${app.server.portal.dir}" />
+					<delete file="${app.server.portal.dir}" />
+				</then>
+				<else>
+					<delete failonerror="false">
+						<fileset
+							dir="${app.server.lib.portal.dir}"
+							excludes="${jdbc.drivers}"
+						/>
+					</delete>
+				</else>
+			</if>
+
+			<if>
+				<equals arg1="${clean.temp.dir}" arg2="true" />
+				<then>
+					<delete dir="${app.server.temp.dir}" />
+				</then>
+			</if>
+
+			<if>
+				<equals arg1="${clean.work.dir}" arg2="true" />
+				<then>
+					<delete dir="${app.server.work.dir}" />
+				</then>
+			</if>
+		</parallel>
 
 		<ant dir="portal-web" target="clean" inheritAll="false" />
-
-		<ant dir="sql" target="clean" inheritAll="false" />
-
-		<delete dir="${doc.dir}" />
-
-		<delete>
-			<fileset dir="." includes="*.ear,*.jar,*.war,*.zip" />
-		</delete>
-
-		<delete includeemptydirs="true" failonerror="false">
-			<fileset
-				dir="${app.server.bin.dir}"
-				includes="*.log*"
-			/>
-		</delete>
-
-		<delete failonerror="false">
-			<fileset
-				dir="${liferay.home}/data/hsql"
-				includes="${database.name}.*"
-			/>
-		</delete>
-
-		<if>
-			<equals arg1="${app.server.type}" arg2="glassfish" />
-			<then>
-				<delete dir="${app.server.instance.dir}/applications/liferay-portal" />
-			</then>
-		</if>
-
-		<if>
-			<equals arg1="${app.server.type}" arg2="tomcat" />
-			<then>
-				<delete failonerror="false">
-					<fileset
-						dir="${app.server.dir}/conf/Catalina/localhost"
-						includes="*-hook.xml,*-portlet.xml"
-					/>
-				</delete>
-
-				<ant dir="support-tomcat" target="clean" inheritAll="false" />
-			</then>
-		</if>
-
-		<delete failonerror="false">
-			<fileset
-				dir="${app.server.classes.portal.dir}"
-				includes="portal-*.properties,system-*.properties"
-			/>
-		</delete>
-
-		<delete includeemptydirs="true" failonerror="false">
-			<fileset
-				dir="${app.server.deploy.dir}"
-				includes="*-ext/**,*-ext.war/**,*-hook/**,*-hook.war/**,*-layouttpl/**,*-layouttpl.war/**,*-portlet/**,*-portlet.war/**,*-theme/**,*-theme.war/**,*-web/**,*-web.war/**"
-			/>
-		</delete>
-
-		<delete failonerror="false">
-			<fileset
-				dir="${app.server.lib.global.dir}"
-				excludes="${jdbc.drivers}"
-			/>
-		</delete>
-
-		<delete failonerror="false">
-			<fileset
-				dir="${app.server.lib.portal.dir}"
-				excludes="${jdbc.drivers}"
-			/>
-		</delete>
-
-		<if>
-			<equals arg1="${clean.log.dir}" arg2="true" />
-			<then>
-				<delete dir="${app.server.log.dir}" />
-			</then>
-		</if>
-
-		<if>
-			<not>
-				<and>
-					<equals arg1="${app.server.type}" arg2="tomcat" />
-					<antelope:endswith string="${app.server.portal.dir}" with="/portal-web/docroot" />
-				</and>
-			</not>
-			<then>
-				<delete dir="${app.server.portal.dir}" />
-				<delete file="${app.server.portal.dir}" />
-			</then>
-		</if>
-
-		<if>
-			<equals arg1="${clean.temp.dir}" arg2="true" />
-			<then>
-				<delete dir="${app.server.temp.dir}" />
-			</then>
-		</if>
-
-		<if>
-			<equals arg1="${clean.work.dir}" arg2="true" />
-			<then>
-				<delete dir="${app.server.work.dir}" />
-			</then>
-		</if>
 
 		<antcall target="print-current-time" />
 	</target>
 
-	<target name="compile">
-		<ant dir="portal-service" target="compile" inheritAll="false" />
-
-		<ant dir="util-bridges" target="compile" inheritAll="false" />
-		<ant dir="util-java" target="compile" inheritAll="false" />
-		<ant dir="util-taglib" target="compile" inheritAll="false" />
-
-		<ant dir="portal-impl" target="compile" inheritAll="false" />
+	<target name="check-sdk-uptodate">
+		<uptodate property="sdk.uptodate">
+			<mapper to="${project.dir}/tools/sdk" type="merge" />
+			<srcfiles dir="${project.dir}/tools" includes="liferay-plugins-sdk-7.0.0.zip*" />
+		</uptodate>
 	</target>
 
-	<target name="deploy">
+	<target name="build-registry-api" depends="setup-sdk">
+		<ant-execute
+			ant.dir="${project.dir}/modules"
+			ant.target="clean"
+		/>
+
+		<ant-execute
+			ant.dir="${project.dir}/modules/core/registry-api"
+			ant.target="compile"
+		/>
+	</target>
+
+	<target name="compile" depends="build-registry-api">
+		<delete file="javac.output.txt" />
+
+		<ant dir="portal-service" target="compile" inheritAll="false" />
+
+		<parallel failonany="true" threadcount="${parallel.thread.count}">
+			<ant dir="util-bridges" target="compile" inheritAll="false" />
+			<ant dir="util-java" target="compile" inheritAll="false" />
+			<ant dir="util-slf4j" target="compile" inheritAll="false" />
+		</parallel>
+
+		<ant dir="util-taglib" target="compile" inheritAll="false" />
+
+		<parallel failonany="true" threadcount="${parallel.thread.count}">
+			<ant dir="portal-impl" target="compile" inheritAll="false" />
+			<ant dir="portal-test" target="compile" inheritAll="false" />
+		</parallel>
+
+		<parallel failonany="true" threadcount="${parallel.thread.count}">
+			<ant dir="portal-pacl" target="compile" inheritAll="false" />
+			<ant dir="portal-test-internal" target="compile" inheritAll="false" />
+			<ant dir="support-tomcat" target="compile" inheritAll="false" />
+		</parallel>
+
 		<if>
-			<or>
-				<equals arg1="${app.server.type}" arg2="glassfish" />
-				<equals arg1="${app.server.type}" arg2="websphere" />
-			</or>
+			<available file="javac.output.txt" />
 			<then>
-				<delete dir="${app.server.portal.dir}" />
-				<delete file="${app.server.portal.dir}" />
+				<fail message="Deprecated APIs detected. Please see javac.output.txt for details." />
 			</then>
+		</if>
+
+		<ant dir="sql" target="build-db" inheritAll="false" />
+		<ant dir="sql" target="rebuild-hypersonic" inheritAll="false" />
+
+		<antcall target="print-current-time" />
+	</target>
+
+	<target name="compile-test">
+		<ant dir="portal-impl" target="compile-test" inheritAll="false" />
+		<ant dir="portal-service" target="compile-test" inheritAll="false" />
+		<ant dir="portal-web" target="compile-test" inheritAll="false" />
+		<ant dir="util-java" target="compile-test" inheritAll="false" />
+	</target>
+
+	<target name="deploy" depends="setup-sdk">
+		<if>
+			<equals arg1="${app.server.type}" arg2="glassfish" />
+			<then>
+				<delete file="${app.server.glassfish.portal.war.dir}" />
+			</then>
+			<elseif>
+				<equals arg1="${app.server.type}" arg2="websphere" />
+				<then>
+					<delete dir="${app.server.portal.dir}" />
+					<delete file="${app.server.portal.dir}" />
+				</then>
+			</elseif>
 		</if>
 
 		<if>
@@ -162,14 +302,7 @@
 				</not>
 			</and>
 			<then>
-				<fail>
-.
-
-Tomcat is not installed in ${app.server.tomcat.dir}. If you already have Tomcat
-installed, make sure the property "$${app.server.tomcat.dir}" points to your
-Tomcat installation. If you wish to automatically install Tomcat into
-${app.server.tomcat.dir}, then run "ant -buildfile build-dist.xml unzip-tomcat".
-				</fail>
+				<ant antfile="build-dist.xml" target="unzip-tomcat" />
 			</then>
 		</if>
 
@@ -177,9 +310,13 @@ ${app.server.tomcat.dir}, then run "ant -buildfile build-dist.xml unzip-tomcat".
 
 		<ant dir="util-bridges" target="deploy" inheritAll="false" />
 		<ant dir="util-java" target="deploy" inheritAll="false" />
+		<ant dir="util-slf4j" target="deploy" inheritAll="false" />
 		<ant dir="util-taglib" target="deploy" inheritAll="false" />
 
 		<ant dir="portal-impl" target="deploy" inheritAll="false" />
+		<ant dir="portal-pacl" target="deploy" inheritAll="false" />
+		<ant dir="portal-test" target="deploy" inheritAll="false" />
+		<ant dir="portal-test-internal" target="deploy" inheritAll="false" />
 
 		<ant dir="portal-web" target="deploy" inheritAll="false" />
 
@@ -192,6 +329,57 @@ ${app.server.tomcat.dir}, then run "ant -buildfile build-dist.xml unzip-tomcat".
 
 		<antcall target="deploy-properties" />
 
+		<antcall target="deploy-additional-jars" />
+
+		<antcall target="update-app-server-scripts" />
+
+		<mkdir dir="${app.server.log.dir}" />
+		<mkdir dir="${app.server.temp.dir}" />
+		<mkdir dir="${app.server.work.dir}" />
+
+		<if>
+			<and>
+				<equals arg1="${app.server.type}" arg2="glassfish" />
+				<not>
+					<available file="${app.server.portal.dir}" type="dir" />
+				</not>
+			</and>
+			<then>
+				<move file="${app.server.glassfish.portal.war.dir}" tofile="${app.server.glassfish.portal.war.dir}-tmp" />
+
+				<mkdir dir="${app.server.portal.dir}" />
+
+				<unzip src="${app.server.glassfish.portal.war.dir}-tmp" dest="${app.server.portal.dir}" />
+			</then>
+		</if>
+
+		<ant-execute
+			ant.dir="${project.dir}/modules/core/registry-api"
+			ant.target="deploy"
+		/>
+
+		<ant-execute
+			ant.dir="${project.dir}/modules"
+			ant.target="deploy"
+		/>
+
+		<if>
+			<and>
+				<available file="${app.server.glassfish.portal.war.dir}-tmp" type="file" />
+				<available file="${app.server.portal.dir}" type="dir" />
+				<equals arg1="${app.server.type}" arg2="glassfish" />
+			</and>
+			<then>
+				<delete dir="${app.server.portal.dir}" />
+
+				<move file="${app.server.glassfish.portal.war.dir}-tmp" tofile="${app.server.glassfish.portal.war.dir}" />
+			</then>
+		</if>
+
+		<antcall target="print-current-time" />
+	</target>
+
+	<target name="deploy-additional-jars">
 		<copy todir="${app.server.lib.global.dir}">
 			<fileset dir="lib/development" includes="hsql.jar,jtds.jar,mysql.jar,postgresql.jar" />
 			<fileset dir="lib/global" />
@@ -203,7 +391,7 @@ ${app.server.tomcat.dir}, then run "ant -buildfile build-dist.xml unzip-tomcat".
 				<copy todir="${app.server.lib.global.dir}">
 					<fileset
 						dir="${jdbc.drivers.optional.dir}"
-						includes="*.jar"
+						includes="${jdbc.drivers}"
 					/>
 				</copy>
 			</then>
@@ -214,44 +402,89 @@ ${app.server.tomcat.dir}, then run "ant -buildfile build-dist.xml unzip-tomcat".
 		</copy>
 
 		<if>
+			<and>
+				<equals arg1="${app.server.type}" arg2="geronimo" />
+				<equals arg1="${app.server.geronimo.version}" arg2="2.2.1" />
+				<not>
+					<available file="${app.server.geronimo.dir}/repository/org/apache/geronimo/specs/geronimo-el_2.2_spec/1.0.3/geronimo-el_2.2_spec-1.0.3.jar" />
+				</not>
+			</and>
+			<then>
+				<mkdir dir="${app.server.geronimo.dir}/repository/org/apache/geronimo/specs/geronimo-el_2.2_spec/1.0.3" />
+
+				<mirrors-get
+					dest="${app.server.geronimo.dir}/repository/org/apache/geronimo/specs/geronimo-el_2.2_spec/1.0.3/geronimo-el_2.2_spec-1.0.3.jar"
+					src="http://repo1.maven.org/maven2/org/apache/geronimo/specs/geronimo-el_2.2_spec/1.0.3/geronimo-el_2.2_spec-1.0.3.jar"
+					verbose="true"
+				/>
+
+				<concat
+					append="true"
+					destfile="${app.server.geronimo.dir}/var/config/artifact_aliases.properties"
+				>
+					org.apache.geronimo.specs/geronimo-el_1.0_spec/1.0.2/jar=org.apache.geronimo.specs/geronimo-el_2.2_spec/1.0.3/jar
+				</concat>
+			</then>
+		</if>
+
+		<if>
+			<equals arg1="${app.server.type}" arg2="glassfish" />
+			<then>
+				<tstamp>
+					<format property="tstamp.value" pattern="yyyyMMddkkmmssSSS" />
+				</tstamp>
+
+				<jar
+					basedir="${app.server.portal.dir}"
+					jarfile="${tstamp.value}"
+				/>
+
+				<delete dir="${app.server.portal.dir}" />
+
+				<move file="${tstamp.value}" tofile="${app.server.glassfish.portal.war.dir}" />
+			</then>
+		</if>
+
+		<if>
 			<equals arg1="${app.server.type}" arg2="jboss" />
 			<then>
 				<if>
-					<not>
-						<available file="${app.server.lib.global.dir}/module.xml" />
-					</not>
+					<equals arg1="${app.server.jboss.major.version}" arg2="5" />
 					<then>
-						<copy
-							file="tools/servers/jboss/modules/module.xml"
-							tofile="${app.server.lib.global.dir}/module.xml"
+						<move
+							failonerror="false"
+							file="${app.server.dir}/common/lib/hibernate-validator.jar"
+							tofile="${app.server.dir}/common/lib/hibernate-validator.jar.bak"
 						/>
-					</then>
-				</if>
 
-				<delete>
-					<fileset
-						dir="${app.server.lib.portal.dir}"
-						includes="eclipselink.jar"
-					/>
-				</delete>
+						<move
+							failonerror="false"
+							file="${app.server.dir}/common/lib/slf4j-jboss-logging.jar"
+							tofile="${app.server.dir}/common/lib/slf4j-jboss-logging.jar.bak"
+						/>
+
+						<delete>
+							<fileset
+								dir="${app.server.lib.portal.dir}"
+								includes="jaxrpc.jar,log4j.jar,stax.jar,xercesImpl.jar,xml-apis.jar"
+							/>
+						</delete>
+					</then>
+					<else>
+						<delete>
+							<fileset
+								dir="${app.server.lib.portal.dir}"
+								includes="eclipselink.jar"
+							/>
+						</delete>
+					</else>
+				</if>
 			</then>
 		</if>
 
 		<if>
 			<equals arg1="${app.server.type}" arg2="jetty" />
 			<then>
-				<if>
-					<not>
-						<available file="${app.server.dir}/contexts/root.xml" />
-					</not>
-					<then>
-						<copy
-							file="tools/servers/jetty/contexts/root.xml"
-							tofile="${app.server.dir}/contexts/root.xml"
-						/>
-					</then>
-				</if>
-
 				<copy todir="${app.server.lib.global.dir}">
 					<fileset
 						dir="lib/development"
@@ -276,6 +509,8 @@ ${app.server.tomcat.dir}, then run "ant -buildfile build-dist.xml unzip-tomcat".
 		<if>
 			<equals arg1="${app.server.type}" arg2="resin" />
 			<then>
+				<ant dir="support-resin" target="deploy" inheritAll="false" />
+
 				<copy todir="${app.server.lib.global.dir}">
 					<fileset
 						dir="lib/development"
@@ -286,22 +521,17 @@ ${app.server.tomcat.dir}, then run "ant -buildfile build-dist.xml unzip-tomcat".
 		</if>
 
 		<if>
-			<equals arg1="${app.server.type}" arg2="tomcat" />
+			<or>
+				<equals arg1="${app.server.type}" arg2="tcserver" />
+				<equals arg1="${app.server.type}" arg2="tomcat" />
+			</or>
 			<then>
 				<if>
-					<not>
-						<available file="${app.server.dir}/conf/Catalina/localhost/${app.server.tomcat.portal.context}.xml" />
-					</not>
+					<equals arg1="${app.server.type}" arg2="tomcat" />
 					<then>
-						<copy
-							file="tools/servers/tomcat/conf/Catalina/localhost/ROOT.xml"
-							tofile="${app.server.dir}/conf/Catalina/localhost/${app.server.tomcat.portal.context}.xml"
-							overwrite="true"
-						/>
+						<ant dir="support-tomcat" target="deploy" inheritAll="false" />
 					</then>
 				</if>
-
-				<ant dir="support-tomcat" target="deploy" inheritAll="false" />
 
 				<copy todir="${app.server.lib.endorsed.dir}" flatten="true">
 					<fileset
@@ -312,7 +542,7 @@ ${app.server.tomcat.dir}, then run "ant -buildfile build-dist.xml unzip-tomcat".
 
 				<if>
 					<not>
-						<equals arg1="${app.server.tomcat.lib.portal.dir}" arg2="${app.server.tomcat.lib.global.dir}" />
+						<equals arg1="${app.server.lib.portal.dir}" arg2="${app.server.lib.global.dir}" />
 					</not>
 					<then>
 						<delete failonerror="false">
@@ -338,24 +568,22 @@ ${app.server.tomcat.dir}, then run "ant -buildfile build-dist.xml unzip-tomcat".
 					/>
 				</copy>
 
-				<delete>
-					<fileset
-						dir="${app.server.lib.portal.dir}"
-						includes="tomcat-juli.jar"
-					/>
-				</delete>
+				<if>
+					<equals arg1="${app.server.type}" arg2="tomcat" />
+					<then>
+						<delete>
+							<fileset
+								dir="${app.server.lib.portal.dir}"
+								includes="tomcat-juli.jar"
+							/>
+						</delete>
+					</then>
+				</if>
 			</then>
 		</if>
 
-		<mkdir dir="${app.server.log.dir}" />
-		<mkdir dir="${app.server.temp.dir}" />
-		<mkdir dir="${app.server.work.dir}" />
-
 		<if>
-			<or>
-				<equals arg1="${app.server.type}" arg2="glassfish" />
-				<equals arg1="${app.server.type}" arg2="websphere" />
-			</or>
+			<equals arg1="${app.server.type}" arg2="websphere" />
 			<then>
 				<tstamp>
 					<format property="tstamp.value" pattern="yyyyMMddkkmmssSSS" />
@@ -369,13 +597,600 @@ ${app.server.tomcat.dir}, then run "ant -buildfile build-dist.xml unzip-tomcat".
 				<delete dir="${app.server.portal.dir}" />
 
 				<move file="${tstamp.value}" tofile="${app.server.portal.dir}" />
+
+				<ant dir="support-websphere" target="deploy" inheritAll="false" />
+			</then>
+		</if>
+	</target>
+
+	<target name="deploy-properties">
+		<if>
+			<and>
+				<equals arg1="${app.server.bundled}" arg2="true" />
+				<equals arg1="${app.server.type}" arg2="glassfish" />
+			</and>
+			<then>
+				<war destfile="${app.server.glassfish.portal.war.dir}" update="true">
+					<classes dir="portal-impl/src" includes="portal-*.properties,system-*.properties" />
+				</war>
+			</then>
+			<else>
+				<copy todir="${app.server.classes.portal.dir}" overwrite="true">
+					<fileset dir="portal-impl/src" includes="portal-*.properties,system-*.properties" />
+				</copy>
+			</else>
+		</if>
+	</target>
+
+	<target name="dist">
+		<ant antfile="build-dist.xml" target="dist" inheritAll="false" />
+	</target>
+
+	<target name="doc">
+		<antcall target="dtddoc" />
+		<antcall target="javadoc" />
+		<antcall target="javadoc-all" />
+		<antcall target="propertiesdoc" />
+		<ant dir="util-taglib" target="taglibdoc" inheritAll="false" />
+	</target>
+
+	<target name="dtddoc">
+		<taskdef classname="DTDDoc.DTDDocTask" classpathref="lib.classpath" name="DTDDoc" />
+
+		<!--<antelope:stringutil string="${lp.version}" property="lp.version.dtd">
+			<replace regex="\." replacement="_" />
+		</antelope:stringutil>-->
+
+		<property name="doc.definitions.dir" value="${doc.dir}/definitions" />
+
+		<DTDDoc
+			destDir="${doc.definitions.dir}"
+			docTitle = "Liferay ${lp.version} Definitions"
+			showFixmeTags="false"
+			showHiddenTags="false"
+			sourceDir="${definitions.dir}"
+		>
+			<include name="liferay-*${lp.version.dtd}.dtd" />
+		</DTDDoc>
+	</target>
+
+	<target name="jar">
+		<ant dir="portal-service" target="jar" inheritAll="false" />
+
+		<ant dir="util-bridges" target="jar" inheritAll="false" />
+		<ant dir="util-java" target="jar" inheritAll="false" />
+		<ant dir="util-slf4j" target="jar" inheritAll="false" />
+		<ant dir="util-taglib" target="jar" inheritAll="false" />
+
+		<ant dir="portal-impl" target="jar" inheritAll="false" />
+		<ant dir="portal-pacl" target="jar" inheritAll="false" />
+		<ant dir="portal-test" target="jar" inheritAll="false" />
+		<ant dir="portal-test-internal" target="jar" inheritAll="false" />
+
+		<ant dir="portal-web" target="war" inheritAll="false" />
+
+		<ant dir="support-tomcat" target="jar" inheritAll="false" />
+	</target>
+
+	<target name="javadoc">
+		<property name="doc.java.dir" value="${doc.dir}/javadocs" />
+
+		<mkdir dir="${doc.java.dir}" />
+
+		<javadoc
+			breakiterator="yes"
+			classpathref="project.classpath"
+			destdir="${doc.java.dir}"
+			doctitle="Liferay ${lp.version} Public API Documentation"
+			encoding="UTF-8"
+			header="&lt;b&gt;Liferay ${lp.version}&lt;/b&gt;"
+			maxmemory="2048m"
+			noqualifier="java.*"
+			overview="portal-service/src/portal-service-overview.html"
+			stylesheetfile="${project.dir}/tools/javadoc.css"
+			useexternalfile="yes"
+			use="yes"
+			windowtitle="Liferay ${lp.version} API"
+		>
+			<doclet name="com.liferay.tools.doclets.standard.Standard" path="${project.dir}/lib/development/liferay-doclet.jar">
+				<param name="-linksource" />
+			</doclet>
+
+			<group title="Portal Services" packages="com.liferay.portal*:com.liferay.counter*:com.liferay.documentlibrary*:com.liferay.mail*" />
+			<group title="Portal Kernel" packages="com.liferay.portal.kernel*" />
+			<group title="Portlet Services" packages="com.liferay.portlet*" />
+			<group title="Portlet Bridges" packages="com.liferay.util.bridges*" />
+
+			<link href="http://docs.liferay.com/portlet-api/2.0/javadocs" />
+			<link href="http://java.sun.com/javase/6/docs/api" />
+			<link href="http://docs.liferay.com/portal/${lp.version.major}/javadocs" />
+
+			<packageset dir="portal-service/src" />
+			<packageset dir="portal-test/src" />
+			<packageset dir="portal-test-internal/src" />
+			<packageset dir="util-bridges/src" />
+			<packageset dir="util-java/src" />
+			<packageset dir="util-slf4j/src" />
+
+			<tag name="generated" description="" />
+		</javadoc>
+	</target>
+
+	<target name="javadoc-all">
+		<property name="doc.java.dir" value="${doc.dir}/javadocs-all" />
+
+		<mkdir dir="${doc.java.dir}" />
+
+		<javadoc
+			breakiterator="yes"
+			classpathref="project.classpath"
+			destdir="${doc.java.dir}"
+			doctitle="Liferay ${lp.version} Internal API Documentation"
+			encoding="UTF-8"
+			header="&lt;b&gt;Liferay ${lp.version}&lt;/b&gt;"
+			maxmemory="2048m"
+			noqualifier="java.*"
+			overview="portal-impl/src/portal-impl-overview.html"
+			stylesheetfile="${project.dir}/tools/javadoc.css"
+			useexternalfile="yes"
+			use="yes"
+			windowtitle="Liferay ${lp.version} Internal API"
+		>
+			<doclet name="com.liferay.tools.doclets.standard.Standard" path="${project.dir}/lib/development/liferay-doclet.jar">
+				<param name="-linksource" />
+			</doclet>
+
+			<group title="Portal Services" packages="com.liferay.portal.service*" />
+			<group title="Portlet Services" packages="com.liferay.portlet*" />
+
+			<link href="http://docs.liferay.com/portlet-api/2.0/javadocs" />
+			<link href="http://java.sun.com/javase/6/docs/api" />
+
+			<packageset dir="portal-impl/src" />
+			<packageset dir="portal-service/src" />
+			<packageset dir="portal-test/src" />
+			<packageset dir="portal-test-internal/src" />
+			<packageset dir="util-bridges/src" />
+			<packageset dir="util-java/src" />
+			<packageset dir="util-slf4j/src" />
+			<packageset dir="util-taglib/src" />
+
+			<tag name="generated" description="ServiceBuilder generated this class. Modifications in this class will be overwritten the next time it is generated." />
+		</javadoc>
+	</target>
+
+	<target name="prepare-generated-files">
+		<ant antfile="build-dist.xml" target="prepare-generated-files" inheritAll="false" />
+	</target>
+
+	<target name="propertiesdoc">
+		<property name="properties.dest.dir" value="${doc.dir}/propertiesdoc" />
+
+		<remake-dir dir="${properties.dest.dir}" />
+
+		<antcall target="propertiesdoc-cmd">
+			<param name="properties.dest.dir" value="${properties.dest.dir}" />
+			<param name="properties.file" value="definitions/liferay-plugin-package_6_1_0.properties" />
+			<param name="properties.title" value="Liferay Plugin Package 6.1 Properties" />
+			<param name="properties.toc" value="true" />
+		</antcall>
+
+		<antcall target="propertiesdoc-cmd">
+			<param name="properties.dest.dir" value="${properties.dest.dir}" />
+			<param name="properties.file" value="definitions/liferay-plugin-package_6_2_0.properties" />
+			<param name="properties.title" value="Liferay Plugin Package 6.2 Properties" />
+			<param name="properties.toc" value="true" />
+		</antcall>
+
+		<antcall target="propertiesdoc-cmd">
+			<param name="properties.dest.dir" value="${properties.dest.dir}" />
+			<param name="properties.file" value="definitions/liferay-plugin-package_7_0_0.properties" />
+			<param name="properties.title" value="Liferay Plugin Package 7.0 Properties" />
+			<param name="properties.toc" value="true" />
+		</antcall>
+
+		<antcall target="propertiesdoc-cmd">
+			<param name="properties.dest.dir" value="${properties.dest.dir}" />
+			<param name="properties.file" value="portal-impl/src/portal.properties" />
+			<param name="properties.title" value="Portal Properties" />
+			<param name="properties.toc" value="true" />
+		</antcall>
+
+		<antcall target="propertiesdoc-cmd">
+			<param name="properties.dest.dir" value="${properties.dest.dir}" />
+			<param name="properties.file" value="portal-impl/src/system.properties" />
+			<param name="properties.title" value="System Properties" />
+			<param name="properties.toc" value="true" />
+		</antcall>
+
+		<java
+			classname="com.liferay.portal.tools.propertiesdoc.PropertiesDocIndexBuilder"
+			classpathref="project.classpath"
+			fork="true"
+			newenvironment="true"
+		>
+			<arg value="properties.dir=${doc.dir}/propertiesdoc" />
+		</java>
+	</target>
+
+	<target name="propertiesdoc-cmd">
+		<java
+			classname="com.liferay.portal.tools.propertiesdoc.PropertiesDocBuilder"
+			classpathref="project.classpath"
+			fork="true"
+			newenvironment="true"
+		>
+			<arg value="properties.dest.dir=${properties.dest.dir}" />
+			<arg value="properties.file=${properties.file}" />
+			<arg value="properties.title=${properties.title}" />
+			<arg value="properties.toc=${properties.toc}" />
+		</java>
+	</target>
+
+	<target name="record-git-commit-plugins">
+		<script classpathref="project.classpath" language="beanshell">
+			<![CDATA[
+				File pluginsDir = null;
+
+				String lpPluginsDirName = project.getProperty("lp.plugins.dir");
+
+				if ((lpPluginsDirName == null) || lpPluginsDirName.equals("")) {
+					File projectDir = new File(project.getProperty("project.dir"));
+
+					String projectDirName = projectDir.getName();
+
+					String pluginsDirName = "liferay-plugins" + projectDirName.substring("liferay-portal".length());
+
+					pluginsDir = new File(projectDir.getParent(), pluginsDirName);
+				}
+				else {
+					if (lpPluginsDirName.contains("${basedir.name}")) {
+						lpPluginsDirName = lpPluginsDirName.substring(0, lpPluginsDirName.lastIndexOf("/"));
+					}
+
+					pluginsDir = new File(lpPluginsDirName);
+				}
+
+				project.setProperty("git.plugins.dir", pluginsDir.toString());
+			]]>
+		</script>
+
+		<exec dir="${git.plugins.dir}" executable="git" outputproperty="git.commit.plugins.rev.parse">
+			<arg line="rev-parse HEAD" />
+		</exec>
+
+		<echo>Recording ${git.plugins.dir} with ${git.commit.plugins.rev.parse}.</echo>
+
+		<var name="git.plugins.dir" unset="true" />
+
+		<echo file="git-commit-plugins">${git.commit.plugins.rev.parse}</echo>
+
+		<if>
+			<isset property="env.JENKINS_HOME" />
+			<then>
+				<copy
+					file="git-commit-plugins"
+					todir="${env.JENKINS_HOME}/userContent/jobs/${env.JOB_NAME}/builds/${env.BUILD_NUMBER}"
+				/>
+			</then>
+		</if>
+	</target>
+
+	<target name="record-git-commit-portal">
+		<exec dir="${project.dir}" executable="git" outputproperty="git.commit.portal.rev.parse">
+			<arg line="rev-parse HEAD" />
+		</exec>
+
+		<echo file="git-commit-portal">${git.commit.portal.rev.parse}</echo>
+
+		<if>
+			<isset property="env.JENKINS_HOME" />
+			<then>
+				<copy
+					file="git-commit-portal"
+					todir="${env.JENKINS_HOME}/userContent/jobs/${env.JOB_NAME}/builds/${env.BUILD_NUMBER}"
+				/>
+			</then>
+		</if>
+	</target>
+
+	<target name="setup-jrebel">
+		<setup-jrebel />
+	</target>
+
+	<target name="setup-sdk" depends="check-sdk-uptodate" unless="sdk.uptodate">
+		<delete dir="${project.dir}/tools/sdk" />
+
+		<unzip
+			dest="${project.dir}/tools"
+			src="${project.dir}/tools/liferay-plugins-sdk-7.0.0.zip"
+		>
+			<mapper
+				type="glob"
+				from="liferay-plugins-sdk-7.0.0/*"
+				to="sdk/*"
+			/>
+		</unzip>
+
+		<propertyselector
+			casesensitive="false"
+			delimiter=","
+			distinct="true"
+			match="app\.(server\.(geronimo|glassfish|jboss|jetty|jonas|resin|tcat|tcserver|tomcat|weblogic|websphere).+)\.dir"
+			override="true"
+			property="app.server.dir.property.list"
+			select="\1"
+		/>
+
+		<sortlist
+			delimiter=","
+			override="true"
+			property="app.server.dir.property.list"
+			value="${app.server.dir.property.list}"
+		/>
+
+		<for list="${app.server.dir.property.list}" param="app.server.dir.property">
+			<sequential>
+				<propertycopy
+					from="app.@{app.server.dir.property}.dir"
+					name="temp.app.server.dir"
+				/>
+
+				<echo
+					append="true"
+					file="${project.dir}/tools/sdk/build.${env.COMPUTERNAME}.properties"
+				>
+					app.@{app.server.dir.property}.dir=${temp.app.server.dir}
+				</echo>
+
+				<var name="temp.app.server.dir" unset="true" />
+			</sequential>
+		</for>
+
+		<propertyselector
+			casesensitive="false"
+			delimiter="," match="ivy.pom.(.+)"
+			property="ivy.pom.property.list"
+			select="\1"
+		/>
+
+		<sortlist
+			delimiter=","
+			override="true"
+			property="ivy.pom.property.list"
+			value="${ivy.pom.property.list}"
+		/>
+
+		<if>
+			<not>
+				<equals arg1="${ivy.pom.property.list}" arg2="$${ivy.pom.property.list}" />
+			</not>
+			<then>
+				<for list="${ivy.pom.property.list}" param="ivy.pom.property">
+					<sequential>
+						<propertycopy
+							from="ivy.pom.@{ivy.pom.property}"
+							name="temp.ivy.pom"
+						/>
+
+						<echo
+							append="true"
+							file="${project.dir}/tools/sdk/build.${env.COMPUTERNAME}.properties"
+						>
+							ivy.pom.@{ivy.pom.property}=${temp.ivy.pom}
+						</echo>
+
+						<var name="temp.ivy.pom" unset="true" />
+					</sequential>
+				</for>
+			</then>
+		</if>
+
+		<propertyselector
+			casesensitive="false"
+			delimiter="," match="sonatype.(.+)"
+			property="sonatype.property.list"
+			select="\1"
+		/>
+
+		<sortlist
+			delimiter=","
+			override="true"
+			property="sonatype.property.list"
+			value="${sonatype.property.list}"
+		/>
+
+		<if>
+			<not>
+				<equals arg1="${sonatype.property.list}" arg2="$${sonatype.property.list}" />
+			</not>
+			<then>
+				<for list="${sonatype.property.list}" param="sonatype.property">
+					<sequential>
+						<propertycopy
+							from="sonatype.@{sonatype.property}"
+							name="temp.sonatype"
+						/>
+
+						<echo
+							append="true"
+							file="${project.dir}/tools/sdk/build.${env.COMPUTERNAME}.properties"
+						>
+							sonatype.@{sonatype.property}=${temp.sonatype}
+						</echo>
+
+						<var name="temp.sonatype" unset="true" />
+					</sequential>
+				</for>
+			</then>
+		</if>
+
+		<echo
+			append="true"
+			file="${project.dir}/tools/sdk/build.${env.COMPUTERNAME}.properties"
+		>
+			app.server.type=${app.server.type}
+			auto.deploy.dir=${liferay.home}/osgi/apps
+			clean.delete.ivy.md5=true
+			clean.delete.lib=true
+			ivy.home=${ivy.home}
+			junit.test.excludes=${junit.test.excludes}
+			liferay.home=${liferay.home}
+			lp.portal.project.dir=${project.dir}
+			module.framework.base.dir=${liferay.home}/osgi
+			-baselinerepo=${-baselinerepo}
+			-metatype=${-metatype}
+			-plugin=${-plugin}
+			-releaserepo=${-releaserepo}
+		</echo>
+
+		<copy file="${project.dir}/tools/sdk/build.${env.COMPUTERNAME}.properties" tofile="${project.dir}/tools/sdk/build.${env.HOST}.properties" />
+		<copy file="${project.dir}/tools/sdk/build.${env.COMPUTERNAME}.properties" tofile="${project.dir}/tools/sdk/build.${env.HOSTNAME}.properties" />
+	</target>
+
+	<target name="setup-testable-tomcat">
+		<setup-testable-tomcat />
+	</target>
+
+	<target name="sort-xml-attributes">
+		<java
+			classname="com.liferay.portal.tools.XMLAttributesSorter"
+			classpathref="project.classpath"
+			fork="true"
+			newenvironment="true"
+		>
+			<jvmarg value="-Xmx512m" />
+			<jvmarg value="-Xss2048k" />
+			<arg value="sort.xml.file.name=${sort.xml.file.name}" />
+		</java>
+	</target>
+
+	<target name="start">
+		<antcall target="compile" />
+
+		<echo>The "start" target is now deprecated. Please use the "compile" target instead.</echo>
+	</target>
+
+	<target name="test-class-group">
+		<ant antfile="build-test.xml" target="test-class-group" inheritAll="false" />
+	</target>
+
+	<target name="test-integration">
+		<ant antfile="build-test.xml" target="test-integration" inheritAll="false" />
+	</target>
+
+	<target name="test-package">
+		<ant antfile="build-test.xml" target="test-package" inheritAll="false" />
+	</target>
+
+	<target name="test-unit">
+		<ant antfile="build-test.xml" target="test-unit" inheritAll="false" />
+	</target>
+
+	<target name="update-app-server-scripts">
+		<if>
+			<equals arg1="${app.server.type}" arg2="jboss" />
+			<then>
+				<if>
+					<equals arg1="${app.server.jboss.major.version}" arg2="5" />
+					<then>
+						<loadfile property="run.conf.content" srcfile="${app.server.bin.dir}/run.conf" />
+
+						<antelope:stringutil string="${run.conf.content}" property="run.conf.content.index">
+							<indexof string="-Dfile.encoding=UTF-8" fromindex="0" />
+						</antelope:stringutil>
+
+						<if>
+							<equals arg1="${run.conf.content.index}" arg2="-1" />
+							<then>
+								<echo file="${app.server.bin.dir}/run.conf" append="true">
+		JAVA_OPTS="$JAVA_OPTS -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true -Djboss.vfs.forceVfsJar=true -Dorg.jboss.logging.Log4jService.catchSystemOut=false -Duser.timezone=GMT -Xmx1024m -XX:MaxPermSize=384m"</echo>
+							</then>
+						</if>
+
+						<loadfile property="run.conf.bat.content" srcfile="${app.server.bin.dir}/run.conf.bat" />
+
+						<antelope:stringutil string="${run.conf.bat.content}" property="run.conf.bat.content.index">
+							<indexof string="-Dfile.encoding=UTF-8" fromindex="0" />
+						</antelope:stringutil>
+
+						<if>
+							<equals arg1="${run.conf.bat.content.index}" arg2="-1" />
+							<then>
+								<replace file="${app.server.bin.dir}/run.conf.bat">
+									<replacetoken><![CDATA[:JAVA_OPTS_SET]]></replacetoken>
+									<replacevalue><![CDATA[set "JAVA_OPTS=%JAVA_OPTS% -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true -Djboss.vfs.forceVfsJar=true -Dorg.jboss.logging.Log4jService.catchSystemOut=false -Duser.timezone=GMT -Xmx1024m -XX:MaxPermSize=384m"
+
+		:JAVA_OPTS_SET]]></replacevalue>
+								</replace>
+							</then>
+						</if>
+
+						<replace file="${app.server.deploy.dir}/jbossweb.sar/server.xml">
+							<replacetoken><![CDATA[redirectPort="8443" />]]></replacetoken>
+							<replacevalue><![CDATA[redirectPort="8443" URIEncoding="UTF-8" />]]></replacevalue>
+						</replace>
+					</then>
+					<else>
+						<if>
+							<not>
+								<available file="${app.server.lib.global.dir}/module.xml" />
+							</not>
+							<then>
+								<copy
+									file="tools/servers/jboss/modules/module.xml"
+									tofile="${app.server.lib.global.dir}/module.xml"
+								/>
+							</then>
+						</if>
+					</else>
+				</if>
+			</then>
+		</if>
+
+		<if>
+			<equals arg1="${app.server.type}" arg2="jetty" />
+			<then>
+				<if>
+					<not>
+						<available file="${app.server.dir}/contexts/root.xml" />
+					</not>
+					<then>
+						<copy
+							file="tools/servers/jetty/contexts/root.xml"
+							tofile="${app.server.dir}/contexts/root.xml"
+						/>
+					</then>
+				</if>
+			</then>
+		</if>
+
+		<if>
+			<equals arg1="${app.server.type}" arg2="tomcat" />
+			<then>
+				<if>
+					<not>
+						<available file="${app.server.dir}/conf/Catalina/localhost/${app.server.tomcat.portal.context}.xml" />
+					</not>
+					<then>
+						<copy
+							file="tools/servers/tomcat/conf/Catalina/localhost/ROOT.xml"
+							tofile="${app.server.dir}/conf/Catalina/localhost/${app.server.tomcat.portal.context}.xml"
+							overwrite="true"
+						/>
+					</then>
+				</if>
 			</then>
 		</if>
 
 		<if>
 			<equals arg1="${app.server.type}" arg2="websphere" />
 			<then>
-				<exec dir="${app.server.websphere.bin.dir}" executable="cmd.exe">
+				<exec dir="${app.server.websphere.bin.dir}" executable="/bin/sh" os="${os.unix}">
+					<arg line="startServer.sh server1" />
+				</exec>
+
+				<exec dir="${app.server.websphere.bin.dir}" executable="cmd.exe" os="${os.windows}">
 					<arg line="/c startServer.bat server1" />
 				</exec>
 
@@ -413,206 +1228,57 @@ print AdminConfig.save()
 print AdminControl.invoke(appManager, 'startApplication', 'liferay-portal')
 				</echo>
 
-				<exec dir="${app.server.websphere.bin.dir}" executable="cmd.exe">
+				<exec dir="${app.server.websphere.bin.dir}" executable="/bin/sh" os="${os.unix}">
+					<arg line="wsadmin.sh -f ${basedir}/wsadmin.py" />
+				</exec>
+
+				<exec dir="${app.server.websphere.bin.dir}" executable="cmd.exe" os="${os.windows}">
 					<arg line="/c wsadmin.bat -f ${basedir}\wsadmin.py" />
 				</exec>
 
 				<delete file="wsadmin.py" />
 
-				<exec dir="${app.server.websphere.bin.dir}" executable="cmd.exe">
+				<exec dir="${app.server.websphere.bin.dir}" executable="/bin/sh" os="${os.unix}">
+					<arg line="stopServer.sh server1" />
+				</exec>
+
+				<exec dir="${app.server.websphere.bin.dir}" executable="cmd.exe" os="${os.windows}">
 					<arg line="/c stopServer.bat server1" />
 				</exec>
 			</then>
 		</if>
-
-		<antcall target="print-current-time" />
 	</target>
 
-	<target name="deploy-properties">
-		<copy todir="${app.server.classes.portal.dir}" overwrite="true">
-			<fileset dir="portal-impl/src" includes="portal-*.properties,system-*.properties" />
-		</copy>
-	</target>
+	<target name="update-ivy-cache">
+		<execute>
+			git reset --hard HEAD
+			git clean -d -f
 
-	<target name="dist">
-		<ant antfile="build-dist.xml" target="dist" inheritAll="false" />
-	</target>
+			rm -fr .ivy
 
-	<target name="doc">
-		<antcall target="dtddoc" />
-		<antcall target="javadoc" />
-		<antcall target="javadoc-all" />
-		<ant dir="util-taglib" target="taglibdoc" inheritAll="false" />
-	</target>
+			ant setup-sdk
 
-	<target name="dtddoc">
-		<taskdef classname="DTDDoc.DTDDocTask" classpathref="lib.classpath" name="DTDDoc" />
+			ant -f modules/apps/build.xml clean
+			ant -f modules/core/build.xml clean
+			ant -f modules/portal/build.xml clean
+			ant -f modules/sdk/build.xml clean
+			ant -f modules/test/build.xml clean
+			ant -f modules/third-party/build.xml clean
+			ant -f modules/util/build.xml clean
 
-		<!--<antelope:stringutil string="${lp.version}" property="lp.version.dtd">
-			<replace regex="\." replacement="_" />
-		</antelope:stringutil>-->
+			ant -f modules/core/registry-api/build.xml deploy
+			ant -f modules/core/registry-test/build.xml compile-test
 
-		<property name="doc.definitions.dir" value="${doc.dir}/definitions" />
+			ant -f modules/apps/build.xml compile-test
+			ant -f modules/core/build.xml compile-test
+			ant -f modules/portal/build.xml compile-test
+			ant -f modules/sdk/build.xml compile-test
+			ant -f modules/test/build.xml compile-test
+			ant -f modules/third-party/build.xml compile-test
+			ant -f modules/util/build.xml compile-test
 
-		<DTDDoc
-			destDir="${doc.definitions.dir}"
-			docTitle = "Liferay ${lp.version} Definitions"
-			showFixmeTags="false"
-			showHiddenTags="false"
-			sourceDir="${definitions.dir}"
-		>
-			<include name="liferay-*${lp.version.dtd}.dtd" />
-		</DTDDoc>
-	</target>
-
-	<target name="jar">
-		<ant dir="portal-service" target="jar" inheritAll="false" />
-
-		<ant dir="util-bridges" target="jar" inheritAll="false" />
-		<ant dir="util-java" target="jar" inheritAll="false" />
-		<ant dir="util-taglib" target="jar" inheritAll="false" />
-
-		<ant dir="portal-impl" target="jar" inheritAll="false" />
-
-		<ant dir="portal-web" target="war" inheritAll="false" />
-
-		<ant dir="support-tomcat" target="jar" inheritAll="false" />
-	</target>
-
-	<target name="javadoc">
-		<property name="doc.java.dir" value="${doc.dir}/javadocs" />
-
-		<mkdir dir="${doc.java.dir}" />
-
-		<javadoc
-			breakiterator="yes"
-			classpathref="project.classpath"
-			destdir="${doc.java.dir}"
-			doctitle="Liferay ${lp.version} Public API Documentation"
-			header="&lt;b&gt;Liferay ${lp.version}&lt;/b&gt;"
-			maxmemory="1024m"
-			noqualifier="java.*"
-			overview="portal-service/src/portal-service-overview.html"
-			stylesheetfile="${project.dir}/tools/javadoc.css"
-			useexternalfile="yes"
-			use="yes"
-			windowtitle="Liferay ${lp.version} API"
-		>
-			<doclet name="com.liferay.tools.doclets.standard.Standard" path="${project.dir}/lib/development/liferay-doclet.jar">
-				<param name="-linksource" />
-			</doclet>
-
-			<group title="Portal Services" packages="com.liferay.portal*:com.liferay.counter*:com.liferay.documentlibrary*:com.liferay.mail*" />
-			<group title="Portal Kernel" packages="com.liferay.portal.kernel*" />
-			<group title="Portlet Services" packages="com.liferay.portlet*" />
-			<group title="Portlet Bridges" packages="com.liferay.util.bridges*" />
-
-			<link href="http://docs.liferay.com/portlet-api/2.0/javadocs" />
-			<link href="http://java.sun.com/javase/6/docs/api" />
-			<link href="http://docs.liferay.com/portal/${lp.version.major}/javadocs" />
-
-			<packageset dir="portal-service/src" />
-			<packageset dir="util-bridges/src" />
-			<packageset dir="util-java/src" />
-
-			<tag name="generated" description="" />
-		</javadoc>
-	</target>
-
-	<target name="javadoc-all">
-		<property name="doc.java.dir" value="${doc.dir}/javadocs-all" />
-
-		<mkdir dir="${doc.java.dir}" />
-
-		<javadoc
-			breakiterator="yes"
-			classpathref="project.classpath"
-			destdir="${doc.java.dir}"
-			doctitle="Liferay ${lp.version} Internal API Documentation"
-			header="&lt;b&gt;Liferay ${lp.version}&lt;/b&gt;"
-			maxmemory="1024m"
-			noqualifier="java.*"
-			overview="portal-impl/src/portal-impl-overview.html"
-			stylesheetfile="${project.dir}/tools/javadoc.css"
-			useexternalfile="yes"
-			use="yes"
-			windowtitle="Liferay ${lp.version} Internal API"
-		>
-			<doclet name="com.liferay.tools.doclets.standard.Standard" path="${project.dir}/lib/development/liferay-doclet.jar">
-				<param name="-linksource" />
-			</doclet>
-
-			<group title="Portal Services" packages="com.liferay.portal.service*" />
-			<group title="Portlet Services" packages="com.liferay.portlet*" />
-
-			<link href="http://docs.liferay.com/portlet-api/2.0/javadocs" />
-			<link href="http://java.sun.com/javase/6/docs/api" />
-
-			<packageset dir="portal-impl/src" />
-			<packageset dir="portal-service/src" />
-			<packageset dir="util-bridges/src" />
-			<packageset dir="util-java/src" />
-			<packageset dir="util-taglib/src" />
-
-			<tag name="generated" description="ServiceBuilder generated this class. Modifications in this class will be overwritten the next time it is generated." />
-		</javadoc>
-	</target>
-
-	<target name="prepare-generated-files">
-		<ant antfile="build-dist.xml" target="prepare-generated-files" inheritAll="false" />
-	</target>
-
-	<target name="record-svn-revision">
-		<exec dir="${project.dir}" executable="cmd.exe" os="${os.windows}" outputproperty="svn.info.output">
-			<arg line="/c svn info" />
-		</exec>
-
-		<script classpathref="project.classpath" language="beanshell">
-			String svnInfoOutput = project.getProperty("svn.info.output");
-
-			int x = svnInfoOutput.indexOf("Revision: ");
-
-			x = svnInfoOutput.indexOf(" ", x);
-
-			int y = svnInfoOutput.indexOf("Node ", x);
-
-			String revision = svnInfoOutput.substring(x, y).trim();
-
-			project.setProperty("svn.info.revision", revision);
-		</script>
-
-		<echo file="svn-revision">Revision: ${svn.info.revision}
-Username: ${svn.username}
-Password: ${svn.password}
-Portal: ${project.dir}
-Plugins: ${lp.plugins.dir}</echo>
-	</target>
-
-	<target name="start">
-		<antcall target="compile" />
-
-		<ant dir="util-taglib" target="jar" inheritAll="false" />
-
-		<ant dir="sql" target="build-db" inheritAll="false" />
-		<ant dir="sql" target="rebuild-hypersonic" inheritAll="false" />
-
-		<ant dir="portal-impl" target="build-themes" inheritAll="false" />
-
-		<antcall target="jar" />
-
-		<antcall target="print-current-time" />
-	</target>
-
-	<target name="test">
-		<ant antfile="build-test.xml" target="test" inheritAll="false" />
-	</target>
-
-	<target name="test-integration">
-		<ant antfile="build-test.xml" target="test-integration" inheritAll="false" />
-	</target>
-
-	<target name="test-unit">
-		<ant antfile="build-test.xml" target="test-unit" inheritAll="false" />
+			ant -f portal-service/build.xml test-class -Dtest.class=StringUtilTest
+		</execute>
 	</target>
 
 	<target name="update-plugins-to-svn-revision">

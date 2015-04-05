@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,9 +14,21 @@
 
 package com.liferay.portal.kernel.search;
 
-import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.registry.Registry;
+import com.liferay.registry.RegistryUtil;
+import com.liferay.registry.ServiceReference;
+import com.liferay.registry.ServiceRegistration;
+import com.liferay.registry.ServiceTracker;
+import com.liferay.registry.ServiceTrackerCustomizer;
+import com.liferay.registry.collections.StringServiceRegistrationMap;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Raymond Augé
@@ -24,61 +36,141 @@ import java.util.List;
 public class IndexerRegistryUtil {
 
 	public static Indexer getIndexer(Class<?> clazz) {
-		return getIndexerRegistry().getIndexer(clazz.getName());
+		return _instance._indexers.get(clazz.getName());
 	}
 
 	public static Indexer getIndexer(String className) {
-		return getIndexerRegistry().getIndexer(className);
-	}
-
-	public static IndexerRegistry getIndexerRegistry() {
-		PortalRuntimePermission.checkGetBeanProperty(IndexerRegistryUtil.class);
-
-		return _indexerRegistry;
+		return _instance._indexers.get(className);
 	}
 
 	public static List<Indexer> getIndexers() {
-		return getIndexerRegistry().getIndexers();
+		List<Indexer> indexers = new ArrayList<>(_instance._indexers.values());
+
+		return Collections.unmodifiableList(indexers);
 	}
 
 	public static Indexer nullSafeGetIndexer(Class<?> clazz) {
-		return getIndexerRegistry().nullSafeGetIndexer(clazz.getName());
+		return _instance._nullSafeGetIndexer(clazz.getName());
 	}
 
 	public static Indexer nullSafeGetIndexer(String className) {
-		return getIndexerRegistry().nullSafeGetIndexer(className);
+		return _instance._nullSafeGetIndexer(className);
 	}
 
 	public static void register(Indexer indexer) {
-		for (String className : indexer.getClassNames()) {
-			register(className, indexer);
-		}
-
-		register(indexer.getClass().getName(), indexer);
+		_instance._register(indexer);
 	}
 
 	public static void register(String className, Indexer indexer) {
-		getIndexerRegistry().register(className, indexer);
+		_instance._register(indexer);
 	}
 
 	public static void unregister(Indexer indexer) {
-		for (String className : indexer.getClassNames()) {
-			unregister(className);
-		}
-
-		unregister(indexer.getClass().getName());
+		_instance._unregister(indexer);
 	}
 
 	public static void unregister(String className) {
-		getIndexerRegistry().unregister(className);
+		_instance._unregister(className);
 	}
 
-	public void setIndexerRegistry(IndexerRegistry indexerRegistry) {
-		PortalRuntimePermission.checkSetBeanProperty(getClass());
+	private IndexerRegistryUtil() {
+		Registry registry = RegistryUtil.getRegistry();
 
-		_indexerRegistry = indexerRegistry;
+		_serviceTracker = registry.trackServices(
+			Indexer.class, new IndexerServiceTrackerCustomizer());
+
+		_serviceTracker.open();
 	}
 
-	private static IndexerRegistry _indexerRegistry;
+	private Indexer _nullSafeGetIndexer(String className) {
+		Indexer indexer = _indexers.get(className);
+
+		if (indexer != null) {
+			return indexer;
+		}
+
+		if (_log.isWarnEnabled()) {
+			_log.warn("No indexer found for " + className);
+		}
+
+		return _dummyIndexer;
+	}
+
+	private void _register(Indexer indexer) {
+		Registry registry = RegistryUtil.getRegistry();
+
+		ServiceRegistration<Indexer> serviceRegistration =
+			registry.registerService(Indexer.class, indexer);
+
+		_serviceRegistrations.put(indexer.getClassName(), serviceRegistration);
+	}
+
+	private void _unregister(Indexer indexer) {
+		_unregister(indexer.getClassName());
+	}
+
+	private void _unregister(String className) {
+		ServiceRegistration<Indexer> serviceRegistration =
+			_serviceRegistrations.remove(className);
+
+		if (serviceRegistration != null) {
+			serviceRegistration.unregister();
+		}
+	}
+
+	private static final Log _log = LogFactoryUtil.getLog(
+		IndexerRegistryUtil.class);
+
+	private static final IndexerRegistryUtil _instance =
+		new IndexerRegistryUtil();
+
+	private static final Indexer _dummyIndexer = new DummyIndexer();
+
+	private final Map<String, Indexer> _indexers = new ConcurrentHashMap<>();
+	private final StringServiceRegistrationMap<Indexer> _serviceRegistrations =
+		new StringServiceRegistrationMap<>();
+	private final ServiceTracker<Indexer, Indexer> _serviceTracker;
+
+	private class IndexerServiceTrackerCustomizer
+		implements ServiceTrackerCustomizer<Indexer, Indexer> {
+
+		@Override
+		public Indexer addingService(
+			ServiceReference<Indexer> serviceReference) {
+
+			Registry registry = RegistryUtil.getRegistry();
+
+			Indexer indexer = registry.getService(serviceReference);
+
+			Class<?> clazz = indexer.getClass();
+
+			_indexers.put(clazz.getName(), indexer);
+
+			_indexers.put(indexer.getClassName(), indexer);
+
+			return indexer;
+		}
+
+		@Override
+		public void modifiedService(
+			ServiceReference<Indexer> serviceReference, Indexer indexer) {
+		}
+
+		@Override
+		public void removedService(
+			ServiceReference<Indexer> serviceReference, Indexer indexer) {
+
+			Registry registry = RegistryUtil.getRegistry();
+
+			registry.ungetService(serviceReference);
+
+			Class<?> clazz = indexer.getClass();
+
+			_indexers.remove(clazz.getName());
+
+			_indexers.remove(indexer.getClassName());
+		}
+
+	}
 
 }

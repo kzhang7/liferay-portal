@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,7 @@
 
 package com.liferay.portlet.shopping.model.impl;
 
-import com.liferay.portal.kernel.exception.SystemException;
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portlet.shopping.model.ShoppingCoupon;
 import com.liferay.portlet.shopping.service.ShoppingCouponLocalServiceUtil;
@@ -28,9 +28,10 @@ import com.liferay.portlet.shopping.service.ShoppingCouponLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see ShoppingCouponImpl
- * @see com.liferay.portlet.shopping.model.ShoppingCoupon
+ * @see ShoppingCoupon
  * @generated
  */
+@ProviderType
 public abstract class ShoppingCouponBaseImpl extends ShoppingCouponModelImpl
 	implements ShoppingCoupon {
 	/*
@@ -38,7 +39,8 @@ public abstract class ShoppingCouponBaseImpl extends ShoppingCouponModelImpl
 	 *
 	 * Never modify or reference this class directly. All methods that expect a shopping coupon model instance should use the {@link ShoppingCoupon} interface instead.
 	 */
-	public void persist() throws SystemException {
+	@Override
+	public void persist() {
 		if (this.isNew()) {
 			ShoppingCouponLocalServiceUtil.addShoppingCoupon(this);
 		}

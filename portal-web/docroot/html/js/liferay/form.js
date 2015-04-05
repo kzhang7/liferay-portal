@@ -1,7 +1,7 @@
 AUI.add(
 	'liferay-form',
 	function(A) {
-		var DEFAULTS_FORM_VALIDATOR = AUI.defaults.FormValidator;
+		var DEFAULTS_FORM_VALIDATOR = A.config.FormValidator;
 
 		var defaultAcceptFiles = DEFAULTS_FORM_VALIDATOR.RULES.acceptFiles;
 
@@ -13,10 +13,17 @@ AUI.add(
 			return defaultAcceptFiles(val, node, ruleValue);
 		};
 
+		var number = function(val, node, ruleValue) {
+			var regex = /^[+\-]?(\d+)(\.\d+)?([eE][+-]?\d+)?$/;
+
+			return regex && regex.test(val);
+		};
+
 		A.mix(
 			DEFAULTS_FORM_VALIDATOR.RULES,
 			{
-				acceptFiles: acceptFiles
+				acceptFiles: acceptFiles,
+				number: number
 			},
 			true
 		);
@@ -48,9 +55,17 @@ AUI.add(
 		var Form = A.Component.create(
 			{
 				ATTRS: {
+					fieldRules: {
+						setter: function(val) {
+							var instance = this;
+
+							instance._processFieldRules(val);
+
+							return val;
+						}
+					},
 					id: {},
 					namespace: {},
-					fieldRules: {},
 					onSubmit: {
 						valueFn: function() {
 							var instance = this;
@@ -68,15 +83,6 @@ AUI.add(
 
 						var id = instance.get('id');
 
-						var fieldRules = instance.get('fieldRules');
-
-						var rules = {};
-						var fieldStrings = {};
-
-						for (var rule in fieldRules) {
-							instance._processFieldRule(rules, fieldStrings, fieldRules[rule]);
-						}
-
 						var form = document[id];
 						var formNode = A.one(form);
 
@@ -86,13 +92,12 @@ AUI.add(
 						if (formNode) {
 							var formValidator = new A.FormValidator(
 								{
-									boundingBox: formNode,
-									fieldStrings: fieldStrings,
-									rules: rules
+									boundingBox: formNode
 								}
 							);
-
 							instance.formValidator = formValidator;
+
+							instance._processFieldRules();
 
 							instance._bindForm();
 						}
@@ -120,10 +125,10 @@ AUI.add(
 					_onFieldFocusChange: function(event) {
 						var instance = this;
 
-						var row = event.currentTarget.ancestor('.aui-field');
+						var row = event.currentTarget.ancestor('.field');
 
 						if (row) {
-							row.toggleClass('aui-field-focused', (event.type == 'focus'));
+							row.toggleClass('field-focused', (event.type == 'focus'));
 						}
 					},
 
@@ -170,9 +175,9 @@ AUI.add(
 
 						fieldRules[validatorName] = value;
 
-						fieldRules.custom = rule.custom;
-
 						if (rule.custom) {
+							fieldRules.custom = rule.custom;
+
 							DEFAULTS_FORM_VALIDATOR.RULES[validatorName] = rule.body;
 						}
 
@@ -189,7 +194,35 @@ AUI.add(
 
 							fieldStrings[validatorName] = errorMessage;
 						}
+					},
+
+					_processFieldRules: function(fieldRules) {
+						var instance = this;
+
+						if (!fieldRules) {
+							fieldRules = instance.get('fieldRules');
+						}
+
+						var fieldStrings = {};
+						var rules = {};
+
+						for (var rule in fieldRules) {
+							instance._processFieldRule(rules, fieldStrings, fieldRules[rule]);
+						}
+
+						var formValidator = instance.formValidator;
+
+						if (formValidator) {
+							formValidator.set('fieldStrings', fieldStrings);
+							formValidator.set('rules', rules);
+						}
 					}
+				},
+
+				get: function(id) {
+					var instance = this;
+
+					return instance._INSTANCES[id];
 				},
 
 				register: function(config) {

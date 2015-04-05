@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,9 +14,10 @@
 
 package com.liferay.portal.service.persistence;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ReferenceRegistry;
 import com.liferay.portal.model.Team;
@@ -25,7 +26,7 @@ import com.liferay.portal.service.ServiceContext;
 import java.util.List;
 
 /**
- * The persistence utility for the team service. This utility wraps {@link TeamPersistenceImpl} and provides direct access to the database for CRUD operations. This utility should only be used by the service layer, as it must operate within a transaction. Never access this utility in a JSP, controller, model, or other front-end class.
+ * The persistence utility for the team service. This utility wraps {@link com.liferay.portal.service.persistence.impl.TeamPersistenceImpl} and provides direct access to the database for CRUD operations. This utility should only be used by the service layer, as it must operate within a transaction. Never access this utility in a JSP, controller, model, or other front-end class.
  *
  * <p>
  * Caching information and settings can be found in <code>portal.properties</code>
@@ -33,9 +34,10 @@ import java.util.List;
  *
  * @author Brian Wing Shun Chan
  * @see TeamPersistence
- * @see TeamPersistenceImpl
+ * @see com.liferay.portal.service.persistence.impl.TeamPersistenceImpl
  * @generated
  */
+@ProviderType
 public class TeamUtil {
 	/*
 	 * NOTE FOR DEVELOPERS:
@@ -60,16 +62,14 @@ public class TeamUtil {
 	/**
 	 * @see com.liferay.portal.service.persistence.BasePersistence#countWithDynamicQuery(DynamicQuery)
 	 */
-	public long countWithDynamicQuery(DynamicQuery dynamicQuery)
-		throws SystemException {
+	public static long countWithDynamicQuery(DynamicQuery dynamicQuery) {
 		return getPersistence().countWithDynamicQuery(dynamicQuery);
 	}
 
 	/**
 	 * @see com.liferay.portal.service.persistence.BasePersistence#findWithDynamicQuery(DynamicQuery)
 	 */
-	public static List<Team> findWithDynamicQuery(DynamicQuery dynamicQuery)
-		throws SystemException {
+	public static List<Team> findWithDynamicQuery(DynamicQuery dynamicQuery) {
 		return getPersistence().findWithDynamicQuery(dynamicQuery);
 	}
 
@@ -77,7 +77,7 @@ public class TeamUtil {
 	 * @see com.liferay.portal.service.persistence.BasePersistence#findWithDynamicQuery(DynamicQuery, int, int)
 	 */
 	public static List<Team> findWithDynamicQuery(DynamicQuery dynamicQuery,
-		int start, int end) throws SystemException {
+		int start, int end) {
 		return getPersistence().findWithDynamicQuery(dynamicQuery, start, end);
 	}
 
@@ -85,102 +85,24 @@ public class TeamUtil {
 	 * @see com.liferay.portal.service.persistence.BasePersistence#findWithDynamicQuery(DynamicQuery, int, int, OrderByComparator)
 	 */
 	public static List<Team> findWithDynamicQuery(DynamicQuery dynamicQuery,
-		int start, int end, OrderByComparator orderByComparator)
-		throws SystemException {
+		int start, int end, OrderByComparator<Team> orderByComparator) {
 		return getPersistence()
 				   .findWithDynamicQuery(dynamicQuery, start, end,
 			orderByComparator);
 	}
 
 	/**
-	 * @see com.liferay.portal.service.persistence.BasePersistence#update(com.liferay.portal.model.BaseModel, boolean)
+	 * @see com.liferay.portal.service.persistence.BasePersistence#update(com.liferay.portal.model.BaseModel)
 	 */
-	public static Team update(Team team, boolean merge)
-		throws SystemException {
-		return getPersistence().update(team, merge);
+	public static Team update(Team team) {
+		return getPersistence().update(team);
 	}
 
 	/**
-	 * @see com.liferay.portal.service.persistence.BasePersistence#update(com.liferay.portal.model.BaseModel, boolean, ServiceContext)
+	 * @see com.liferay.portal.service.persistence.BasePersistence#update(com.liferay.portal.model.BaseModel, ServiceContext)
 	 */
-	public static Team update(Team team, boolean merge,
-		ServiceContext serviceContext) throws SystemException {
-		return getPersistence().update(team, merge, serviceContext);
-	}
-
-	/**
-	* Caches the team in the entity cache if it is enabled.
-	*
-	* @param team the team
-	*/
-	public static void cacheResult(com.liferay.portal.model.Team team) {
-		getPersistence().cacheResult(team);
-	}
-
-	/**
-	* Caches the teams in the entity cache if it is enabled.
-	*
-	* @param teams the teams
-	*/
-	public static void cacheResult(
-		java.util.List<com.liferay.portal.model.Team> teams) {
-		getPersistence().cacheResult(teams);
-	}
-
-	/**
-	* Creates a new team with the primary key. Does not add the team to the database.
-	*
-	* @param teamId the primary key for the new team
-	* @return the new team
-	*/
-	public static com.liferay.portal.model.Team create(long teamId) {
-		return getPersistence().create(teamId);
-	}
-
-	/**
-	* Removes the team with the primary key from the database. Also notifies the appropriate model listeners.
-	*
-	* @param teamId the primary key of the team
-	* @return the team that was removed
-	* @throws com.liferay.portal.NoSuchTeamException if a team with the primary key could not be found
-	* @throws SystemException if a system exception occurred
-	*/
-	public static com.liferay.portal.model.Team remove(long teamId)
-		throws com.liferay.portal.NoSuchTeamException,
-			com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().remove(teamId);
-	}
-
-	public static com.liferay.portal.model.Team updateImpl(
-		com.liferay.portal.model.Team team, boolean merge)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().updateImpl(team, merge);
-	}
-
-	/**
-	* Returns the team with the primary key or throws a {@link com.liferay.portal.NoSuchTeamException} if it could not be found.
-	*
-	* @param teamId the primary key of the team
-	* @return the team
-	* @throws com.liferay.portal.NoSuchTeamException if a team with the primary key could not be found
-	* @throws SystemException if a system exception occurred
-	*/
-	public static com.liferay.portal.model.Team findByPrimaryKey(long teamId)
-		throws com.liferay.portal.NoSuchTeamException,
-			com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().findByPrimaryKey(teamId);
-	}
-
-	/**
-	* Returns the team with the primary key or returns <code>null</code> if it could not be found.
-	*
-	* @param teamId the primary key of the team
-	* @return the team, or <code>null</code> if a team with the primary key could not be found
-	* @throws SystemException if a system exception occurred
-	*/
-	public static com.liferay.portal.model.Team fetchByPrimaryKey(long teamId)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().fetchByPrimaryKey(teamId);
+	public static Team update(Team team, ServiceContext serviceContext) {
+		return getPersistence().update(team, serviceContext);
 	}
 
 	/**
@@ -188,11 +110,8 @@ public class TeamUtil {
 	*
 	* @param groupId the group ID
 	* @return the matching teams
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Team> findByGroupId(
-		long groupId)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Team> findByGroupId(long groupId) {
 		return getPersistence().findByGroupId(groupId);
 	}
 
@@ -200,18 +119,15 @@ public class TeamUtil {
 	* Returns a range of all the teams where groupId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link TeamModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
 	* @param start the lower bound of the range of teams
 	* @param end the upper bound of the range of teams (not inclusive)
 	* @return the range of matching teams
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Team> findByGroupId(
-		long groupId, int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Team> findByGroupId(long groupId, int start, int end) {
 		return getPersistence().findByGroupId(groupId, start, end);
 	}
 
@@ -219,7 +135,7 @@ public class TeamUtil {
 	* Returns an ordered range of all the teams where groupId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link TeamModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
@@ -227,12 +143,9 @@ public class TeamUtil {
 	* @param end the upper bound of the range of teams (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of matching teams
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Team> findByGroupId(
-		long groupId, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Team> findByGroupId(long groupId, int start, int end,
+		OrderByComparator<Team> orderByComparator) {
 		return getPersistence()
 				   .findByGroupId(groupId, start, end, orderByComparator);
 	}
@@ -243,14 +156,11 @@ public class TeamUtil {
 	* @param groupId the group ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching team
-	* @throws com.liferay.portal.NoSuchTeamException if a matching team could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchTeamException if a matching team could not be found
 	*/
-	public static com.liferay.portal.model.Team findByGroupId_First(
-		long groupId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.NoSuchTeamException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Team findByGroupId_First(long groupId,
+		OrderByComparator<Team> orderByComparator)
+		throws com.liferay.portal.NoSuchTeamException {
 		return getPersistence().findByGroupId_First(groupId, orderByComparator);
 	}
 
@@ -260,12 +170,9 @@ public class TeamUtil {
 	* @param groupId the group ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching team, or <code>null</code> if a matching team could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public static com.liferay.portal.model.Team fetchByGroupId_First(
-		long groupId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static Team fetchByGroupId_First(long groupId,
+		OrderByComparator<Team> orderByComparator) {
 		return getPersistence().fetchByGroupId_First(groupId, orderByComparator);
 	}
 
@@ -275,14 +182,11 @@ public class TeamUtil {
 	* @param groupId the group ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching team
-	* @throws com.liferay.portal.NoSuchTeamException if a matching team could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchTeamException if a matching team could not be found
 	*/
-	public static com.liferay.portal.model.Team findByGroupId_Last(
-		long groupId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.NoSuchTeamException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Team findByGroupId_Last(long groupId,
+		OrderByComparator<Team> orderByComparator)
+		throws com.liferay.portal.NoSuchTeamException {
 		return getPersistence().findByGroupId_Last(groupId, orderByComparator);
 	}
 
@@ -292,12 +196,9 @@ public class TeamUtil {
 	* @param groupId the group ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching team, or <code>null</code> if a matching team could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public static com.liferay.portal.model.Team fetchByGroupId_Last(
-		long groupId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static Team fetchByGroupId_Last(long groupId,
+		OrderByComparator<Team> orderByComparator) {
 		return getPersistence().fetchByGroupId_Last(groupId, orderByComparator);
 	}
 
@@ -308,14 +209,11 @@ public class TeamUtil {
 	* @param groupId the group ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the previous, current, and next team
-	* @throws com.liferay.portal.NoSuchTeamException if a team with the primary key could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchTeamException if a team with the primary key could not be found
 	*/
-	public static com.liferay.portal.model.Team[] findByGroupId_PrevAndNext(
-		long teamId, long groupId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.NoSuchTeamException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Team[] findByGroupId_PrevAndNext(long teamId, long groupId,
+		OrderByComparator<Team> orderByComparator)
+		throws com.liferay.portal.NoSuchTeamException {
 		return getPersistence()
 				   .findByGroupId_PrevAndNext(teamId, groupId, orderByComparator);
 	}
@@ -325,11 +223,8 @@ public class TeamUtil {
 	*
 	* @param groupId the group ID
 	* @return the matching teams that the user has permission to view
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Team> filterFindByGroupId(
-		long groupId)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Team> filterFindByGroupId(long groupId) {
 		return getPersistence().filterFindByGroupId(groupId);
 	}
 
@@ -337,18 +232,16 @@ public class TeamUtil {
 	* Returns a range of all the teams that the user has permission to view where groupId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link TeamModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
 	* @param start the lower bound of the range of teams
 	* @param end the upper bound of the range of teams (not inclusive)
 	* @return the range of matching teams that the user has permission to view
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Team> filterFindByGroupId(
-		long groupId, int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Team> filterFindByGroupId(long groupId, int start,
+		int end) {
 		return getPersistence().filterFindByGroupId(groupId, start, end);
 	}
 
@@ -356,7 +249,7 @@ public class TeamUtil {
 	* Returns an ordered range of all the teams that the user has permissions to view where groupId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link TeamModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
@@ -364,12 +257,9 @@ public class TeamUtil {
 	* @param end the upper bound of the range of teams (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of matching teams that the user has permission to view
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Team> filterFindByGroupId(
-		long groupId, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Team> filterFindByGroupId(long groupId, int start,
+		int end, OrderByComparator<Team> orderByComparator) {
 		return getPersistence()
 				   .filterFindByGroupId(groupId, start, end, orderByComparator);
 	}
@@ -381,32 +271,55 @@ public class TeamUtil {
 	* @param groupId the group ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the previous, current, and next team
-	* @throws com.liferay.portal.NoSuchTeamException if a team with the primary key could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchTeamException if a team with the primary key could not be found
 	*/
-	public static com.liferay.portal.model.Team[] filterFindByGroupId_PrevAndNext(
-		long teamId, long groupId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.NoSuchTeamException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Team[] filterFindByGroupId_PrevAndNext(long teamId,
+		long groupId, OrderByComparator<Team> orderByComparator)
+		throws com.liferay.portal.NoSuchTeamException {
 		return getPersistence()
 				   .filterFindByGroupId_PrevAndNext(teamId, groupId,
 			orderByComparator);
 	}
 
 	/**
-	* Returns the team where groupId = &#63; and name = &#63; or throws a {@link com.liferay.portal.NoSuchTeamException} if it could not be found.
+	* Removes all the teams where groupId = &#63; from the database.
+	*
+	* @param groupId the group ID
+	*/
+	public static void removeByGroupId(long groupId) {
+		getPersistence().removeByGroupId(groupId);
+	}
+
+	/**
+	* Returns the number of teams where groupId = &#63;.
+	*
+	* @param groupId the group ID
+	* @return the number of matching teams
+	*/
+	public static int countByGroupId(long groupId) {
+		return getPersistence().countByGroupId(groupId);
+	}
+
+	/**
+	* Returns the number of teams that the user has permission to view where groupId = &#63;.
+	*
+	* @param groupId the group ID
+	* @return the number of matching teams that the user has permission to view
+	*/
+	public static int filterCountByGroupId(long groupId) {
+		return getPersistence().filterCountByGroupId(groupId);
+	}
+
+	/**
+	* Returns the team where groupId = &#63; and name = &#63; or throws a {@link NoSuchTeamException} if it could not be found.
 	*
 	* @param groupId the group ID
 	* @param name the name
 	* @return the matching team
-	* @throws com.liferay.portal.NoSuchTeamException if a matching team could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchTeamException if a matching team could not be found
 	*/
-	public static com.liferay.portal.model.Team findByG_N(long groupId,
-		java.lang.String name)
-		throws com.liferay.portal.NoSuchTeamException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Team findByG_N(long groupId, java.lang.String name)
+		throws com.liferay.portal.NoSuchTeamException {
 		return getPersistence().findByG_N(groupId, name);
 	}
 
@@ -416,11 +329,8 @@ public class TeamUtil {
 	* @param groupId the group ID
 	* @param name the name
 	* @return the matching team, or <code>null</code> if a matching team could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public static com.liferay.portal.model.Team fetchByG_N(long groupId,
-		java.lang.String name)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static Team fetchByG_N(long groupId, java.lang.String name) {
 		return getPersistence().fetchByG_N(groupId, name);
 	}
 
@@ -431,72 +341,10 @@ public class TeamUtil {
 	* @param name the name
 	* @param retrieveFromCache whether to use the finder cache
 	* @return the matching team, or <code>null</code> if a matching team could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public static com.liferay.portal.model.Team fetchByG_N(long groupId,
-		java.lang.String name, boolean retrieveFromCache)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static Team fetchByG_N(long groupId, java.lang.String name,
+		boolean retrieveFromCache) {
 		return getPersistence().fetchByG_N(groupId, name, retrieveFromCache);
-	}
-
-	/**
-	* Returns all the teams.
-	*
-	* @return the teams
-	* @throws SystemException if a system exception occurred
-	*/
-	public static java.util.List<com.liferay.portal.model.Team> findAll()
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().findAll();
-	}
-
-	/**
-	* Returns a range of all the teams.
-	*
-	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
-	* </p>
-	*
-	* @param start the lower bound of the range of teams
-	* @param end the upper bound of the range of teams (not inclusive)
-	* @return the range of teams
-	* @throws SystemException if a system exception occurred
-	*/
-	public static java.util.List<com.liferay.portal.model.Team> findAll(
-		int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().findAll(start, end);
-	}
-
-	/**
-	* Returns an ordered range of all the teams.
-	*
-	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
-	* </p>
-	*
-	* @param start the lower bound of the range of teams
-	* @param end the upper bound of the range of teams (not inclusive)
-	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
-	* @return the ordered range of teams
-	* @throws SystemException if a system exception occurred
-	*/
-	public static java.util.List<com.liferay.portal.model.Team> findAll(
-		int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().findAll(start, end, orderByComparator);
-	}
-
-	/**
-	* Removes all the teams where groupId = &#63; from the database.
-	*
-	* @param groupId the group ID
-	* @throws SystemException if a system exception occurred
-	*/
-	public static void removeByGroupId(long groupId)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		getPersistence().removeByGroupId(groupId);
 	}
 
 	/**
@@ -505,47 +353,10 @@ public class TeamUtil {
 	* @param groupId the group ID
 	* @param name the name
 	* @return the team that was removed
-	* @throws SystemException if a system exception occurred
 	*/
-	public static com.liferay.portal.model.Team removeByG_N(long groupId,
-		java.lang.String name)
-		throws com.liferay.portal.NoSuchTeamException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Team removeByG_N(long groupId, java.lang.String name)
+		throws com.liferay.portal.NoSuchTeamException {
 		return getPersistence().removeByG_N(groupId, name);
-	}
-
-	/**
-	* Removes all the teams from the database.
-	*
-	* @throws SystemException if a system exception occurred
-	*/
-	public static void removeAll()
-		throws com.liferay.portal.kernel.exception.SystemException {
-		getPersistence().removeAll();
-	}
-
-	/**
-	* Returns the number of teams where groupId = &#63;.
-	*
-	* @param groupId the group ID
-	* @return the number of matching teams
-	* @throws SystemException if a system exception occurred
-	*/
-	public static int countByGroupId(long groupId)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().countByGroupId(groupId);
-	}
-
-	/**
-	* Returns the number of teams that the user has permission to view where groupId = &#63;.
-	*
-	* @param groupId the group ID
-	* @return the number of matching teams that the user has permission to view
-	* @throws SystemException if a system exception occurred
-	*/
-	public static int filterCountByGroupId(long groupId)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().filterCountByGroupId(groupId);
 	}
 
 	/**
@@ -554,22 +365,147 @@ public class TeamUtil {
 	* @param groupId the group ID
 	* @param name the name
 	* @return the number of matching teams
-	* @throws SystemException if a system exception occurred
 	*/
-	public static int countByG_N(long groupId, java.lang.String name)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static int countByG_N(long groupId, java.lang.String name) {
 		return getPersistence().countByG_N(groupId, name);
+	}
+
+	/**
+	* Caches the team in the entity cache if it is enabled.
+	*
+	* @param team the team
+	*/
+	public static void cacheResult(Team team) {
+		getPersistence().cacheResult(team);
+	}
+
+	/**
+	* Caches the teams in the entity cache if it is enabled.
+	*
+	* @param teams the teams
+	*/
+	public static void cacheResult(List<Team> teams) {
+		getPersistence().cacheResult(teams);
+	}
+
+	/**
+	* Creates a new team with the primary key. Does not add the team to the database.
+	*
+	* @param teamId the primary key for the new team
+	* @return the new team
+	*/
+	public static Team create(long teamId) {
+		return getPersistence().create(teamId);
+	}
+
+	/**
+	* Removes the team with the primary key from the database. Also notifies the appropriate model listeners.
+	*
+	* @param teamId the primary key of the team
+	* @return the team that was removed
+	* @throws NoSuchTeamException if a team with the primary key could not be found
+	*/
+	public static Team remove(long teamId)
+		throws com.liferay.portal.NoSuchTeamException {
+		return getPersistence().remove(teamId);
+	}
+
+	public static Team updateImpl(Team team) {
+		return getPersistence().updateImpl(team);
+	}
+
+	/**
+	* Returns the team with the primary key or throws a {@link NoSuchTeamException} if it could not be found.
+	*
+	* @param teamId the primary key of the team
+	* @return the team
+	* @throws NoSuchTeamException if a team with the primary key could not be found
+	*/
+	public static Team findByPrimaryKey(long teamId)
+		throws com.liferay.portal.NoSuchTeamException {
+		return getPersistence().findByPrimaryKey(teamId);
+	}
+
+	/**
+	* Returns the team with the primary key or returns <code>null</code> if it could not be found.
+	*
+	* @param teamId the primary key of the team
+	* @return the team, or <code>null</code> if a team with the primary key could not be found
+	*/
+	public static Team fetchByPrimaryKey(long teamId) {
+		return getPersistence().fetchByPrimaryKey(teamId);
+	}
+
+	public static java.util.Map<java.io.Serializable, Team> fetchByPrimaryKeys(
+		java.util.Set<java.io.Serializable> primaryKeys) {
+		return getPersistence().fetchByPrimaryKeys(primaryKeys);
+	}
+
+	/**
+	* Returns all the teams.
+	*
+	* @return the teams
+	*/
+	public static List<Team> findAll() {
+		return getPersistence().findAll();
+	}
+
+	/**
+	* Returns a range of all the teams.
+	*
+	* <p>
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link TeamModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	* </p>
+	*
+	* @param start the lower bound of the range of teams
+	* @param end the upper bound of the range of teams (not inclusive)
+	* @return the range of teams
+	*/
+	public static List<Team> findAll(int start, int end) {
+		return getPersistence().findAll(start, end);
+	}
+
+	/**
+	* Returns an ordered range of all the teams.
+	*
+	* <p>
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link TeamModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	* </p>
+	*
+	* @param start the lower bound of the range of teams
+	* @param end the upper bound of the range of teams (not inclusive)
+	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	* @return the ordered range of teams
+	*/
+	public static List<Team> findAll(int start, int end,
+		OrderByComparator<Team> orderByComparator) {
+		return getPersistence().findAll(start, end, orderByComparator);
+	}
+
+	/**
+	* Removes all the teams from the database.
+	*/
+	public static void removeAll() {
+		getPersistence().removeAll();
 	}
 
 	/**
 	* Returns the number of teams.
 	*
 	* @return the number of teams
-	* @throws SystemException if a system exception occurred
 	*/
-	public static int countAll()
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static int countAll() {
 		return getPersistence().countAll();
+	}
+
+	/**
+	* Returns the primaryKeys of users associated with the team.
+	*
+	* @param pk the primary key of the team
+	* @return long[] of the primaryKeys of users associated with the team
+	*/
+	public static long[] getUserPrimaryKeys(long pk) {
+		return getPersistence().getUserPrimaryKeys(pk);
 	}
 
 	/**
@@ -577,10 +513,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @return the users associated with the team
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.User> getUsers(
-		long pk) throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<com.liferay.portal.model.User> getUsers(long pk) {
 		return getPersistence().getUsers(pk);
 	}
 
@@ -588,18 +522,16 @@ public class TeamUtil {
 	* Returns a range of all the users associated with the team.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link TeamModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param pk the primary key of the team
 	* @param start the lower bound of the range of teams
 	* @param end the upper bound of the range of teams (not inclusive)
 	* @return the range of users associated with the team
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.User> getUsers(
-		long pk, int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<com.liferay.portal.model.User> getUsers(long pk,
+		int start, int end) {
 		return getPersistence().getUsers(pk, start, end);
 	}
 
@@ -607,7 +539,7 @@ public class TeamUtil {
 	* Returns an ordered range of all the users associated with the team.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link TeamModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param pk the primary key of the team
@@ -615,12 +547,10 @@ public class TeamUtil {
 	* @param end the upper bound of the range of teams (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of users associated with the team
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.User> getUsers(
-		long pk, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<com.liferay.portal.model.User> getUsers(long pk,
+		int start, int end,
+		OrderByComparator<com.liferay.portal.model.User> orderByComparator) {
 		return getPersistence().getUsers(pk, start, end, orderByComparator);
 	}
 
@@ -629,10 +559,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @return the number of users associated with the team
-	* @throws SystemException if a system exception occurred
 	*/
-	public static int getUsersSize(long pk)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static int getUsersSize(long pk) {
 		return getPersistence().getUsersSize(pk);
 	}
 
@@ -642,10 +570,8 @@ public class TeamUtil {
 	* @param pk the primary key of the team
 	* @param userPK the primary key of the user
 	* @return <code>true</code> if the user is associated with the team; <code>false</code> otherwise
-	* @throws SystemException if a system exception occurred
 	*/
-	public static boolean containsUser(long pk, long userPK)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static boolean containsUser(long pk, long userPK) {
 		return getPersistence().containsUser(pk, userPK);
 	}
 
@@ -654,10 +580,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team to check for associations with users
 	* @return <code>true</code> if the team has any users associated with it; <code>false</code> otherwise
-	* @throws SystemException if a system exception occurred
 	*/
-	public static boolean containsUsers(long pk)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static boolean containsUsers(long pk) {
 		return getPersistence().containsUsers(pk);
 	}
 
@@ -666,10 +590,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userPK the primary key of the user
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void addUser(long pk, long userPK)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void addUser(long pk, long userPK) {
 		getPersistence().addUser(pk, userPK);
 	}
 
@@ -678,10 +600,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param user the user
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void addUser(long pk, com.liferay.portal.model.User user)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void addUser(long pk, com.liferay.portal.model.User user) {
 		getPersistence().addUser(pk, user);
 	}
 
@@ -690,10 +610,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userPKs the primary keys of the users
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void addUsers(long pk, long[] userPKs)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void addUsers(long pk, long[] userPKs) {
 		getPersistence().addUsers(pk, userPKs);
 	}
 
@@ -702,11 +620,9 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param users the users
-	* @throws SystemException if a system exception occurred
 	*/
 	public static void addUsers(long pk,
-		java.util.List<com.liferay.portal.model.User> users)
-		throws com.liferay.portal.kernel.exception.SystemException {
+		List<com.liferay.portal.model.User> users) {
 		getPersistence().addUsers(pk, users);
 	}
 
@@ -714,10 +630,8 @@ public class TeamUtil {
 	* Clears all associations between the team and its users. Also notifies the appropriate model listeners and clears the mapping table finder cache.
 	*
 	* @param pk the primary key of the team to clear the associated users from
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void clearUsers(long pk)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void clearUsers(long pk) {
 		getPersistence().clearUsers(pk);
 	}
 
@@ -726,10 +640,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userPK the primary key of the user
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void removeUser(long pk, long userPK)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void removeUser(long pk, long userPK) {
 		getPersistence().removeUser(pk, userPK);
 	}
 
@@ -738,10 +650,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param user the user
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void removeUser(long pk, com.liferay.portal.model.User user)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void removeUser(long pk, com.liferay.portal.model.User user) {
 		getPersistence().removeUser(pk, user);
 	}
 
@@ -750,10 +660,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userPKs the primary keys of the users
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void removeUsers(long pk, long[] userPKs)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void removeUsers(long pk, long[] userPKs) {
 		getPersistence().removeUsers(pk, userPKs);
 	}
 
@@ -762,11 +670,9 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param users the users
-	* @throws SystemException if a system exception occurred
 	*/
 	public static void removeUsers(long pk,
-		java.util.List<com.liferay.portal.model.User> users)
-		throws com.liferay.portal.kernel.exception.SystemException {
+		List<com.liferay.portal.model.User> users) {
 		getPersistence().removeUsers(pk, users);
 	}
 
@@ -775,10 +681,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userPKs the primary keys of the users to be associated with the team
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void setUsers(long pk, long[] userPKs)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void setUsers(long pk, long[] userPKs) {
 		getPersistence().setUsers(pk, userPKs);
 	}
 
@@ -787,12 +691,20 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param users the users to be associated with the team
-	* @throws SystemException if a system exception occurred
 	*/
 	public static void setUsers(long pk,
-		java.util.List<com.liferay.portal.model.User> users)
-		throws com.liferay.portal.kernel.exception.SystemException {
+		List<com.liferay.portal.model.User> users) {
 		getPersistence().setUsers(pk, users);
+	}
+
+	/**
+	* Returns the primaryKeys of user groups associated with the team.
+	*
+	* @param pk the primary key of the team
+	* @return long[] of the primaryKeys of user groups associated with the team
+	*/
+	public static long[] getUserGroupPrimaryKeys(long pk) {
+		return getPersistence().getUserGroupPrimaryKeys(pk);
 	}
 
 	/**
@@ -800,10 +712,9 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @return the user groups associated with the team
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.UserGroup> getUserGroups(
-		long pk) throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<com.liferay.portal.model.UserGroup> getUserGroups(
+		long pk) {
 		return getPersistence().getUserGroups(pk);
 	}
 
@@ -811,18 +722,16 @@ public class TeamUtil {
 	* Returns a range of all the user groups associated with the team.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link TeamModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param pk the primary key of the team
 	* @param start the lower bound of the range of teams
 	* @param end the upper bound of the range of teams (not inclusive)
 	* @return the range of user groups associated with the team
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.UserGroup> getUserGroups(
-		long pk, int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<com.liferay.portal.model.UserGroup> getUserGroups(
+		long pk, int start, int end) {
 		return getPersistence().getUserGroups(pk, start, end);
 	}
 
@@ -830,7 +739,7 @@ public class TeamUtil {
 	* Returns an ordered range of all the user groups associated with the team.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link TeamModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param pk the primary key of the team
@@ -838,12 +747,10 @@ public class TeamUtil {
 	* @param end the upper bound of the range of teams (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of user groups associated with the team
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.UserGroup> getUserGroups(
+	public static List<com.liferay.portal.model.UserGroup> getUserGroups(
 		long pk, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+		OrderByComparator<com.liferay.portal.model.UserGroup> orderByComparator) {
 		return getPersistence().getUserGroups(pk, start, end, orderByComparator);
 	}
 
@@ -852,10 +759,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @return the number of user groups associated with the team
-	* @throws SystemException if a system exception occurred
 	*/
-	public static int getUserGroupsSize(long pk)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static int getUserGroupsSize(long pk) {
 		return getPersistence().getUserGroupsSize(pk);
 	}
 
@@ -865,10 +770,8 @@ public class TeamUtil {
 	* @param pk the primary key of the team
 	* @param userGroupPK the primary key of the user group
 	* @return <code>true</code> if the user group is associated with the team; <code>false</code> otherwise
-	* @throws SystemException if a system exception occurred
 	*/
-	public static boolean containsUserGroup(long pk, long userGroupPK)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static boolean containsUserGroup(long pk, long userGroupPK) {
 		return getPersistence().containsUserGroup(pk, userGroupPK);
 	}
 
@@ -877,10 +780,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team to check for associations with user groups
 	* @return <code>true</code> if the team has any user groups associated with it; <code>false</code> otherwise
-	* @throws SystemException if a system exception occurred
 	*/
-	public static boolean containsUserGroups(long pk)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static boolean containsUserGroups(long pk) {
 		return getPersistence().containsUserGroups(pk);
 	}
 
@@ -889,10 +790,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userGroupPK the primary key of the user group
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void addUserGroup(long pk, long userGroupPK)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void addUserGroup(long pk, long userGroupPK) {
 		getPersistence().addUserGroup(pk, userGroupPK);
 	}
 
@@ -901,11 +800,9 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userGroup the user group
-	* @throws SystemException if a system exception occurred
 	*/
 	public static void addUserGroup(long pk,
-		com.liferay.portal.model.UserGroup userGroup)
-		throws com.liferay.portal.kernel.exception.SystemException {
+		com.liferay.portal.model.UserGroup userGroup) {
 		getPersistence().addUserGroup(pk, userGroup);
 	}
 
@@ -914,10 +811,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userGroupPKs the primary keys of the user groups
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void addUserGroups(long pk, long[] userGroupPKs)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void addUserGroups(long pk, long[] userGroupPKs) {
 		getPersistence().addUserGroups(pk, userGroupPKs);
 	}
 
@@ -926,11 +821,9 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userGroups the user groups
-	* @throws SystemException if a system exception occurred
 	*/
 	public static void addUserGroups(long pk,
-		java.util.List<com.liferay.portal.model.UserGroup> userGroups)
-		throws com.liferay.portal.kernel.exception.SystemException {
+		List<com.liferay.portal.model.UserGroup> userGroups) {
 		getPersistence().addUserGroups(pk, userGroups);
 	}
 
@@ -938,10 +831,8 @@ public class TeamUtil {
 	* Clears all associations between the team and its user groups. Also notifies the appropriate model listeners and clears the mapping table finder cache.
 	*
 	* @param pk the primary key of the team to clear the associated user groups from
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void clearUserGroups(long pk)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void clearUserGroups(long pk) {
 		getPersistence().clearUserGroups(pk);
 	}
 
@@ -950,10 +841,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userGroupPK the primary key of the user group
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void removeUserGroup(long pk, long userGroupPK)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void removeUserGroup(long pk, long userGroupPK) {
 		getPersistence().removeUserGroup(pk, userGroupPK);
 	}
 
@@ -962,11 +851,9 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userGroup the user group
-	* @throws SystemException if a system exception occurred
 	*/
 	public static void removeUserGroup(long pk,
-		com.liferay.portal.model.UserGroup userGroup)
-		throws com.liferay.portal.kernel.exception.SystemException {
+		com.liferay.portal.model.UserGroup userGroup) {
 		getPersistence().removeUserGroup(pk, userGroup);
 	}
 
@@ -975,10 +862,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userGroupPKs the primary keys of the user groups
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void removeUserGroups(long pk, long[] userGroupPKs)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void removeUserGroups(long pk, long[] userGroupPKs) {
 		getPersistence().removeUserGroups(pk, userGroupPKs);
 	}
 
@@ -987,11 +872,9 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userGroups the user groups
-	* @throws SystemException if a system exception occurred
 	*/
 	public static void removeUserGroups(long pk,
-		java.util.List<com.liferay.portal.model.UserGroup> userGroups)
-		throws com.liferay.portal.kernel.exception.SystemException {
+		List<com.liferay.portal.model.UserGroup> userGroups) {
 		getPersistence().removeUserGroups(pk, userGroups);
 	}
 
@@ -1000,10 +883,8 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userGroupPKs the primary keys of the user groups to be associated with the team
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void setUserGroups(long pk, long[] userGroupPKs)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void setUserGroups(long pk, long[] userGroupPKs) {
 		getPersistence().setUserGroups(pk, userGroupPKs);
 	}
 
@@ -1012,11 +893,9 @@ public class TeamUtil {
 	*
 	* @param pk the primary key of the team
 	* @param userGroups the user groups to be associated with the team
-	* @throws SystemException if a system exception occurred
 	*/
 	public static void setUserGroups(long pk,
-		java.util.List<com.liferay.portal.model.UserGroup> userGroups)
-		throws com.liferay.portal.kernel.exception.SystemException {
+		List<com.liferay.portal.model.UserGroup> userGroups) {
 		getPersistence().setUserGroups(pk, userGroups);
 	}
 
@@ -1031,8 +910,9 @@ public class TeamUtil {
 	}
 
 	/**
-	 * @deprecated
+	 * @deprecated As of 6.2.0
 	 */
+	@Deprecated
 	public void setPersistence(TeamPersistence persistence) {
 	}
 

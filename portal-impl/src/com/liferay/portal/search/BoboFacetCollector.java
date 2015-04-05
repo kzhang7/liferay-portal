@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -39,21 +39,23 @@ public class BoboFacetCollector implements FacetCollector {
 		}
 	}
 
+	@Override
 	public String getFieldName() {
 		return _fieldName;
 	}
 
+	@Override
 	public TermCollector getTermCollector(String term) {
 		return new BoboTermCollector(_facetAccessible.getFacet(term));
 	}
 
+	@Override
 	public List<TermCollector> getTermCollectors() {
 		return _termCollectors;
 	}
 
-	private FacetAccessible _facetAccessible;
-	private String _fieldName;
-	private List<TermCollector> _termCollectors =
-		new ArrayList<TermCollector>();
+	private final FacetAccessible _facetAccessible;
+	private final String _fieldName;
+	private final List<TermCollector> _termCollectors = new ArrayList<>();
 
 }

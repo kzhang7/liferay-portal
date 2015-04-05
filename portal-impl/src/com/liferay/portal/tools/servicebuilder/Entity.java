@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -34,18 +34,22 @@ import java.util.Set;
  */
 public class Entity {
 
-	public static final String DEFAULT_DATA_SOURCE = "liferayDataSource";
-
-	public static final String DEFAULT_SESSION_FACTORY =
-		"liferaySessionFactory";
-
-	public static final String DEFAULT_TX_MANAGER = "liferayTransactionManager";
-
 	public static final Accessor<Entity, String> NAME_ACCESSOR =
 		new Accessor<Entity, String>() {
 
+			@Override
 			public String get(Entity entity) {
 				return entity.getName();
+			}
+
+			@Override
+			public Class<String> getAttributeClass() {
+				return String.class;
+			}
+
+			@Override
+			public Class<Entity> getTypeClass() {
+				return Entity.class;
 			}
 
 		};
@@ -65,21 +69,30 @@ public class Entity {
 	public static boolean hasColumn(
 		String name, List<EntityColumn> columnList) {
 
-		int pos = columnList.indexOf(new EntityColumn(name));
+		return hasColumn(name, null, columnList);
+	}
 
-		if (pos != -1) {
-			return true;
+	public static boolean hasColumn(
+		String name, String type, List<EntityColumn> columnList) {
+
+		int index = columnList.indexOf(new EntityColumn(name));
+
+		if (index != -1) {
+			EntityColumn col = columnList.get(index);
+
+			if ((type == null) || type.equals(col.getType())) {
+				return true;
+			}
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	public Entity(String name) {
 		this(
 			null, null, null, name, null, null, null, false, false, false, true,
-			null, null, null, null, null, true, false, null, null, null, null,
-			null, null, null, null, null);
+			null, null, null, null, null, true, false, false, false, false,
+			false, null, null, null, null, null, null, null, null, null, null);
 	}
 
 	public Entity(
@@ -88,11 +101,13 @@ public class Entity {
 		boolean uuidAccessor, boolean localService, boolean remoteService,
 		String persistenceClass, String finderClass, String dataSource,
 		String sessionFactory, String txManager, boolean cacheEnabled,
-		boolean jsonEnabled, List<EntityColumn> pkList,
+		boolean dynamicUpdateEnabled, boolean jsonEnabled, boolean mvccEnabled,
+		boolean trashEnabled, boolean deprecated, List<EntityColumn> pkList,
 		List<EntityColumn> regularColList, List<EntityColumn> blobList,
 		List<EntityColumn> collectionList, List<EntityColumn> columnList,
 		EntityOrder order, List<EntityFinder> finderList,
-		List<Entity> referenceList, List<String> txRequiredList) {
+		List<Entity> referenceList, List<String> unresolvedReferenceList,
+		List<String> txRequiredList) {
 
 		_packagePath = packagePath;
 		_portletName = portletName;
@@ -108,12 +123,15 @@ public class Entity {
 		_remoteService = remoteService;
 		_persistenceClass = persistenceClass;
 		_finderClass = finderClass;
-		_dataSource = GetterUtil.getString(dataSource, DEFAULT_DATA_SOURCE);
+		_dataSource = GetterUtil.getString(dataSource, _DATA_SOURCE_DEFAULT);
 		_sessionFactory = GetterUtil.getString(
-			sessionFactory, DEFAULT_SESSION_FACTORY);
-		_txManager = GetterUtil.getString(txManager, DEFAULT_TX_MANAGER);
-		_cacheEnabled = cacheEnabled;
+			sessionFactory, _SESSION_FACTORY_DEFAULT);
+		_txManager = GetterUtil.getString(txManager, _TX_MANAGER_DEFAULT);
+		_dynamicUpdateEnabled = dynamicUpdateEnabled;
 		_jsonEnabled = jsonEnabled;
+		_mvccEnabled = mvccEnabled;
+		_trashEnabled = trashEnabled;
+		_deprecated = deprecated;
 		_pkList = pkList;
 		_regularColList = regularColList;
 		_blobList = blobList;
@@ -122,16 +140,17 @@ public class Entity {
 		_order = order;
 		_finderList = finderList;
 		_referenceList = referenceList;
+		_unresolvedReferenceList = unresolvedReferenceList;
 		_txRequiredList = txRequiredList;
 
 		if (_finderList != null) {
-			Set<EntityColumn> finderColumns = new HashSet<EntityColumn>();
+			Set<EntityColumn> finderColumns = new HashSet<>();
 
 			for (EntityFinder entityFinder : _finderList) {
 				finderColumns.addAll(entityFinder.getColumns());
 			}
 
-			_finderColumnsList = new ArrayList<EntityColumn>(finderColumns);
+			_finderColumnsList = new ArrayList<>(finderColumns);
 
 			Collections.sort(_finderColumnsList);
 		}
@@ -142,16 +161,44 @@ public class Entity {
 		if ((_blobList != null) && !_blobList.isEmpty()) {
 			for (EntityColumn col : _blobList) {
 				if (!col.isLazy()) {
-					_cacheEnabled = false;
+					cacheEnabled = false;
 
 					break;
 				}
 			}
 		}
+
+		_cacheEnabled = cacheEnabled;
+
+		boolean containerModel = false;
+
+		if ((_columnList != null) && !_columnList.isEmpty()) {
+			for (EntityColumn col : _columnList) {
+				if (col.isContainerModel() || col.isParentContainerModel()) {
+					containerModel = true;
+
+					break;
+				}
+			}
+		}
+
+		_containerModel = containerModel;
+	}
+
+	public void addReference(Entity reference) {
+		_referenceList.add(reference);
 	}
 
 	@Override
 	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof Entity)) {
+			return false;
+		}
+
 		Entity entity = (Entity)obj;
 
 		String name = entity.getName();
@@ -166,6 +213,24 @@ public class Entity {
 
 	public String getAlias() {
 		return _alias;
+	}
+
+	public List<EntityColumn> getBadNamedColumnsList() {
+		List<EntityColumn> badNamedColumnsList = ListUtil.copy(_columnList);
+
+		Iterator<EntityColumn> itr = badNamedColumnsList.iterator();
+
+		while (itr.hasNext()) {
+			EntityColumn col = itr.next();
+
+			String name = col.getName();
+
+			if (name.equals(col.getDBName())) {
+				itr.remove();
+			}
+		}
+
+		return badNamedColumnsList;
 	}
 
 	public List<EntityColumn> getBlobList() {
@@ -274,22 +339,20 @@ public class Entity {
 		if (hasCompoundPK()) {
 			return _name + "PK";
 		}
-		else {
-			EntityColumn col = _getPKColumn();
 
-			return col.getType();
-		}
+		EntityColumn col = _getPKColumn();
+
+		return col.getType();
 	}
 
 	public String getPKDBName() {
 		if (hasCompoundPK()) {
 			return getVarName() + "PK";
 		}
-		else {
-			EntityColumn col = _getPKColumn();
 
-			return col.getDBName();
-		}
+		EntityColumn col = _getPKColumn();
+
+		return col.getDBName();
 	}
 
 	public List<EntityColumn> getPKList() {
@@ -300,11 +363,20 @@ public class Entity {
 		if (hasCompoundPK()) {
 			return getVarName() + "PK";
 		}
-		else {
-			EntityColumn col = _getPKColumn();
 
-			return col.getName();
+		EntityColumn col = _getPKColumn();
+
+		return col.getName();
+	}
+
+	public String getPKVarNames() {
+		if (hasCompoundPK()) {
+			return getVarName() + "PKs";
 		}
+
+		EntityColumn col = _getPKColumn();
+
+		return col.getNames();
 	}
 
 	public String getPortletName() {
@@ -364,12 +436,20 @@ public class Entity {
 		while (itr.hasNext()) {
 			EntityFinder finder = itr.next();
 
-			if (finder.isCollection()) {
+			if (finder.isCollection() && !finder.isUnique()) {
 				itr.remove();
 			}
 		}
 
 		return finderList;
+	}
+
+	public List<String> getUnresolvedReferenceList() {
+		if (_unresolvedReferenceList == null) {
+			return new ArrayList<>();
+		}
+
+		return _unresolvedReferenceList;
 	}
 
 	public String getVarName() {
@@ -378,6 +458,21 @@ public class Entity {
 
 	public String getVarNames() {
 		return TextFormatter.formatPlural(getVarName());
+	}
+
+	public boolean hasActionableDynamicQuery() {
+		if (hasColumns() && hasLocalService()) {
+			if (hasCompoundPK()) {
+				EntityColumn col = _pkList.get(0);
+
+				return col.isPrimitiveType();
+			}
+			else {
+				return hasPrimitivePK();
+			}
+		}
+
+		return false;
 	}
 
 	public boolean hasArrayableOperator() {
@@ -394,8 +489,12 @@ public class Entity {
 		return hasColumn(name, _columnList);
 	}
 
+	public boolean hasColumn(String name, String type) {
+		return hasColumn(name, type, _columnList);
+	}
+
 	public boolean hasColumns() {
-		if ((_columnList == null) || (_columnList.size() == 0)) {
+		if (ListUtil.isEmpty(_columnList)) {
 			return false;
 		}
 		else {
@@ -454,16 +553,6 @@ public class Entity {
 		return false;
 	}
 
-	public boolean hasLocalizedColumn() {
-		for (EntityColumn col : _columnList) {
-			if (col.isLocalized()) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	public boolean hasLocalService() {
 		return _localService;
 	}
@@ -476,15 +565,14 @@ public class Entity {
 		if (hasCompoundPK()) {
 			return false;
 		}
-		else {
-			EntityColumn col = _getPKColumn();
 
-			if (col.isPrimitiveType(includeWrappers)) {
-				return true;
-			}
-			else {
-				return false;
-			}
+		EntityColumn col = _getPKColumn();
+
+		if (col.isPrimitiveType(includeWrappers)) {
+			return true;
+		}
+		else {
+			return false;
 		}
 	}
 
@@ -501,18 +589,16 @@ public class Entity {
 	}
 
 	public boolean isAttachedModel() {
-		if (hasColumn("classNameId") && hasColumn("classPK")) {
-			EntityColumn classNameIdCol = getColumn("classNameId");
+		if (!isTypedModel()) {
+			return false;
+		}
 
-			String classNameIdColType = classNameIdCol.getType();
-
+		if (hasColumn("classPK")) {
 			EntityColumn classPKCol = getColumn("classPK");
 
 			String classPKColType = classPKCol.getType();
 
-			if (classNameIdColType.equals("long") &&
-				classPKColType.equals("long")) {
-
+			if (classPKColType.equals("long")) {
 				return true;
 			}
 		}
@@ -521,23 +607,26 @@ public class Entity {
 	}
 
 	public boolean isAuditedModel() {
-		if (hasColumn("companyId") && hasColumn("createDate") &&
-			hasColumn("modifiedDate") && hasColumn("userId") &&
+		if (hasColumn("companyId") && hasColumn("createDate", "Date") &&
+			hasColumn("modifiedDate", "Date") && hasColumn("userId") &&
 			hasColumn("userName")) {
 
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	public boolean isCacheEnabled() {
 		return _cacheEnabled;
 	}
 
+	public boolean isContainerModel() {
+		return _containerModel;
+	}
+
 	public boolean isDefaultDataSource() {
-		if (_dataSource.equals(DEFAULT_DATA_SOURCE)) {
+		if (_dataSource.equals(_DATA_SOURCE_DEFAULT)) {
 			return true;
 		}
 		else {
@@ -546,7 +635,7 @@ public class Entity {
 	}
 
 	public boolean isDefaultSessionFactory() {
-		if (_sessionFactory.equals(DEFAULT_SESSION_FACTORY)) {
+		if (_sessionFactory.equals(_SESSION_FACTORY_DEFAULT)) {
 			return true;
 		}
 		else {
@@ -555,12 +644,20 @@ public class Entity {
 	}
 
 	public boolean isDefaultTXManager() {
-		if (_txManager.equals(DEFAULT_TX_MANAGER)) {
+		if (_txManager.equals(_TX_MANAGER_DEFAULT)) {
 			return true;
 		}
 		else {
 			return false;
 		}
+	}
+
+	public boolean isDeprecated() {
+		return _deprecated;
+	}
+
+	public boolean isDynamicUpdateEnabled() {
+		return _dynamicUpdateEnabled;
 	}
 
 	public boolean isGroupedModel() {
@@ -599,6 +696,20 @@ public class Entity {
 
 	public boolean isJsonEnabled() {
 		return _jsonEnabled;
+	}
+
+	public boolean isLocalizedModel() {
+		for (EntityColumn col : _columnList) {
+			if (col.isLocalized()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public boolean isMvccEnabled() {
+		return _mvccEnabled;
 	}
 
 	public boolean isOrdered() {
@@ -650,6 +761,16 @@ public class Entity {
 		return _portalReference;
 	}
 
+	public boolean isResolved() {
+		if ((_unresolvedReferenceList != null) &&
+			_unresolvedReferenceList.isEmpty()) {
+
+			return true;
+		}
+
+		return false;
+	}
+
 	public boolean isResourcedModel() {
 		String pkVarName = getPKVarName();
 
@@ -661,6 +782,59 @@ public class Entity {
 		else {
 			return false;
 		}
+	}
+
+	public boolean isStagedAuditedModel() {
+		if (isAuditedModel() && isStagedModel()) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public boolean isStagedGroupedModel() {
+		if (isGroupedModel() && isStagedModel()) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public boolean isStagedModel() {
+		if (hasUuid() && hasColumn("companyId") &&
+			hasColumn("createDate", "Date") &&
+			hasColumn("modifiedDate", "Date")) {
+
+			return true;
+		}
+
+		return false;
+	}
+
+	public boolean isTrashEnabled() {
+		return _trashEnabled;
+	}
+
+	public boolean isTreeModel() {
+		if (hasColumn("treePath")) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public boolean isTypedModel() {
+		if (hasColumn("classNameId")) {
+			EntityColumn classNameIdCol = getColumn("classNameId");
+
+			String classNameIdColType = classNameIdCol.getType();
+
+			if (classNameIdColType.equals("long")) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public boolean isWorkflowEnabled() {
@@ -682,6 +856,10 @@ public class Entity {
 		_portalReference = portalReference;
 	}
 
+	public void setResolved() {
+		_unresolvedReferenceList = null;
+	}
+
 	public void setTransients(List<String> transients) {
 		_transients = transients;
 	}
@@ -695,36 +873,50 @@ public class Entity {
 		return _pkList.get(0);
 	}
 
-	private String _alias;
+	private static final String _DATA_SOURCE_DEFAULT = "liferayDataSource";
+
+	private static final String _SESSION_FACTORY_DEFAULT =
+		"liferaySessionFactory";
+
+	private static final String _TX_MANAGER_DEFAULT =
+		"liferayTransactionManager";
+
+	private final String _alias;
 	private List<EntityColumn> _blobList;
-	private boolean _cacheEnabled;
-	private List<EntityColumn> _collectionList;
-	private List<EntityColumn> _columnList;
-	private String _dataSource;
-	private String _finderClass;
-	private List<EntityColumn> _finderColumnsList;
-	private List<EntityFinder> _finderList;
-	private String _humanName;
-	private boolean _jsonEnabled;
-	private boolean _localService;
-	private String _name;
-	private EntityOrder _order;
-	private String _packagePath;
+	private final boolean _cacheEnabled;
+	private final List<EntityColumn> _collectionList;
+	private final List<EntityColumn> _columnList;
+	private final boolean _containerModel;
+	private final String _dataSource;
+	private final boolean _deprecated;
+	private final boolean _dynamicUpdateEnabled;
+	private final String _finderClass;
+	private final List<EntityColumn> _finderColumnsList;
+	private final List<EntityFinder> _finderList;
+	private final String _humanName;
+	private final boolean _jsonEnabled;
+	private final boolean _localService;
+	private final boolean _mvccEnabled;
+	private final String _name;
+	private final EntityOrder _order;
+	private final String _packagePath;
 	private List<String> _parentTransients;
-	private String _persistenceClass;
-	private List<EntityColumn> _pkList;
+	private final String _persistenceClass;
+	private final List<EntityColumn> _pkList;
 	private boolean _portalReference;
-	private String _portletName;
-	private String _portletShortName;
-	private List<Entity> _referenceList;
-	private List<EntityColumn> _regularColList;
-	private boolean _remoteService;
-	private String _sessionFactory;
-	private String _table;
+	private final String _portletName;
+	private final String _portletShortName;
+	private final List<Entity> _referenceList;
+	private final List<EntityColumn> _regularColList;
+	private final boolean _remoteService;
+	private final String _sessionFactory;
+	private final String _table;
 	private List<String> _transients;
-	private String _txManager;
-	private List<String> _txRequiredList;
-	private boolean _uuid;
-	private boolean _uuidAccessor;
+	private final boolean _trashEnabled;
+	private final String _txManager;
+	private final List<String> _txRequiredList;
+	private List<String> _unresolvedReferenceList;
+	private final boolean _uuid;
+	private final boolean _uuidAccessor;
 
 }

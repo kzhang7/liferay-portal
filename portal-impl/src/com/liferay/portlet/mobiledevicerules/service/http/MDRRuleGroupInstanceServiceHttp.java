@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.mobiledevicerules.service.http;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.MethodHandler;
@@ -24,13 +26,11 @@ import com.liferay.portal.service.http.TunnelUtil;
 import com.liferay.portlet.mobiledevicerules.service.MDRRuleGroupInstanceServiceUtil;
 
 /**
- * <p>
- * This class provides a HTTP utility for the
- * {@link com.liferay.portlet.mobiledevicerules.service.MDRRuleGroupInstanceServiceUtil} service utility. The
+ * Provides the HTTP utility for the
+ * {@link MDRRuleGroupInstanceServiceUtil} service utility. The
  * static methods of this class calls the same methods of the service utility.
  * However, the signatures are different because it requires an additional
- * {@link com.liferay.portal.security.auth.HttpPrincipal} parameter.
- * </p>
+ * {@link HttpPrincipal} parameter.
  *
  * <p>
  * The benefits of using the HTTP utility is that it is fast and allows for
@@ -47,21 +47,21 @@ import com.liferay.portlet.mobiledevicerules.service.MDRRuleGroupInstanceService
  * The HTTP utility is only generated for remote services.
  * </p>
  *
- * @author    Edward C. Han
- * @see       MDRRuleGroupInstanceServiceSoap
- * @see       com.liferay.portal.security.auth.HttpPrincipal
- * @see       com.liferay.portlet.mobiledevicerules.service.MDRRuleGroupInstanceServiceUtil
+ * @author Edward C. Han
+ * @see MDRRuleGroupInstanceServiceSoap
+ * @see HttpPrincipal
+ * @see MDRRuleGroupInstanceServiceUtil
  * @generated
  */
+@ProviderType
 public class MDRRuleGroupInstanceServiceHttp {
 	public static com.liferay.portlet.mobiledevicerules.model.MDRRuleGroupInstance addRuleGroupInstance(
 		HttpPrincipal httpPrincipal, long groupId, java.lang.String className,
 		long classPK, long ruleGroupId, int priority,
 		com.liferay.portal.service.ServiceContext serviceContext)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
-			MethodKey methodKey = new MethodKey(MDRRuleGroupInstanceServiceUtil.class.getName(),
+			MethodKey methodKey = new MethodKey(MDRRuleGroupInstanceServiceUtil.class,
 					"addRuleGroupInstance", _addRuleGroupInstanceParameterTypes0);
 
 			MethodHandler methodHandler = new MethodHandler(methodKey, groupId,
@@ -75,10 +75,6 @@ public class MDRRuleGroupInstanceServiceHttp {
 			catch (Exception e) {
 				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
 				}
 
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
@@ -97,10 +93,9 @@ public class MDRRuleGroupInstanceServiceHttp {
 		HttpPrincipal httpPrincipal, long groupId, java.lang.String className,
 		long classPK, long ruleGroupId,
 		com.liferay.portal.service.ServiceContext serviceContext)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
-			MethodKey methodKey = new MethodKey(MDRRuleGroupInstanceServiceUtil.class.getName(),
+			MethodKey methodKey = new MethodKey(MDRRuleGroupInstanceServiceUtil.class,
 					"addRuleGroupInstance", _addRuleGroupInstanceParameterTypes1);
 
 			MethodHandler methodHandler = new MethodHandler(methodKey, groupId,
@@ -114,10 +109,6 @@ public class MDRRuleGroupInstanceServiceHttp {
 			catch (Exception e) {
 				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
 				}
 
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
@@ -134,10 +125,9 @@ public class MDRRuleGroupInstanceServiceHttp {
 
 	public static void deleteRuleGroupInstance(HttpPrincipal httpPrincipal,
 		long ruleGroupInstanceId)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
-			MethodKey methodKey = new MethodKey(MDRRuleGroupInstanceServiceUtil.class.getName(),
+			MethodKey methodKey = new MethodKey(MDRRuleGroupInstanceServiceUtil.class,
 					"deleteRuleGroupInstance",
 					_deleteRuleGroupInstanceParameterTypes2);
 
@@ -150,10 +140,6 @@ public class MDRRuleGroupInstanceServiceHttp {
 			catch (Exception e) {
 				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
 				}
 
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
@@ -169,10 +155,9 @@ public class MDRRuleGroupInstanceServiceHttp {
 	public static java.util.List<com.liferay.portlet.mobiledevicerules.model.MDRRuleGroupInstance> getRuleGroupInstances(
 		HttpPrincipal httpPrincipal, java.lang.String className, long classPK,
 		int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+		com.liferay.portal.kernel.util.OrderByComparator<com.liferay.portlet.mobiledevicerules.model.MDRRuleGroupInstance> orderByComparator) {
 		try {
-			MethodKey methodKey = new MethodKey(MDRRuleGroupInstanceServiceUtil.class.getName(),
+			MethodKey methodKey = new MethodKey(MDRRuleGroupInstanceServiceUtil.class,
 					"getRuleGroupInstances",
 					_getRuleGroupInstancesParameterTypes3);
 
@@ -185,10 +170,6 @@ public class MDRRuleGroupInstanceServiceHttp {
 				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
 			}
 			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
-				}
-
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 
@@ -202,10 +183,9 @@ public class MDRRuleGroupInstanceServiceHttp {
 	}
 
 	public static int getRuleGroupInstancesCount(HttpPrincipal httpPrincipal,
-		java.lang.String className, long classPK)
-		throws com.liferay.portal.kernel.exception.SystemException {
+		java.lang.String className, long classPK) {
 		try {
-			MethodKey methodKey = new MethodKey(MDRRuleGroupInstanceServiceUtil.class.getName(),
+			MethodKey methodKey = new MethodKey(MDRRuleGroupInstanceServiceUtil.class,
 					"getRuleGroupInstancesCount",
 					_getRuleGroupInstancesCountParameterTypes4);
 
@@ -218,10 +198,6 @@ public class MDRRuleGroupInstanceServiceHttp {
 				returnObj = TunnelUtil.invoke(httpPrincipal, methodHandler);
 			}
 			catch (Exception e) {
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
-				}
-
 				throw new com.liferay.portal.kernel.exception.SystemException(e);
 			}
 
@@ -236,10 +212,9 @@ public class MDRRuleGroupInstanceServiceHttp {
 
 	public static com.liferay.portlet.mobiledevicerules.model.MDRRuleGroupInstance updateRuleGroupInstance(
 		HttpPrincipal httpPrincipal, long ruleGroupInstanceId, int priority)
-		throws com.liferay.portal.kernel.exception.PortalException,
-			com.liferay.portal.kernel.exception.SystemException {
+		throws com.liferay.portal.kernel.exception.PortalException {
 		try {
-			MethodKey methodKey = new MethodKey(MDRRuleGroupInstanceServiceUtil.class.getName(),
+			MethodKey methodKey = new MethodKey(MDRRuleGroupInstanceServiceUtil.class,
 					"updateRuleGroupInstance",
 					_updateRuleGroupInstanceParameterTypes5);
 
@@ -254,10 +229,6 @@ public class MDRRuleGroupInstanceServiceHttp {
 			catch (Exception e) {
 				if (e instanceof com.liferay.portal.kernel.exception.PortalException) {
 					throw (com.liferay.portal.kernel.exception.PortalException)e;
-				}
-
-				if (e instanceof com.liferay.portal.kernel.exception.SystemException) {
-					throw (com.liferay.portal.kernel.exception.SystemException)e;
 				}
 
 				throw new com.liferay.portal.kernel.exception.SystemException(e);

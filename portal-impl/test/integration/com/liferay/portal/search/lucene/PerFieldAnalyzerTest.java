@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,17 +15,18 @@
 package com.liferay.portal.search.lucene;
 
 import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
-import com.liferay.portal.test.EnvironmentExecutionTestListener;
-import com.liferay.portal.test.ExecutionTestListeners;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.MainServletTestRule;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Fieldable;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import org.mockito.Mockito;
 
@@ -34,9 +35,13 @@ import org.powermock.api.mockito.PowerMockito;
 /**
  * @author Mate Thurzo
  */
-@ExecutionTestListeners(listeners = {EnvironmentExecutionTestListener.class})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class PerFieldAnalyzerTest extends PowerMockito {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
 
 	@Before
 	public void setUp() {
@@ -53,17 +58,23 @@ public class PerFieldAnalyzerTest extends PowerMockito {
 
 			when(
 				analyzer.getPositionIncrementGap(fieldName)
-			).thenReturn(1);
+			).thenReturn(
+				1
+			);
 
 			when(
 				analyzer.getOffsetGap(Mockito.any(Fieldable.class))
-			).thenReturn(1);
+			).thenReturn(
+				1
+			);
 
 			Fieldable fieldable = mock(Fieldable.class);
 
 			when(
 				fieldable.name()
-			).thenReturn(fieldName);
+			).thenReturn(
+				fieldName
+			);
 
 			_perFieldAnalyzer.addAnalyzer(fieldName, analyzer);
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -20,19 +20,18 @@ package com.liferay.portal.kernel.cache.cluster;
 public class PortalCacheClusterException extends RuntimeException {
 
 	public PortalCacheClusterException() {
-		super();
 	}
 
 	public PortalCacheClusterException(String msg) {
 		super(msg);
 	}
 
-	public PortalCacheClusterException(Throwable cause) {
-		super(cause);
-	}
-
 	public PortalCacheClusterException(String msg, Throwable cause) {
 		super(msg, cause);
+	}
+
+	public PortalCacheClusterException(Throwable cause) {
+		super(cause);
 	}
 
 }

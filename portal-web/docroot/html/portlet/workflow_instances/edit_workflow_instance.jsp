@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -23,12 +23,10 @@ WorkflowInstance workflowInstance = (WorkflowInstance)request.getAttribute(WebKe
 
 Map<String, Serializable> workflowContext = workflowInstance.getWorkflowContext();
 
-long companyId = GetterUtil.getLong((String)workflowContext.get(WorkflowConstants.CONTEXT_COMPANY_ID));
-long groupId = GetterUtil.getLong((String)workflowContext.get(WorkflowConstants.CONTEXT_GROUP_ID));
 String className = (String)workflowContext.get(WorkflowConstants.CONTEXT_ENTRY_CLASS_NAME);
 long classPK = GetterUtil.getLong((String)workflowContext.get(WorkflowConstants.CONTEXT_ENTRY_CLASS_PK));
 
-WorkflowHandler workflowHandler = WorkflowHandlerRegistryUtil.getWorkflowHandler(className);
+WorkflowHandler<?> workflowHandler = WorkflowHandlerRegistryUtil.getWorkflowHandler(className);
 
 AssetRenderer assetRenderer = workflowHandler.getAssetRenderer(classPK);
 AssetRendererFactory assetRendererFactory = workflowHandler.getAssetRendererFactory();
@@ -39,27 +37,11 @@ if (assetRenderer != null) {
 	assetEntry = assetRendererFactory.getAssetEntry(assetRendererFactory.getClassName(), assetRenderer.getClassPK());
 }
 
-String headerTitle = LanguageUtil.get(pageContext, workflowInstance.getWorkflowDefinitionName());
+String headerTitle = LanguageUtil.get(request, workflowInstance.getWorkflowDefinitionName());
 
 if (assetEntry != null) {
 	headerTitle = headerTitle.concat(StringPool.COLON + StringPool.SPACE + assetRenderer.getTitle(locale));
 }
-
-PortletURL viewFullContentURL = renderResponse.createRenderURL();
-
-viewFullContentURL.setParameter("struts_action", "/workflow_tasks/view_content");
-viewFullContentURL.setParameter("redirect", currentURL);
-
-if (assetEntry != null) {
-	viewFullContentURL.setParameter("assetEntryId", String.valueOf(assetEntry.getEntryId()));
-	viewFullContentURL.setParameter("assetEntryVersionId", String.valueOf(classPK));
-}
-
-viewFullContentURL.setParameter("type", assetRendererFactory.getType());
-viewFullContentURL.setParameter("showEditURL", Boolean.FALSE.toString());
-viewFullContentURL.setParameter("workflowAssetPreview", Boolean.TRUE.toString());
-
-request.setAttribute(WebKeys.WORKFLOW_ASSET_PREVIEW, Boolean.TRUE);
 %>
 
 <portlet:renderURL var="backURL">
@@ -72,67 +54,86 @@ request.setAttribute(WebKeys.WORKFLOW_ASSET_PREVIEW, Boolean.TRUE);
 	title="<%= headerTitle %>"
 />
 
-<aui:layout>
-	<aui:column columnWidth="<%= 75 %>" cssClass="lfr-asset-column lfr-asset-column-details" first="<%= true %>">
-		<aui:layout>
-			<aui:column columnWidth="60">
-				<div class="lfr-asset-status">
-					<aui:field-wrapper label="state">
-						<%= LanguageUtil.get(pageContext, workflowInstance.getState()) %>
-					</aui:field-wrapper>
-				</div>
-			</aui:column>
+<aui:row>
+	<aui:col cssClass="lfr-asset-column lfr-asset-column-details" width="<%= 75 %>">
+		<aui:row>
+			<aui:col width="<%= 60 %>">
+				<aui:input name="state" type="resource" value="<%= LanguageUtil.get(request, workflowInstance.getState()) %>" />
+			</aui:col>
 
-			<aui:column>
-				<div class="lfr-asset-date">
-					<aui:field-wrapper label="end-date">
-						<%= (workflowInstance.getEndDate() == null) ? LanguageUtil.get(pageContext, "never") : dateFormatDateTime.format(workflowInstance.getEndDate()) %>
-					</aui:field-wrapper>
-				</div>
-			</aui:column>
-		</aui:layout>
+			<aui:col width="<%= 33 %>">
+				<aui:input name="endDate" type="resource" value='<%= (workflowInstance.getEndDate() == null) ? LanguageUtil.get(request, "never") : dateFormatDateTime.format(workflowInstance.getEndDate()) %>' />
+			</aui:col>
+		</aui:row>
 
 		<liferay-ui:panel-container cssClass="task-panel-container" extended="<%= true %>" id="preview">
 
 			<c:if test="<%= assetRenderer != null %>">
-				<liferay-ui:panel defaultState="open" title='<%= LanguageUtil.format(pageContext, "preview-of-x", ResourceActionsUtil.getModelResource(locale, className)) %>'>
+				<liferay-ui:panel defaultState="open" title='<%= LanguageUtil.format(request, "preview-of-x", ResourceActionsUtil.getModelResource(locale, className), false) %>'>
 					<div class="task-content-actions">
 						<liferay-ui:icon-list>
 							<c:if test="<%= assetRenderer.hasViewPermission(permissionChecker) %>">
-								<liferay-ui:icon image="view" method="get" url="<%= viewFullContentURL.toString() %>" />
+								<portlet:renderURL var="viewFullContentURL">
+									<portlet:param name="struts_action" value="/workflow_instances/view_content" />
+									<portlet:param name="redirect" value="<%= currentURL %>" />
+
+									<c:if test="<%= assetEntry != null %>">
+										<portlet:param name="assetEntryId" value="<%= String.valueOf(assetEntry.getEntryId()) %>" />
+										<portlet:param name="assetEntryVersionId" value="<%= String.valueOf(classPK) %>" />
+									</c:if>
+
+									<portlet:param name="type" value="<%= assetRendererFactory.getType() %>" />
+									<portlet:param name="showEditURL" value="<%= Boolean.FALSE.toString() %>" />
+								</portlet:renderURL>
+
+								<liferay-ui:icon iconCssClass="icon-search" message="view[action]" method="get" url="<%= assetRenderer.isPreviewInContext() ? assetRenderer.getURLViewInContext((LiferayPortletRequest)renderRequest, (LiferayPortletResponse)renderResponse, null) : viewFullContentURL.toString() %>" />
 							</c:if>
 						</liferay-ui:icon-list>
 					</div>
 
 					<h3 class="task-content-title">
-						<img alt="" src="<%= workflowHandler.getIconPath(liferayPortletRequest) %>" /> <%= HtmlUtil.escape(workflowHandler.getTitle(classPK, locale)) %>
+						<liferay-ui:icon
+							iconCssClass="<%= workflowHandler.getIconCssClass() %>"
+							label="<%= true %>"
+							message="<%= HtmlUtil.escape(workflowHandler.getTitle(classPK, locale)) %>"
+						/>
 					</h3>
 
-					<%
-					String path = workflowHandler.render(classPK, renderRequest, renderResponse, AssetRenderer.TEMPLATE_ABSTRACT);
-
-					request.setAttribute(WebKeys.ASSET_RENDERER, assetRenderer);
-					request.setAttribute(WebKeys.ASSET_PUBLISHER_ABSTRACT_LENGTH, 200);
-					%>
-
-					<c:choose>
-						<c:when test="<%= path == null %>">
-							<%= workflowHandler.getSummary(classPK, locale) %>
-						</c:when>
-						<c:otherwise>
-							<liferay-util:include page="<%= path %>" portletId="<%= assetRendererFactory.getPortletId() %>" />
-						</c:otherwise>
-					</c:choose>
+					<liferay-ui:asset-display
+						assetRenderer="<%= assetRenderer %>"
+						template="<%= AssetRenderer.TEMPLATE_ABSTRACT %>"
+					/>
 
 					<%
-					String selectionStyle = "manual";
-
 					String[] metadataFields = new String[] {"author", "categories", "tags"};
 					%>
 
-					<div class="asset-metadata">
-						<%@ include file="/html/portlet/asset_publisher/asset_metadata.jspf" %>
-					</div>
+					<liferay-ui:asset-metadata
+						className="<%= assetEntry.getClassName() %>"
+						classPK="<%= assetEntry.getClassPK() %>"
+						metadataFields="<%= metadataFields %>"
+					/>
+				</liferay-ui:panel>
+
+				<liferay-ui:panel title="comments">
+					<portlet:actionURL var="discussionURL">
+						<portlet:param name="struts_action" value="/workflow_instances/edit_workflow_instance_discussion" />
+					</portlet:actionURL>
+
+					<portlet:resourceURL var="discussionPaginationURL">
+						<portlet:param name="struts_action" value="/workflow_instances/edit_workflow_instance_discussion" />
+					</portlet:resourceURL>
+
+					<liferay-ui:discussion
+						className="<%= assetRenderer.getClassName() %>"
+						classPK="<%= assetRenderer.getClassPK() %>"
+						formAction="<%= discussionURL %>"
+						formName="fm1"
+						paginationURL="<%= discussionPaginationURL %>"
+						ratingsEnabled="<%= false %>"
+						redirect="<%= currentURL %>"
+						userId="<%= user.getUserId() %>"
+					/>
 				</liferay-ui:panel>
 			</c:if>
 
@@ -173,43 +174,26 @@ request.setAttribute(WebKeys.WORKFLOW_ASSET_PREVIEW, Boolean.TRUE);
 							/>
 
 							<liferay-ui:search-container-column-text
-								buffer="buffer"
 								name="task"
 							>
-
-								<%
-								buffer.append("<span class=\"task-name\" id=\"");
-								buffer.append(workflowTask.getWorkflowTaskId());
-								buffer.append("\">");
-								buffer.append(LanguageUtil.get(pageContext, workflowTask.getName()));
-								buffer.append("</span>");
-								%>
-
+								<span class="task-name" id="<%= workflowTask.getWorkflowTaskId() %>">
+									<liferay-ui:message key="<%= HtmlUtil.escape(workflowTask.getName()) %>" />
+								</span>
 							</liferay-ui:search-container-column-text>
 
 							<liferay-ui:search-container-column-text
-								buffer="buffer"
 								name="due-date"
-							>
-
-								<%
-								if (workflowTask.getDueDate() == null) {
-									buffer.append(LanguageUtil.get(pageContext, "never"));
-								}
-								else {
-									buffer.append(dateFormatDateTime.format(workflowTask.getDueDate()));
-								}
-								%>
-
-							</liferay-ui:search-container-column-text>
+								value='<%= (workflowTask.getDueDate() == null) ? LanguageUtil.get(request, "never") : dateFormatDateTime.format(workflowTask.getDueDate()) %>'
+							/>
 
 							<liferay-ui:search-container-column-text
 								name="completed"
-								value='<%= workflowTask.isCompleted() ? LanguageUtil.get(pageContext, "yes") : LanguageUtil.get(pageContext, "no") %>'
+								value='<%= workflowTask.isCompleted() ? LanguageUtil.get(request, "yes") : LanguageUtil.get(request, "no") %>'
 							/>
 
 							<liferay-ui:search-container-column-jsp
 								align="right"
+								cssClass="entry-action"
 								path="/html/portlet/workflow_instances/workflow_task_action.jsp"
 							/>
 						</liferay-ui:search-container-row>
@@ -233,27 +217,10 @@ request.setAttribute(WebKeys.WORKFLOW_ASSET_PREVIEW, Boolean.TRUE);
 
 				<%@ include file="/html/portlet/workflow_instances/workflow_logs.jspf" %>
 			</liferay-ui:panel>
-
-			<liferay-ui:panel title="comments">
-				<portlet:actionURL var="discussionURL">
-					<portlet:param name="struts_action" value="/workflow_instances/edit_workflow_instance_discussion" />
-				</portlet:actionURL>
-
-				<liferay-ui:discussion
-					className="<%= WorkflowInstance.class.getName() %>"
-					classPK="<%= workflowInstance.getWorkflowInstanceId() %>"
-					formAction="<%= discussionURL %>"
-					formName="fm1"
-					ratingsEnabled="<%= false %>"
-					redirect="<%= currentURL %>"
-					subject="<%= workflowInstance.getWorkflowDefinitionName() %>"
-					userId="<%= user.getUserId() %>"
-				/>
-			</liferay-ui:panel>
 		</liferay-ui:panel-container>
-	</aui:column>
+	</aui:col>
 
-	<aui:column columnWidth="<%= 25 %>" cssClass="lfr-asset-column lfr-asset-column-actions" last="<%= true %>">
+	<aui:col cssClass="lfr-asset-column lfr-asset-column-actions" last="<%= true %>" width="<%= 25 %>">
 		<div class="lfr-asset-summary">
 			<liferay-ui:icon
 				cssClass="lfr-asset-avatar"
@@ -262,7 +229,7 @@ request.setAttribute(WebKeys.WORKFLOW_ASSET_PREVIEW, Boolean.TRUE);
 			/>
 
 			<div class="lfr-asset-name">
-				<%= workflowInstance.getWorkflowDefinitionName() %>
+				<%= HtmlUtil.escape(workflowInstance.getWorkflowDefinitionName()) %>
 			</div>
 		</div>
 
@@ -271,8 +238,8 @@ request.setAttribute(WebKeys.WORKFLOW_ASSET_PREVIEW, Boolean.TRUE);
 		%>
 
 		<liferay-util:include page="/html/portlet/workflow_instances/workflow_instance_action.jsp" />
-	</aui:column>
-</aui:layout>
+	</aui:col>
+</aui:row>
 
 <%
 PortalUtil.addPortletBreadcrumbEntry(request, headerTitle, currentURL);

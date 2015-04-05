@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -22,8 +22,6 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.expando.model.ExpandoTableConstants;
 import com.liferay.portlet.journal.model.JournalArticle;
 import com.liferay.portlet.journal.model.impl.JournalArticleImpl;
-import com.liferay.portlet.wiki.model.WikiPage;
-import com.liferay.portlet.wiki.model.impl.WikiPageImpl;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -98,8 +96,7 @@ public class UpgradeExpando extends UpgradeProcess {
 			JournalArticle.class.getName(), JournalArticleImpl.TABLE_NAME,
 			"id_");
 
-		updateTables(
-			WikiPage.class.getName(), WikiPageImpl.TABLE_NAME, "pageId");
+		updateTables("com.liferay.wiki.model.WikiPage", "WikiPage", "pageId");
 	}
 
 	protected boolean hasRow(long companyId, long tableId, long classPK)
@@ -330,6 +327,6 @@ public class UpgradeExpando extends UpgradeProcess {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(UpgradeExpando.class);
+	private static final Log _log = LogFactoryUtil.getLog(UpgradeExpando.class);
 
 }

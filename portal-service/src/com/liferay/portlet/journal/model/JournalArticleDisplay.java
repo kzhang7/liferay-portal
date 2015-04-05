@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.journal.model;
 
+import com.liferay.portal.theme.ThemeDisplay;
+
 import java.io.Serializable;
 
 /**
@@ -21,6 +23,8 @@ import java.io.Serializable;
  * @author Raymond Augé
  */
 public interface JournalArticleDisplay extends Serializable {
+
+	public String getArticleDisplayImageURL(ThemeDisplay themeDisplay);
 
 	public String getArticleId();
 
@@ -31,6 +35,10 @@ public interface JournalArticleDisplay extends Serializable {
 	public String getContent();
 
 	public int getCurrentPage();
+
+	public String getDDMStructureKey();
+
+	public String getDDMTemplateKey();
 
 	public String getDescription();
 
@@ -46,13 +54,7 @@ public interface JournalArticleDisplay extends Serializable {
 
 	public String getSmallImageURL();
 
-	public String getStructureId();
-
-	public String getTemplateId();
-
 	public String getTitle();
-
-	public String getType();
 
 	public String getUrlTitle();
 
@@ -72,6 +74,10 @@ public interface JournalArticleDisplay extends Serializable {
 
 	public void setCurrentPage(int currentPage);
 
+	public void setDDMStructureKey(String ddmStructureKey);
+
+	public void setDDMTemplateKey(String ddmTemplateKey);
+
 	public void setNumberOfPages(int numberOfPages);
 
 	public void setPaginate(boolean paginate);
@@ -81,9 +87,5 @@ public interface JournalArticleDisplay extends Serializable {
 	public void setSmallImageId(long smallImageId);
 
 	public void setSmallImageURL(String smallImageURL);
-
-	public void setStructureId(String structureId);
-
-	public void setTemplateId(String templateId);
 
 }

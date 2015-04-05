@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,7 +15,8 @@
 package com.liferay.portlet.journal.service.impl;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.jsonwebservice.JSONWebService;
+import com.liferay.portal.kernel.jsonwebservice.JSONWebServiceMode;
 import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.service.ServiceContext;
 import com.liferay.portlet.journal.model.JournalFeed;
@@ -28,55 +29,75 @@ import com.liferay.portlet.journal.service.permission.JournalPermission;
  */
 public class JournalFeedServiceImpl extends JournalFeedServiceBaseImpl {
 
+	@Override
 	public JournalFeed addFeed(
 			long groupId, String feedId, boolean autoFeedId, String name,
-			String description, String type, String structureId,
-			String templateId, String rendererTemplateId, int delta,
-			String orderByCol, String orderByType,
-			String targetLayoutFriendlyUrl, String targetPortletId,
-			String contentField, String feedType, double feedVersion,
-			ServiceContext serviceContext)
-		throws PortalException, SystemException {
+			String description, String ddmStructureKey, String ddmTemplateKey,
+			String ddmRendererTemplateKey, int delta, String orderByCol,
+			String orderByType, String targetLayoutFriendlyUrl,
+			String targetPortletId, String contentField, String feedType,
+			double feedVersion, ServiceContext serviceContext)
+		throws PortalException {
 
 		JournalPermission.check(
 			getPermissionChecker(), groupId, ActionKeys.ADD_FEED);
 
 		return journalFeedLocalService.addFeed(
-			getUserId(), groupId, feedId, autoFeedId, name, description, type,
-			structureId, templateId, rendererTemplateId, delta, orderByCol,
-			orderByType, targetLayoutFriendlyUrl, targetPortletId, contentField,
-			feedType, feedVersion, serviceContext);
+			getUserId(), groupId, feedId, autoFeedId, name, description,
+			ddmStructureKey, ddmTemplateKey, ddmRendererTemplateKey, delta,
+			orderByCol, orderByType, targetLayoutFriendlyUrl, targetPortletId,
+			contentField, feedType, feedVersion, serviceContext);
 	}
 
-	public void deleteFeed(long groupId, long feedId)
-		throws PortalException, SystemException {
-
+	@Override
+	public void deleteFeed(long feedId) throws PortalException {
 		JournalFeedPermission.check(
 			getPermissionChecker(), feedId, ActionKeys.DELETE);
 
 		journalFeedLocalService.deleteFeed(feedId);
 	}
 
-	public void deleteFeed(long groupId, String feedId)
-		throws PortalException, SystemException {
+	/**
+	 * @deprecated As of 6.2.0, replaced by {@link #deleteFeed(long, String)}
+	 */
+	@Deprecated
+	@JSONWebService(mode = JSONWebServiceMode.IGNORE)
+	@Override
+	public void deleteFeed(long groupId, long feedId) throws PortalException {
+		deleteFeed(groupId, String.valueOf(feedId));
+	}
 
+	@Override
+	public void deleteFeed(long groupId, String feedId) throws PortalException {
 		JournalFeedPermission.check(
 			getPermissionChecker(), groupId, feedId, ActionKeys.DELETE);
 
 		journalFeedLocalService.deleteFeed(groupId, feedId);
 	}
 
-	public JournalFeed getFeed(long groupId, long feedId)
-		throws PortalException, SystemException {
-
+	@Override
+	public JournalFeed getFeed(long feedId) throws PortalException {
 		JournalFeedPermission.check(
 			getPermissionChecker(), feedId, ActionKeys.VIEW);
 
 		return journalFeedLocalService.getFeed(feedId);
 	}
 
+	/**
+	 * @deprecated As of 6.2.0, replaced by {@link #getFeed(long, String)}
+	 */
+	@Deprecated
+	@JSONWebService(mode = JSONWebServiceMode.IGNORE)
+	@Override
+	public JournalFeed getFeed(long groupId, long feedId)
+		throws PortalException {
+
+		return getFeed(groupId, String.valueOf(feedId));
+	}
+
+	@Override
 	public JournalFeed getFeed(long groupId, String feedId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		JournalFeedPermission.check(
 			getPermissionChecker(), groupId, feedId, ActionKeys.VIEW);
@@ -84,21 +105,22 @@ public class JournalFeedServiceImpl extends JournalFeedServiceBaseImpl {
 		return journalFeedLocalService.getFeed(groupId, feedId);
 	}
 
+	@Override
 	public JournalFeed updateFeed(
 			long groupId, String feedId, String name, String description,
-			String type, String structureId, String templateId,
-			String rendererTemplateId, int delta, String orderByCol,
+			String ddmStructureKey, String ddmTemplateKey,
+			String ddmRendererTemplateKey, int delta, String orderByCol,
 			String orderByType, String targetLayoutFriendlyUrl,
 			String targetPortletId, String contentField, String feedType,
 			double feedVersion, ServiceContext serviceContext)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		JournalFeedPermission.check(
 			getPermissionChecker(), groupId, feedId, ActionKeys.UPDATE);
 
 		return journalFeedLocalService.updateFeed(
-			groupId, feedId, name, description, type, structureId, templateId,
-			rendererTemplateId, delta, orderByCol, orderByType,
+			groupId, feedId, name, description, ddmStructureKey, ddmTemplateKey,
+			ddmRendererTemplateKey, delta, orderByCol, orderByType,
 			targetLayoutFriendlyUrl, targetPortletId, contentField, feedType,
 			feedVersion, serviceContext);
 	}

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -40,8 +40,9 @@ public class RSSAction extends PortletAction {
 
 	@Override
 	public void processAction(
-			ActionMapping mapping, ActionForm form, PortletConfig portletConfig,
-			ActionRequest actionRequest, ActionResponse actionResponse)
+			ActionMapping actionMapping, ActionForm actionForm,
+			PortletConfig portletConfig, ActionRequest actionRequest,
+			ActionResponse actionResponse)
 		throws Exception {
 
 		if (!PortalUtil.isRSSFeedsEnabled()) {
@@ -69,8 +70,9 @@ public class RSSAction extends PortletAction {
 
 	@Override
 	public void serveResource(
-			ActionMapping mapping, ActionForm form, PortletConfig portletConfig,
-			ResourceRequest resourceRequest, ResourceResponse resourceResponse)
+			ActionMapping actionMapping, ActionForm actionForm,
+			PortletConfig portletConfig, ResourceRequest resourceRequest,
+			ResourceResponse resourceResponse)
 		throws Exception {
 
 		if (!PortalUtil.isRSSFeedsEnabled()) {
@@ -82,22 +84,19 @@ public class RSSAction extends PortletAction {
 
 		resourceResponse.setContentType(ContentTypes.TEXT_XML_UTF8);
 
-		OutputStream outputStream = resourceResponse.getPortletOutputStream();
+		try (OutputStream outputStream =
+				resourceResponse.getPortletOutputStream()) {
 
-		try {
 			byte[] bytes = getRSS(resourceRequest, resourceResponse);
 
 			outputStream.write(bytes);
-		}
-		finally {
-			outputStream.close();
 		}
 	}
 
 	@Override
 	public ActionForward strutsExecute(
-			ActionMapping mapping, ActionForm form, HttpServletRequest request,
-			HttpServletResponse response)
+			ActionMapping actionMapping, ActionForm actionForm,
+			HttpServletRequest request, HttpServletResponse response)
 		throws Exception {
 
 		if (!PortalUtil.isRSSFeedsEnabled()) {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,17 +15,20 @@
 package com.liferay.portal.service.impl;
 
 import com.liferay.portal.NoSuchReleaseException;
+import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.dao.db.DB;
 import com.liferay.portal.kernel.dao.db.DBFactoryUtil;
 import com.liferay.portal.kernel.dao.jdbc.DataAccess;
-import com.liferay.portal.kernel.dao.shard.ShardUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.upgrade.OlderVersionException;
+import com.liferay.portal.kernel.upgrade.UpgradeProcess;
+import com.liferay.portal.kernel.upgrade.util.UpgradeProcessUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
-import com.liferay.portal.kernel.util.ReleaseInfo;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.Release;
 import com.liferay.portal.model.ReleaseConstants;
@@ -38,15 +41,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * @author Brian Wing Shun Chan
  */
 public class ReleaseLocalServiceImpl extends ReleaseLocalServiceBaseImpl {
 
-	public Release addRelease(String servletContextName, int buildNumber)
-		throws SystemException {
-
+	@Override
+	public Release addRelease(String servletContextName, int buildNumber) {
 		Release release = null;
 
 		if (servletContextName.equals(
@@ -73,12 +77,13 @@ public class ReleaseLocalServiceImpl extends ReleaseLocalServiceBaseImpl {
 			release.setTestString(ReleaseConstants.TEST_STRING);
 		}
 
-		releasePersistence.update(release, false);
+		releasePersistence.update(release);
 
 		return release;
 	}
 
-	public void createTablesAndPopulate() throws SystemException {
+	@Override
+	public void createTablesAndPopulate() {
 		try {
 			if (_log.isInfoEnabled()) {
 				_log.info("Create tables and populate with default data");
@@ -89,14 +94,11 @@ public class ReleaseLocalServiceImpl extends ReleaseLocalServiceBaseImpl {
 			db.runSQLTemplate("portal-tables.sql", false);
 			db.runSQLTemplate("portal-data-common.sql", false);
 			db.runSQLTemplate("portal-data-counter.sql", false);
-
-			if (!PropsValues.SCHEMA_RUN_MINIMAL && !ShardUtil.isEnabled()) {
-				db.runSQLTemplate("portal-data-sample.vm", false);
-			}
-
 			db.runSQLTemplate("portal-data-release.sql", false);
 			db.runSQLTemplate("indexes.sql", false);
 			db.runSQLTemplate("sequences.sql", false);
+
+			StartupHelperUtil.setDbNew(true);
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -105,8 +107,30 @@ public class ReleaseLocalServiceImpl extends ReleaseLocalServiceBaseImpl {
 		}
 	}
 
-	public int getBuildNumberOrCreate()
-		throws PortalException, SystemException {
+	@Override
+	public Release fetchRelease(String servletContextName) {
+		if (Validator.isNull(servletContextName)) {
+			throw new IllegalArgumentException("Servlet context name is null");
+		}
+
+		Release release = null;
+
+		if (servletContextName.equals(
+				ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME)) {
+
+			release = releasePersistence.fetchByPrimaryKey(
+				ReleaseConstants.DEFAULT_ID);
+		}
+		else {
+			release = releasePersistence.fetchByServletContextName(
+				servletContextName);
+		}
+
+		return release;
+	}
+
+	@Override
+	public int getBuildNumberOrCreate() throws PortalException {
 
 		// Get release build number
 
@@ -164,9 +188,8 @@ public class ReleaseLocalServiceImpl extends ReleaseLocalServiceBaseImpl {
 
 			testSupportsStringCaseSensitiveQuery();
 
-			Release release = getRelease(
-				ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME,
-				ReleaseInfo.getParentBuildNumber());
+			Release release = fetchRelease(
+				ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME);
 
 			return release.getBuildNumber();
 		}
@@ -176,33 +199,10 @@ public class ReleaseLocalServiceImpl extends ReleaseLocalServiceBaseImpl {
 		}
 	}
 
-	public Release getRelease(String servletContextName, int buildNumber)
-		throws PortalException, SystemException {
-
-		if (Validator.isNull(servletContextName)) {
-			throw new IllegalArgumentException(
-				"Servlet context name cannot be null");
-		}
-
-		Release release = null;
-
-		if (servletContextName.equals(
-				ReleaseConstants.DEFAULT_SERVLET_CONTEXT_NAME)) {
-
-			release = releasePersistence.findByPrimaryKey(
-				ReleaseConstants.DEFAULT_ID);
-		}
-		else {
-			release = releasePersistence.findByServletContextName(
-				servletContextName);
-		}
-
-		return release;
-	}
-
+	@Override
 	public Release updateRelease(
 			long releaseId, int buildNumber, Date buildDate, boolean verified)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		Release release = releasePersistence.findByPrimaryKey(releaseId);
 
@@ -211,14 +211,76 @@ public class ReleaseLocalServiceImpl extends ReleaseLocalServiceBaseImpl {
 		release.setBuildDate(buildDate);
 		release.setVerified(verified);
 
-		releasePersistence.update(release, false);
+		releasePersistence.update(release);
 
 		return release;
 	}
 
-	protected void testSupportsStringCaseSensitiveQuery()
-		throws SystemException {
+	@Override
+	public void updateRelease(
+			String servletContextName, List<UpgradeProcess> upgradeProcesses,
+			int buildNumber, int previousBuildNumber, boolean indexOnUpgrade)
+		throws PortalException {
 
+		if (buildNumber <= 0) {
+			_log.error(
+				"Skipping upgrade processes for " + servletContextName +
+					" because \"release.info.build.number\" is not specified");
+
+			return;
+		}
+
+		Release release = releaseLocalService.fetchRelease(servletContextName);
+
+		if (release == null) {
+			release = releaseLocalService.addRelease(
+				servletContextName, previousBuildNumber);
+		}
+
+		if (buildNumber == release.getBuildNumber()) {
+			if (_log.isDebugEnabled()) {
+				_log.debug(
+					"Skipping upgrade processes for " + servletContextName +
+						" because it is already up to date");
+			}
+		}
+		else if (buildNumber < release.getBuildNumber()) {
+			throw new OlderVersionException(
+				"Skipping upgrade processes for " + servletContextName +
+					" because you are trying to upgrade with an older version");
+		}
+		else {
+			UpgradeProcessUtil.upgradeProcess(
+				release.getBuildNumber(), upgradeProcesses, indexOnUpgrade);
+		}
+
+		releaseLocalService.updateRelease(
+			release.getReleaseId(), buildNumber, null, true);
+	}
+
+	@Override
+	public void updateRelease(
+			String servletContextName, List<UpgradeProcess> upgradeProcesses,
+			Properties unfilteredPortalProperties)
+		throws Exception {
+
+		int buildNumber = GetterUtil.getInteger(
+			unfilteredPortalProperties.getProperty(
+				PropsKeys.RELEASE_INFO_BUILD_NUMBER));
+		int previousBuildNumber = GetterUtil.getInteger(
+			unfilteredPortalProperties.getProperty(
+				PropsKeys.RELEASE_INFO_PREVIOUS_BUILD_NUMBER),
+			buildNumber);
+		boolean indexOnUpgrade = GetterUtil.getBoolean(
+			unfilteredPortalProperties.getProperty(PropsKeys.INDEX_ON_UPGRADE),
+			PropsValues.INDEX_ON_UPGRADE);
+
+		updateRelease(
+			servletContextName, upgradeProcesses, buildNumber,
+			previousBuildNumber, indexOnUpgrade);
+	}
+
+	protected void testSupportsStringCaseSensitiveQuery() {
 		DB db = DBFactoryUtil.getDB();
 
 		int count = testSupportsStringCaseSensitiveQuery(
@@ -256,7 +318,7 @@ public class ReleaseLocalServiceImpl extends ReleaseLocalServiceBaseImpl {
 		}
 
 		count = testSupportsStringCaseSensitiveQuery(
-			ReleaseConstants.TEST_STRING.toUpperCase());
+			StringUtil.toUpperCase(ReleaseConstants.TEST_STRING));
 
 		if (count == 0) {
 			db.setSupportsStringCaseSensitiveQuery(true);
@@ -305,7 +367,7 @@ public class ReleaseLocalServiceImpl extends ReleaseLocalServiceBaseImpl {
 	private static final String _TEST_DATABASE_STRING_CASE_SENSITIVITY =
 		"select count(*) from Release_ where releaseId = ? and testString = ?";
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		ReleaseLocalServiceImpl.class);
 
 }

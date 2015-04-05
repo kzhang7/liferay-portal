@@ -27,21 +27,20 @@ AUI.add(
 					autoExtend: {
 						value: false
 					},
-					redirectUrl: {
-						value: ''
-					},
 					redirectOnExpire: {
 						value: true
 					},
-					sessionState: {
-						value: 'active'
+					redirectUrl: {
+						value: ''
 					},
 					sessionLength: {
 						getter: '_getLengthInMillis',
 						value: 0
 					},
+					sessionState: {
+						value: 'active'
+					},
 					timestamp: {
-						lazyAdd: false,
 						getter: '_getTimestamp',
 						setter: '_setTimestamp',
 						value: 0
@@ -76,6 +75,18 @@ AUI.add(
 						instance._startTimer();
 					},
 
+					expire: function() {
+						var instance = this;
+
+						instance.set('sessionState', 'expired', SRC_EVENT_OBJ);
+					},
+
+					extend: function() {
+						var instance = this;
+
+						instance.set('sessionState', 'active', SRC_EVENT_OBJ);
+					},
+
 					registerInterval: function(fn) {
 						var instance = this;
 
@@ -91,6 +102,13 @@ AUI.add(
 						return fnId;
 					},
 
+					resetInterval: function() {
+						var instance = this;
+
+						instance._stopTimer();
+						instance._startTimer();
+					},
+
 					unregisterInterval: function(fnId) {
 						var instance = this;
 
@@ -101,18 +119,6 @@ AUI.add(
 						}
 
 						return fnId;
-					},
-
-					expire: function() {
-						var instance = this;
-
-						instance.set('sessionState', 'expired', SRC_EVENT_OBJ);
-					},
-
-					extend: function() {
-						var instance = this;
-
-						instance.set('sessionState', 'active', SRC_EVENT_OBJ);
 					},
 
 					warn: function() {
@@ -246,6 +252,15 @@ AUI.add(
 						);
 
 						instance.publish('warned');
+
+						A.on(
+							'io:complete',
+							function(transactionId, response, args) {
+								if (!args || (args && (args.sessionExtend || !Lang.isBoolean(args.sessionExtend)))) {
+									instance.resetInterval();
+								}
+							}
+						);
 					},
 
 					_onSessionStateChange: function(event) {
@@ -293,8 +308,8 @@ AUI.add(
 
 								var extend = false;
 
-								var isExpirationMoment = (elapsed == sessionLength);
-								var isWarningMoment = (elapsed == warningTime);
+								var expirationMoment = (elapsed == sessionLength);
+								var warningMoment = (elapsed == warningTime);
 
 								var hasExpired = (elapsed >= sessionLength);
 								var hasWarned = (elapsed >= warningTime);
@@ -302,41 +317,39 @@ AUI.add(
 								var updateSessionState = true;
 
 								if (hasWarned) {
-									if (isWarningMoment || isExpirationMoment) {
+									if (warningMoment || expirationMoment) {
 										var timestamp = instance.get('timestamp');
 
 										if (timestamp == 'expired') {
-											isExpirationMoment = true;
+											expirationMoment = true;
 											hasExpired = true;
 										}
+										else if (instance.get('autoExtend')) {
+											hasExpired = false;
+											hasWarned = false;
+
+											expirationMoment = false;
+											warningMoment = false;
+
+											extend = true;
+										}
 										else {
-											if (instance.get('autoExtend')) {
-												hasExpired = false;
+											var timeOffset = Math.floor((Lang.now() - timestamp) / 1000) * 1000;
+
+											if (timeOffset < warningTime) {
+												instance._elapsed = timeOffset;
+
+												updateSessionState = false;
 												hasWarned = false;
-
-												isExpirationMoment = false;
-												isWarningMoment = false;
-
-												extend = true;
-											}
-											else {
-												var timeOffset = Math.floor((Lang.now() - timestamp) / 1000) * 1000;
-
-												if (timeOffset < warningTime) {
-													instance._elapsed = timeOffset;
-
-													updateSessionState = false;
-													hasWarned = false;
-												}
 											}
 										}
 									}
 
 									if (updateSessionState) {
-										if (isExpirationMoment) {
+										if (expirationMoment) {
 											instance.expire();
 										}
-										else if (isWarningMoment) {
+										else if (warningMoment) {
 											instance.warn();
 										}
 										else if (extend) {
@@ -346,7 +359,7 @@ AUI.add(
 								}
 
 								for (var i in registered) {
-									registered[i](elapsed, interval, hasWarned, hasExpired, isWarningMoment, isExpirationMoment);
+									registered[i](elapsed, interval, hasWarned, hasExpired, warningMoment, expirationMoment);
 								}
 							},
 							interval
@@ -394,7 +407,7 @@ AUI.add(
 							instance._extendText = Liferay.Language.get('extend');
 
 							instance._warningText = Liferay.Language.get('warning-your-session-will-expire');
-							instance._warningText = Lang.sub(instance._warningText, ['<span class="countdown-timer">{0}</span>', host.get('warningLength') / 60000]);
+							instance._warningText = Lang.sub(instance._warningText, ['<span class="countdown-timer">{0}</span>', host.get('sessionLength') / 60000]);
 
 							host.on('sessionStateChange', instance._onHostSessionStateChange, instance);
 
@@ -438,12 +451,12 @@ AUI.add(
 						banner.show();
 
 						instance._intervalId = host.registerInterval(
-							function(elapsed, interval, hasWarned, hasExpired, isWarningMoment, isExpirationMoment) {
+							function(elapsed, interval, hasWarned, hasExpired, warningMoment, expirationMoment) {
 								if (!hasWarned) {
 									instance._uiSetActivated();
 								}
 								else if (!hasExpired) {
-									if (isWarningMoment) {
+									if (warningMoment) {
 										if (remainingTime <= 0) {
 											remainingTime = warningLength;
 										}
@@ -460,6 +473,42 @@ AUI.add(
 						);
 					},
 
+					_formatNumber: function(value) {
+						var instance = this;
+
+						var floor = Math.floor;
+						var padNumber = Lang.String.padNumber;
+
+						return Lang.String.padNumber(Math.floor(value), 2);
+					},
+
+					_formatTime: function(time) {
+						var instance = this;
+
+						time = Number(time);
+
+						if (Lang.isNumber(time) && time > 0) {
+							time /= 1000;
+
+							BUFFER_TIME[0] = instance._formatNumber(time / 3600);
+
+							time %= 3600;
+
+							BUFFER_TIME[1] = instance._formatNumber(time / 60);
+
+							time %= 60;
+
+							BUFFER_TIME[2] = instance._formatNumber(time);
+
+							time = BUFFER_TIME.join(':');
+						}
+						else {
+							time = 0;
+						}
+
+						return time;
+					},
+
 					_getBanner: function() {
 						var instance = this;
 
@@ -470,7 +519,7 @@ AUI.add(
 								{
 									closeText: instance._extendText,
 									content: instance._warningText,
-									noticeClass: 'aui-helper-hidden',
+									noticeClass: 'popup-alert-notice',
 									onClose: function() {
 										instance._host.extend();
 									},
@@ -515,6 +564,8 @@ AUI.add(
 
 						banner.replaceClass('popup-alert-notice', 'popup-alert-warning');
 
+						banner.replaceClass('alert-warning', 'alert-danger');
+
 						banner.show();
 
 						DOC.title = instance.get('pageTitle');
@@ -530,42 +581,6 @@ AUI.add(
 						counterTextNode.text(instance._formatTime(remainingTime));
 
 						DOC.title = banner.text();
-					},
-
-					_formatNumber: function(value) {
-						var instance = this;
-
-						var floor = Math.floor;
-						var padNumber = Lang.String.padNumber;
-
-						return Lang.String.padNumber(Math.floor(value), 2);
-					},
-
-					_formatTime: function(time) {
-						var instance = this;
-
-						time = Number(time);
-
-						if (Lang.isNumber(time) && time > 0) {
-							time /= 1000;
-
-							BUFFER_TIME[0] = instance._formatNumber(time / 3600);
-
-							time %= 3600;
-
-							BUFFER_TIME[1] = instance._formatNumber(time / 60);
-
-							time %= 60;
-
-							BUFFER_TIME[2] = instance._formatNumber(time);
-
-							time = BUFFER_TIME.join(':');
-						}
-						else {
-							time = 0;
-						}
-
-						return time;
 					}
 				}
 			}
@@ -576,6 +591,6 @@ AUI.add(
 	},
 	'',
 	{
-		requires: ['aui-io-request', 'aui-task-manager', 'cookie', 'liferay-notice']
+		requires: ['aui-io-request', 'aui-timer', 'cookie', 'liferay-notice']
 	}
 );

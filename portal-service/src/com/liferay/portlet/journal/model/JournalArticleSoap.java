@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.journal.model;
 
+import aQute.bnd.annotation.ProviderType;
+
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -23,10 +25,11 @@ import java.util.List;
 /**
  * This class is used by SOAP remote services, specifically {@link com.liferay.portlet.journal.service.http.JournalArticleServiceSoap}.
  *
- * @author    Brian Wing Shun Chan
- * @see       com.liferay.portlet.journal.service.http.JournalArticleServiceSoap
+ * @author Brian Wing Shun Chan
+ * @see com.liferay.portlet.journal.service.http.JournalArticleServiceSoap
  * @generated
  */
+@ProviderType
 public class JournalArticleSoap implements Serializable {
 	public static JournalArticleSoap toSoapModel(JournalArticle model) {
 		JournalArticleSoap soapModel = new JournalArticleSoap();
@@ -43,15 +46,15 @@ public class JournalArticleSoap implements Serializable {
 		soapModel.setFolderId(model.getFolderId());
 		soapModel.setClassNameId(model.getClassNameId());
 		soapModel.setClassPK(model.getClassPK());
+		soapModel.setTreePath(model.getTreePath());
 		soapModel.setArticleId(model.getArticleId());
 		soapModel.setVersion(model.getVersion());
 		soapModel.setTitle(model.getTitle());
 		soapModel.setUrlTitle(model.getUrlTitle());
 		soapModel.setDescription(model.getDescription());
 		soapModel.setContent(model.getContent());
-		soapModel.setType(model.getType());
-		soapModel.setStructureId(model.getStructureId());
-		soapModel.setTemplateId(model.getTemplateId());
+		soapModel.setDDMStructureKey(model.getDDMStructureKey());
+		soapModel.setDDMTemplateKey(model.getDDMTemplateKey());
 		soapModel.setLayoutUuid(model.getLayoutUuid());
 		soapModel.setDisplayDate(model.getDisplayDate());
 		soapModel.setExpirationDate(model.getExpirationDate());
@@ -212,6 +215,14 @@ public class JournalArticleSoap implements Serializable {
 		_classPK = classPK;
 	}
 
+	public String getTreePath() {
+		return _treePath;
+	}
+
+	public void setTreePath(String treePath) {
+		_treePath = treePath;
+	}
+
 	public String getArticleId() {
 		return _articleId;
 	}
@@ -260,28 +271,20 @@ public class JournalArticleSoap implements Serializable {
 		_content = content;
 	}
 
-	public String getType() {
-		return _type;
+	public String getDDMStructureKey() {
+		return _DDMStructureKey;
 	}
 
-	public void setType(String type) {
-		_type = type;
+	public void setDDMStructureKey(String DDMStructureKey) {
+		_DDMStructureKey = DDMStructureKey;
 	}
 
-	public String getStructureId() {
-		return _structureId;
+	public String getDDMTemplateKey() {
+		return _DDMTemplateKey;
 	}
 
-	public void setStructureId(String structureId) {
-		_structureId = structureId;
-	}
-
-	public String getTemplateId() {
-		return _templateId;
-	}
-
-	public void setTemplateId(String templateId) {
-		_templateId = templateId;
+	public void setDDMTemplateKey(String DDMTemplateKey) {
+		_DDMTemplateKey = DDMTemplateKey;
 	}
 
 	public String getLayoutUuid() {
@@ -400,15 +403,15 @@ public class JournalArticleSoap implements Serializable {
 	private long _folderId;
 	private long _classNameId;
 	private long _classPK;
+	private String _treePath;
 	private String _articleId;
 	private double _version;
 	private String _title;
 	private String _urlTitle;
 	private String _description;
 	private String _content;
-	private String _type;
-	private String _structureId;
-	private String _templateId;
+	private String _DDMStructureKey;
+	private String _DDMTemplateKey;
 	private String _layoutUuid;
 	private Date _displayDate;
 	private Date _expirationDate;

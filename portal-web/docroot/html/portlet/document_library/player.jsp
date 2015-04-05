@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,6 +17,8 @@
 <%@ include file="/html/portlet/document_library/init.jsp" %>
 
 <%
+String randomNamespace = GetterUtil.getString(request.getAttribute("view_file_entry.jsp-randomNamespace"));
+
 boolean supportedAudio = GetterUtil.getBoolean((String)request.getAttribute("view_file_entry.jsp-supportedAudio"));
 boolean supportedVideo = GetterUtil.getBoolean((String)request.getAttribute("view_file_entry.jsp-supportedVideo"));
 
@@ -49,18 +51,18 @@ for (String previewFileURL : previewFileURLs) {
 		<aui:script use="aui-audio">
 			var audio = new A.Audio(
 				{
-					contentBox: '#<portlet:namespace />previewFileContent',
+					contentBox: '#<portlet:namespace /><%= randomNamespace %>previewFileContent',
 					fixedAttributes: {
 						allowfullscreen: 'true',
 						wmode: 'opaque'
 					}
 
 					<c:if test="<%= Validator.isNotNull(oggPreviewFileURL) %>">
-						, oggUrl: '<%= oggPreviewFileURL %>'
+						, oggUrl: '<%= HtmlUtil.escapeJS(oggPreviewFileURL) %>'
 					</c:if>
 
 					<c:if test="<%= Validator.isNotNull(mp3PreviewFileURL) %>">
-						, url: '<%= mp3PreviewFileURL %>'
+						, url: '<%= HtmlUtil.escapeJS(mp3PreviewFileURL) %>'
 					</c:if>
 				}
 			).render();
@@ -70,7 +72,7 @@ for (String previewFileURL : previewFileURLs) {
 		<aui:script use="aui-base,aui-video">
 			new A.Video(
 				{
-					contentBox: '#<portlet:namespace />previewFileContent',
+					contentBox: '#<portlet:namespace /><%= randomNamespace %>previewFileContent',
 					fixedAttributes: {
 						allowfullscreen: 'true',
 						bgColor: '#000000',
@@ -78,13 +80,13 @@ for (String previewFileURL : previewFileURLs) {
 					},
 
 					<c:if test="<%= Validator.isNotNull(ogvPreviewFileURL) %>">
-						ogvUrl: '<%= ogvPreviewFileURL %>',
+						ogvUrl: '<%= HtmlUtil.escapeJS(ogvPreviewFileURL) %>',
 					</c:if>
 
-					poster: '<%= videoThumbnailURL %>'
+					poster: '<%= HtmlUtil.escapeJS(videoThumbnailURL) %>'
 
 					<c:if test="<%= Validator.isNotNull(mp4PreviewFileURL) %>">
-						, url: '<%= mp4PreviewFileURL %>'
+						, url: '<%= HtmlUtil.escapeJS(mp4PreviewFileURL) %>'
 					</c:if>
 				}
 			).render();

@@ -2,6 +2,8 @@ package ${packagePath}.service.http;
 
 import ${packagePath}.model.${entity.name};
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
@@ -11,9 +13,10 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * @author    ${author}
+ * @author ${author}
  * @generated
  */
+@ProviderType
 public class ${entity.name}JSONSerializer {
 
 	public static JSONObject toJSONObject(${entity.name} model) {

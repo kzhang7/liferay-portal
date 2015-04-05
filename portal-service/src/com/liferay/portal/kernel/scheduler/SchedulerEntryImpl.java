@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,6 @@
 
 package com.liferay.portal.kernel.scheduler;
 
-import com.liferay.portal.kernel.messaging.MessageListener;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
@@ -25,30 +24,22 @@ import com.liferay.portal.kernel.util.Time;
  */
 public class SchedulerEntryImpl implements SchedulerEntry {
 
-	public String getContextPath() {
-		return _contextPath;
-	}
-
+	@Override
 	public String getDescription() {
 		return _description;
 	}
 
-	public MessageListener getEventListener() {
-		return _eventListener;
-	}
-
+	@Override
 	public String getEventListenerClass() {
 		return _eventListenerClass;
 	}
 
-	public String getPropertyKey() {
-		return _propertyKey;
-	}
-
+	@Override
 	public TimeUnit getTimeUnit() {
 		return _timeUnit;
 	}
 
+	@Override
 	public Trigger getTrigger() throws SchedulerException {
 		if (_trigger != null) {
 			return _trigger;
@@ -88,68 +79,59 @@ public class SchedulerEntryImpl implements SchedulerEntry {
 		return _trigger;
 	}
 
+	@Override
 	public TriggerType getTriggerType() {
 		return _triggerType;
 	}
 
+	@Override
 	public String getTriggerValue() {
 		return _triggerValue;
 	}
 
-	public void setContextPath(String contextPath) {
-		_contextPath = contextPath;
-	}
-
+	@Override
 	public void setDescription(String description) {
 		_description = description;
 	}
 
-	public void setEventListener(MessageListener eventListener) {
-		_eventListener = eventListener;
-	}
-
+	@Override
 	public void setEventListenerClass(String eventListenerClass) {
 		_eventListenerClass = eventListenerClass;
 	}
 
-	public void setPropertyKey(String propertyKey) {
-		_propertyKey = propertyKey;
-	}
-
+	@Override
 	public void setTimeUnit(TimeUnit timeUnit) {
 		_timeUnit = timeUnit;
 	}
 
+	@Override
 	public void setTriggerType(TriggerType triggerType) {
 		_triggerType = triggerType;
 	}
 
+	@Override
 	public void setTriggerValue(int triggerValue) {
 		_triggerValue = String.valueOf(triggerValue);
 	}
 
+	@Override
 	public void setTriggerValue(long triggerValue) {
 		_triggerValue = String.valueOf(triggerValue);
 	}
 
+	@Override
 	public void setTriggerValue(String triggerValue) {
 		_triggerValue = triggerValue;
 	}
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(19);
+		StringBundler sb = new StringBundler(13);
 
-		sb.append("{contextPath=");
-		sb.append(_contextPath);
 		sb.append(", description=");
 		sb.append(_description);
-		sb.append(", eventListener=");
-		sb.append(_eventListener);
 		sb.append(", eventListenerClass=");
 		sb.append(_eventListenerClass);
-		sb.append(", propertyKey=");
-		sb.append(_propertyKey);
 		sb.append(", timeUnit=");
 		sb.append(_timeUnit);
 		sb.append(", trigger=");
@@ -163,11 +145,8 @@ public class SchedulerEntryImpl implements SchedulerEntry {
 		return sb.toString();
 	}
 
-	private String _contextPath = StringPool.BLANK;
 	private String _description = StringPool.BLANK;
-	private transient MessageListener _eventListener;
 	private String _eventListenerClass = StringPool.BLANK;
-	private String _propertyKey = StringPool.BLANK;
 	private TimeUnit _timeUnit;
 	private Trigger _trigger;
 	private TriggerType _triggerType;

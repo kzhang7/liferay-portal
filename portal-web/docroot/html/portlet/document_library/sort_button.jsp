@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,9 +17,12 @@
 <%@ include file="/html/portlet/document_library/init.jsp" %>
 
 <%
+String navigation = ParamUtil.getString(request, "navigation", "home");
+
 long folderId = GetterUtil.getLong((String)request.getAttribute("view.jsp-folderId"));
 
-String orderByCol = ParamUtil.getString(request, "orderByCol");
+long fileEntryTypeId = ParamUtil.getLong(request, "fileEntryTypeId", DLFileEntryTypeConstants.FILE_ENTRY_TYPE_ID_ALL);
+
 String orderByType = ParamUtil.getString(request, "orderByType");
 
 String reverseOrderByType = "asc";
@@ -29,75 +32,59 @@ if (orderByType.equals("asc")) {
 }
 %>
 
-<liferay-ui:icon-menu align="left" direction="down" icon="" message="sort-by" showExpanded="<%= false %>" showWhenSingleIcon="<%= false %>">
+<aui:nav-item dropdown="<%= true %>" id="sortButtonContainer" label="sort-by">
+	<portlet:renderURL var="sortTitleURL">
+		<portlet:param name="struts_action" value="/document_library/view" />
+		<portlet:param name="navigation" value="<%= navigation %>" />
+		<portlet:param name="folderId" value="<%= String.valueOf(folderId) %>" />
+		<portlet:param name="fileEntryTypeId" value="<%= String.valueOf(fileEntryTypeId) %>" />
+		<portlet:param name="orderByCol" value="title" />
+		<portlet:param name="orderByType" value="<%= reverseOrderByType %>" />
+	</portlet:renderURL>
 
-	<%
-	String taglibURL = "javascript:" + liferayPortletResponse.getNamespace() + "sortEntries('" + folderId + "', 'title','" + reverseOrderByType + "')";
-	%>
+	<aui:nav-item href="<%= sortTitleURL %>" iconCssClass="icon-calendar" label="title" />
 
-	<liferay-ui:icon
-		message="title"
-		url="<%= taglibURL %>"
-	/>
+	<portlet:renderURL var="sortDisplayDateURL">
+		<portlet:param name="struts_action" value="/document_library/view" />
+		<portlet:param name="navigation" value="<%= navigation %>" />
+		<portlet:param name="folderId" value="<%= String.valueOf(folderId) %>" />
+		<portlet:param name="fileEntryTypeId" value="<%= String.valueOf(fileEntryTypeId) %>" />
+		<portlet:param name="orderByCol" value="creationDate" />
+		<portlet:param name="orderByType" value="<%= reverseOrderByType %>" />
+	</portlet:renderURL>
 
-	<%
-	taglibURL = "javascript:" + liferayPortletResponse.getNamespace() + "sortEntries('" + folderId + "', 'creationDate','" + reverseOrderByType + "')";
-	%>
+	<aui:nav-item href="<%= sortDisplayDateURL %>" iconCssClass="icon-calendar" label="create-date" />
 
-	<liferay-ui:icon
-		message="create-date"
-		url="<%= taglibURL %>"
-	/>
+	<portlet:renderURL var="sortModifiedDateURL">
+		<portlet:param name="struts_action" value="/document_library/view" />
+		<portlet:param name="navigation" value="<%= navigation %>" />
+		<portlet:param name="folderId" value="<%= String.valueOf(folderId) %>" />
+		<portlet:param name="fileEntryTypeId" value="<%= String.valueOf(fileEntryTypeId) %>" />
+		<portlet:param name="orderByCol" value="modifiedDate" />
+		<portlet:param name="orderByType" value="<%= reverseOrderByType %>" />
+	</portlet:renderURL>
 
-	<%
-	taglibURL = "javascript:" + liferayPortletResponse.getNamespace() + "sortEntries('" + folderId + "', 'modifiedDate','" + reverseOrderByType + "')";
-	%>
+	<aui:nav-item href="<%= sortModifiedDateURL %>" iconCssClass="icon-calendar" label="modified-date" />
 
-	<liferay-ui:icon
-		message="modified-date"
-		url="<%= taglibURL %>"
-	/>
+	<portlet:renderURL var="sortDownloadsURL">
+		<portlet:param name="struts_action" value="/document_library/view" />
+		<portlet:param name="navigation" value="<%= navigation %>" />
+		<portlet:param name="folderId" value="<%= String.valueOf(folderId) %>" />
+		<portlet:param name="fileEntryTypeId" value="<%= String.valueOf(fileEntryTypeId) %>" />
+		<portlet:param name="orderByCol" value="downloads" />
+		<portlet:param name="orderByType" value="<%= reverseOrderByType %>" />
+	</portlet:renderURL>
 
-	<%
-	taglibURL = "javascript:" + liferayPortletResponse.getNamespace() + "sortEntries('" + folderId + "', 'downloads','" + reverseOrderByType + "')";
-	%>
+	<aui:nav-item href="<%= sortDownloadsURL %>" iconCssClass="icon-calendar" label="downloads" />
 
-	<liferay-ui:icon
-		message="downloads"
-		url="<%= taglibURL %>"
-	/>
+	<portlet:renderURL var="sortSizeURL">
+		<portlet:param name="struts_action" value="/document_library/view" />
+		<portlet:param name="navigation" value="<%= navigation %>" />
+		<portlet:param name="folderId" value="<%= String.valueOf(folderId) %>" />
+		<portlet:param name="fileEntryTypeId" value="<%= String.valueOf(fileEntryTypeId) %>" />
+		<portlet:param name="orderByCol" value="size" />
+		<portlet:param name="orderByType" value="<%= reverseOrderByType %>" />
+	</portlet:renderURL>
 
-	<%
-	taglibURL = "javascript:" + liferayPortletResponse.getNamespace() + "sortEntries('" + folderId + "', 'size','" + reverseOrderByType + "')";
-	%>
-
-	<liferay-ui:icon
-		message="size"
-		url="<%= taglibURL %>"
-	/>
-</liferay-ui:icon-menu>
-
-<aui:script>
-	Liferay.provide(
-		window,
-		'<portlet:namespace />sortEntries',
-		function(folderId, orderByCol, reverseOrderByType) {
-			Liferay.fire(
-				'<portlet:namespace />dataRequest',
-				{
-					requestParams: {
-						'<portlet:namespace />folderId': folderId,
-						'<portlet:namespace />struts_action': '/document_library/view',
-						'<portlet:namespace />viewEntries': <%= Boolean.FALSE.toString() %>,
-						'<portlet:namespace />viewEntriesPage': <%= Boolean.TRUE.toString() %>,
-						'<portlet:namespace />viewFolders': <%= Boolean.FALSE.toString() %>,
-						'<portlet:namespace />orderByCol': orderByCol,
-						'<portlet:namespace />orderByType': reverseOrderByType,
-						'<portlet:namespace />saveOrderBy': <%= Boolean.TRUE.toString() %>
-					}
-				}
-			);
-		},
-		['aui-base']
-	);
-</aui:script>
+	<aui:nav-item href="<%= sortSizeURL %>" iconCssClass="icon-calendar" label="size" />
+</aui:nav-item>

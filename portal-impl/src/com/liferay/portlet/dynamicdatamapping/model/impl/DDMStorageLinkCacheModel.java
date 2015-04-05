@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,13 +14,19 @@
 
 package com.liferay.portlet.dynamicdatamapping.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.CacheModel;
 
 import com.liferay.portlet.dynamicdatamapping.model.DDMStorageLink;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 /**
  * The cache model class for representing DDMStorageLink in entity cache.
@@ -29,8 +35,33 @@ import java.io.Serializable;
  * @see DDMStorageLink
  * @generated
  */
+@ProviderType
 public class DDMStorageLinkCacheModel implements CacheModel<DDMStorageLink>,
-	Serializable {
+	Externalizable {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof DDMStorageLinkCacheModel)) {
+			return false;
+		}
+
+		DDMStorageLinkCacheModel ddmStorageLinkCacheModel = (DDMStorageLinkCacheModel)obj;
+
+		if (storageLinkId == ddmStorageLinkCacheModel.storageLinkId) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return HashUtil.hash(0, storageLinkId);
+	}
+
 	@Override
 	public String toString() {
 		StringBundler sb = new StringBundler(11);
@@ -50,6 +81,7 @@ public class DDMStorageLinkCacheModel implements CacheModel<DDMStorageLink>,
 		return sb.toString();
 	}
 
+	@Override
 	public DDMStorageLink toEntityModel() {
 		DDMStorageLinkImpl ddmStorageLinkImpl = new DDMStorageLinkImpl();
 
@@ -68,6 +100,31 @@ public class DDMStorageLinkCacheModel implements CacheModel<DDMStorageLink>,
 		ddmStorageLinkImpl.resetOriginalValues();
 
 		return ddmStorageLinkImpl;
+	}
+
+	@Override
+	public void readExternal(ObjectInput objectInput) throws IOException {
+		uuid = objectInput.readUTF();
+		storageLinkId = objectInput.readLong();
+		classNameId = objectInput.readLong();
+		classPK = objectInput.readLong();
+		structureId = objectInput.readLong();
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput objectOutput)
+		throws IOException {
+		if (uuid == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(uuid);
+		}
+
+		objectOutput.writeLong(storageLinkId);
+		objectOutput.writeLong(classNameId);
+		objectOutput.writeLong(classPK);
+		objectOutput.writeLong(structureId);
 	}
 
 	public String uuid;

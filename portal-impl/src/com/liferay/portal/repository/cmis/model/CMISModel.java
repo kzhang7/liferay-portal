@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,11 +15,11 @@
 package com.liferay.portal.repository.cmis.model;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.repository.RepositoryException;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.CompanyConstants;
 import com.liferay.portal.model.User;
 import com.liferay.portal.repository.cmis.CMISRepository;
@@ -93,7 +93,7 @@ public abstract class CMISModel {
 	protected abstract CMISRepository getCmisRepository();
 
 	@SuppressWarnings("unused")
-	protected Folder getParentFolder() throws PortalException, SystemException {
+	protected Folder getParentFolder() throws PortalException {
 		return _parentFolder;
 	}
 
@@ -101,8 +101,10 @@ public abstract class CMISModel {
 		User user = null;
 
 		try {
-			String authType = CompanyLocalServiceUtil.getCompany(
-				getCompanyId()).getAuthType();
+			Company company = CompanyLocalServiceUtil.getCompany(
+				getCompanyId());
+
+			String authType = company.getAuthType();
 
 			if (authType.equals(CompanyConstants.AUTH_TYPE_ID)) {
 				user = UserLocalServiceUtil.getUser(
@@ -131,11 +133,9 @@ public abstract class CMISModel {
 		return user;
 	}
 
-	private static Map<String, Action> _mappedActionKeys =
-		new HashMap<String, Action>();
-	private static Set<String> _unsupportedActionKeys = new HashSet<String>();
-
-	private Folder _parentFolder;
+	private static final Map<String, Action> _mappedActionKeys =
+		new HashMap<>();
+	private static final Set<String> _unsupportedActionKeys = new HashSet<>();
 
 	static {
 		_mappedActionKeys.put(ActionKeys.ACCESS, Action.CAN_GET_FOLDER_TREE);
@@ -152,7 +152,10 @@ public abstract class CMISModel {
 		_unsupportedActionKeys.add(ActionKeys.ADD_SHORTCUT);
 		_unsupportedActionKeys.add(ActionKeys.DELETE_DISCUSSION);
 		_unsupportedActionKeys.add(ActionKeys.PERMISSIONS);
+		_unsupportedActionKeys.add(ActionKeys.SUBSCRIBE);
 		_unsupportedActionKeys.add(ActionKeys.UPDATE_DISCUSSION);
 	}
+
+	private Folder _parentFolder;
 
 }

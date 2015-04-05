@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,18 +14,24 @@
 
 package com.liferay.portlet.messageboards.service;
 
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.util.GroupTestUtil;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
+import com.liferay.portal.kernel.test.util.UserTestUtil;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.model.Group;
-import com.liferay.portal.model.GroupConstants;
 import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.security.permission.DoAsUserThread;
-import com.liferay.portal.service.*;
-import com.liferay.portal.test.EnvironmentExecutionTestListener;
-import com.liferay.portal.test.ExecutionTestListeners;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.util.TestPropsValues;
+import com.liferay.portal.service.ServiceContext;
+import com.liferay.portal.service.UserLocalServiceUtil;
+import com.liferay.portal.service.test.ServiceTestUtil;
+import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.MainServletTestRule;
 import com.liferay.portlet.messageboards.model.MBCategory;
 import com.liferay.portlet.messageboards.model.MBCategoryConstants;
+import com.liferay.portlet.messageboards.model.MBMessage;
 import com.liferay.portlet.messageboards.model.MBMessageConstants;
 
 import java.io.InputStream;
@@ -33,18 +39,22 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 /**
  * @author Alexander Chow
  */
-@ExecutionTestListeners(listeners = {EnvironmentExecutionTestListener.class})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class MBMessageServiceTest {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
 
 	@Before
 	public void setUp() throws Exception {
@@ -69,16 +79,20 @@ public class MBMessageServiceTest {
 		boolean allowAnonymous = false;
 		boolean mailingListActive = false;
 
-		Group group = GroupLocalServiceUtil.getGroup(
-			TestPropsValues.getCompanyId(), GroupConstants.GUEST);
+		_group = GroupTestUtil.addGroup();
 
-		ServiceContext serviceContext = new ServiceContext();
+		for (int i = 0; i < ServiceTestUtil.THREAD_COUNT; i++) {
+			UserTestUtil.addUser(
+				RandomTestUtil.randomString(), _group.getGroupId());
+		}
+
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(_group.getGroupId());
 
 		serviceContext.setGroupPermissions(
 			new String[] {ActionKeys.ADD_MESSAGE, ActionKeys.VIEW});
 		serviceContext.setGuestPermissions(
 			new String[] {ActionKeys.ADD_MESSAGE, ActionKeys.VIEW});
-		serviceContext.setScopeGroupId(group.getGroupId());
 
 		_category = MBCategoryServiceUtil.addCategory(
 			MBCategoryConstants.DEFAULT_PARENT_CATEGORY_ID, name, description,
@@ -87,21 +101,12 @@ public class MBMessageServiceTest {
 			outCustom, outServerName, outServerPort, outUseSSL, outUserName,
 			outPassword, allowAnonymous, mailingListActive, serviceContext);
 
-		_userIds = UserLocalServiceUtil.getGroupUserIds(group.getGroupId());
-	}
-
-	@After
-	public void tearDown() throws Exception {
-		if (_category != null) {
-			MBCategoryServiceUtil.deleteCategory(
-				_category.getGroupId(), _category.getCategoryId());
-		}
+		_userIds = UserLocalServiceUtil.getGroupUserIds(_group.getGroupId());
 	}
 
 	@Test
 	public void testAddMessagesConcurrently() throws Exception {
-		DoAsUserThread[] doAsUserThreads =
-			new DoAsUserThread[ServiceTestUtil.THREAD_COUNT];
+		DoAsUserThread[] doAsUserThreads = new DoAsUserThread[_userIds.length];
 
 		for (int i = 0; i < doAsUserThreads.length; i++) {
 			String subject = "Test Message " + i;
@@ -126,13 +131,16 @@ public class MBMessageServiceTest {
 		}
 
 		Assert.assertTrue(
-			"Only " + successCount + " out of " +
-				ServiceTestUtil.THREAD_COUNT +
-					" threads added messages successfully",
-			successCount == ServiceTestUtil.THREAD_COUNT);
+			"Only " + successCount + " out of " + _userIds.length +
+				" threads added messages successfully",
+			successCount == _userIds.length);
 	}
 
 	private MBCategory _category;
+
+	@DeleteAfterTestRun
+	private Group _group;
+
 	private long[] _userIds;
 
 	private class AddMessageThread extends DoAsUserThread {
@@ -152,7 +160,7 @@ public class MBMessageServiceTest {
 		protected void doRun() throws Exception {
 			String body = "This is a test message.";
 			List<ObjectValuePair<String, InputStream>> inputStreamOVPs =
-				new ArrayList<ObjectValuePair<String, InputStream>>();
+				new ArrayList<>();
 			boolean anonymous = false;
 			double priority = 0.0;
 			boolean allowPingbacks = false;
@@ -162,13 +170,15 @@ public class MBMessageServiceTest {
 			serviceContext.setAddGroupPermissions(true);
 			serviceContext.setAddGuestPermissions(true);
 
-			MBMessageServiceUtil.addMessage(
+			MBMessage mbMessage = MBMessageServiceUtil.addMessage(
 				_category.getGroupId(), _category.getCategoryId(), _subject,
 				body, MBMessageConstants.DEFAULT_FORMAT, inputStreamOVPs,
 				anonymous, priority, allowPingbacks, serviceContext);
+
+			MBMessageLocalServiceUtil.deleteMessage(mbMessage);
 		}
 
-		private String _subject;
+		private final String _subject;
 
 	}
 

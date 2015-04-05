@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,9 +18,12 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.pop.MessageListener;
 import com.liferay.portal.kernel.pop.MessageListenerException;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.CharPool;
-import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.ObjectValuePair;
+import com.liferay.portal.kernel.util.PrefsPropsUtil;
+import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.StreamUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.model.Company;
@@ -33,8 +36,6 @@ import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PortletKeys;
 import com.liferay.portal.util.PropsValues;
-import com.liferay.portlet.messageboards.NoSuchCategoryException;
-import com.liferay.portlet.messageboards.NoSuchMessageException;
 import com.liferay.portlet.messageboards.model.MBCategory;
 import com.liferay.portlet.messageboards.model.MBCategoryConstants;
 import com.liferay.portlet.messageboards.model.MBMessage;
@@ -50,6 +51,7 @@ import java.io.InputStream;
 import java.util.List;
 
 import javax.mail.Message;
+import javax.mail.MessagingException;
 
 import org.apache.commons.lang.time.StopWatch;
 
@@ -60,24 +62,32 @@ import org.apache.commons.lang.time.StopWatch;
  */
 public class MessageListenerImpl implements MessageListener {
 
+	@Override
 	public boolean accept(String from, String recipient, Message message) {
 		try {
-			String messageId = getMessageId(recipient, message);
+			if (isAutoReply(message)) {
+				return false;
+			}
 
-			if ((messageId == null) ||
-				(!messageId.startsWith(
-					MBUtil.MESSAGE_POP_PORTLET_PREFIX, getOffset()))) {
+			String messageIdString = getMessageIdString(recipient, message);
+
+			if ((messageIdString == null) ||
+				!messageIdString.startsWith(
+					MBUtil.MESSAGE_POP_PORTLET_PREFIX,
+					MBUtil.getMessageIdStringOffset())) {
 
 				return false;
 			}
 
-			Company company = getCompany(messageId);
-			long categoryId = getCategoryId(messageId);
+			Company company = getCompany(messageIdString);
+			long categoryId = MBUtil.getCategoryId(messageIdString);
 
 			MBCategory category = MBCategoryLocalServiceUtil.getCategory(
 				categoryId);
 
-			if (category.getCompanyId() != company.getCompanyId()) {
+			if ((category.getCompanyId() != company.getCompanyId()) &&
+				!category.isRoot()) {
+
 				return false;
 			}
 
@@ -85,9 +95,11 @@ public class MessageListenerImpl implements MessageListener {
 				_log.debug("Check to see if user " + from + " exists");
 			}
 
-			if (from.equalsIgnoreCase(
-					PropsValues.MAIL_SESSION_MAIL_POP3_USER)) {
+			String pop3User = PrefsPropsUtil.getString(
+				PropsKeys.MAIL_SESSION_MAIL_POP3_USER,
+				PropsValues.MAIL_SESSION_MAIL_POP3_USER);
 
+			if (StringUtil.equalsIgnoreCase(from, pop3User)) {
 				return false;
 			}
 
@@ -105,42 +117,61 @@ public class MessageListenerImpl implements MessageListener {
 		}
 	}
 
+	@Override
 	public void deliver(String from, String recipient, Message message)
 		throws MessageListenerException {
 
 		List<ObjectValuePair<String, InputStream>> inputStreamOVPs = null;
 
 		try {
-			StopWatch stopWatch = null;
+			StopWatch stopWatch = new StopWatch();
+
+			stopWatch.start();
 
 			if (_log.isDebugEnabled()) {
-				stopWatch = new StopWatch();
-
-				stopWatch.start();
-
 				_log.debug("Deliver message from " + from + " to " + recipient);
 			}
 
-			String messageId = getMessageId(recipient, message);
+			String messageIdString = getMessageIdString(recipient, message);
 
-			Company company = getCompany(messageId);
+			Company company = getCompany(messageIdString);
 
 			if (_log.isDebugEnabled()) {
-				_log.debug("Message id " + messageId);
+				_log.debug("Message id " + messageIdString);
+			}
+
+			long parentMessageId = MBUtil.getMessageId(messageIdString);
+
+			if (_log.isDebugEnabled()) {
+				_log.debug("Parent message id " + parentMessageId);
+			}
+
+			MBMessage parentMessage = null;
+
+			if (parentMessageId > 0) {
+				parentMessage = MBMessageLocalServiceUtil.fetchMBMessage(
+					parentMessageId);
+			}
+
+			if (_log.isDebugEnabled()) {
+				_log.debug("Parent message " + parentMessage);
 			}
 
 			long groupId = 0;
-			long categoryId = getCategoryId(messageId);
+			long categoryId = MBUtil.getCategoryId(messageIdString);
 
-			try {
-				MBCategory category = MBCategoryLocalServiceUtil.getCategory(
-					categoryId);
+			MBCategory category = MBCategoryLocalServiceUtil.fetchMBCategory(
+				categoryId);
 
-				groupId = category.getGroupId();
-			}
-			catch (NoSuchCategoryException nsce) {
-				groupId = categoryId;
+			if (category == null) {
 				categoryId = MBCategoryConstants.DEFAULT_PARENT_CATEGORY_ID;
+
+				if (parentMessage != null) {
+					groupId = parentMessage.getGroupId();
+				}
+			}
+			else {
+				groupId = category.getGroupId();
 			}
 
 			if (_log.isDebugEnabled()) {
@@ -151,32 +182,7 @@ public class MessageListenerImpl implements MessageListener {
 			User user = UserLocalServiceUtil.getUserByEmailAddress(
 				company.getCompanyId(), from);
 
-			long parentMessageId = getParentMessageId(recipient, message);
-
-			if (_log.isDebugEnabled()) {
-				_log.debug("Parent message id " + parentMessageId);
-			}
-
-			MBMessage parentMessage = null;
-
-			try {
-				if (parentMessageId > 0) {
-					parentMessage = MBMessageLocalServiceUtil.getMessage(
-						parentMessageId);
-				}
-			}
-			catch (NoSuchMessageException nsme) {
-
-				// If the parent message does not exist we ignore it and post
-				// the message as a new thread.
-
-			}
-
-			if (_log.isDebugEnabled()) {
-				_log.debug("Parent message " + parentMessage);
-			}
-
-			String subject = MBUtil.getSubjectWithoutMessageId(message);
+			String subject = MBUtil.getSubjectForEmail(message);
 
 			MBMailMessage mbMailMessage = new MBMailMessage();
 
@@ -188,11 +194,12 @@ public class MessageListenerImpl implements MessageListener {
 
 			ServiceContext serviceContext = new ServiceContext();
 
-			serviceContext.setAddGroupPermissions(true);
-			serviceContext.setAddGuestPermissions(true);
+			serviceContext.setAttribute("propagatePermissions", Boolean.TRUE);
 			serviceContext.setLayoutFullURL(
 				PortalUtil.getLayoutFullURL(
-					groupId, PortletKeys.MESSAGE_BOARDS));
+					groupId, PortletKeys.MESSAGE_BOARDS,
+					StringUtil.equalsIgnoreCase(
+						Http.HTTPS, PropsValues.WEB_SERVER_PROTOCOL)));
 			serviceContext.setScopeGroupId(groupId);
 
 			if (parentMessage == null) {
@@ -240,42 +247,32 @@ public class MessageListenerImpl implements MessageListener {
 		}
 	}
 
+	@Override
 	public String getId() {
 		return MessageListenerImpl.class.getName();
 	}
 
-	protected long getCategoryId(String recipient) {
-		int pos = recipient.indexOf(CharPool.AT);
-
-		String target = recipient.substring(
-			MBUtil.MESSAGE_POP_PORTLET_PREFIX.length() + getOffset(), pos);
-
-		String[] parts = StringUtil.split(target, CharPool.PERIOD);
-
-		return GetterUtil.getLong(parts[0]);
-	}
-
-	protected Company getCompany(String messageId) throws Exception {
+	protected Company getCompany(String messageIdString) throws Exception {
 		int pos =
-			messageId.indexOf(CharPool.AT) +
+			messageIdString.indexOf(CharPool.AT) +
 				PropsValues.POP_SERVER_SUBDOMAIN.length() + 1;
 
 		if (PropsValues.POP_SERVER_SUBDOMAIN.length() > 0) {
 			pos++;
 		}
 
-		int endPos = messageId.indexOf(CharPool.GREATER_THAN, pos);
+		int endPos = messageIdString.indexOf(CharPool.GREATER_THAN, pos);
 
 		if (endPos == -1) {
-			endPos = messageId.length();
+			endPos = messageIdString.length();
 		}
 
-		String mx = messageId.substring(pos, endPos);
+		String mx = messageIdString.substring(pos, endPos);
 
 		return CompanyLocalServiceUtil.getCompanyByMx(mx);
 	}
 
-	protected String getMessageId(String recipient, Message message)
+	protected String getMessageIdString(String recipient, Message message)
 		throws Exception {
 
 		if (PropsValues.POP_SERVER_SUBDOMAIN.length() > 0) {
@@ -286,47 +283,29 @@ public class MessageListenerImpl implements MessageListener {
 		}
 	}
 
-	protected int getOffset() {
-		if (PropsValues.POP_SERVER_SUBDOMAIN.length() == 0) {
-			return 1;
+	protected boolean isAutoReply(Message message) throws MessagingException {
+		String[] autoReply = message.getHeader("X-Autoreply");
+
+		if (ArrayUtil.isNotEmpty(autoReply)) {
+			return true;
 		}
 
-		return 0;
+		String[] autoReplyFrom = message.getHeader("X-Autoreply-From");
+
+		if (ArrayUtil.isNotEmpty(autoReplyFrom)) {
+			return true;
+		}
+
+		String[] mailAutoReply = message.getHeader("X-Mail-Autoreply");
+
+		if (ArrayUtil.isNotEmpty(mailAutoReply)) {
+			return true;
+		}
+
+		return false;
 	}
 
-	protected long getParentMessageId(String recipient, Message message)
-		throws Exception {
-
-		if (!StringUtil.startsWith(
-				recipient, MBUtil.MESSAGE_POP_PORTLET_PREFIX)) {
-
-			return MBUtil.getParentMessageId(message);
-		}
-
-		int pos = recipient.indexOf(CharPool.AT);
-
-		if (pos < 0) {
-			return MBUtil.getParentMessageId(message);
-		}
-
-		String target = recipient.substring(
-			MBUtil.MESSAGE_POP_PORTLET_PREFIX.length(), pos);
-
-		String[] parts = StringUtil.split(target, CharPool.PERIOD);
-
-		long parentMessageId = 0;
-
-		if (parts.length == 2) {
-			parentMessageId = GetterUtil.getLong(parts[1]);
-		}
-
-		if (parentMessageId > 0) {
-			return parentMessageId;
-		}
-
-		return MBUtil.getParentMessageId(message);
-	}
-
-	private static Log _log = LogFactoryUtil.getLog(MessageListenerImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		MessageListenerImpl.class);
 
 }

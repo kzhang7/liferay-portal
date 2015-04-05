@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,13 +14,19 @@
 
 package com.liferay.portlet.journal.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.CacheModel;
 
 import com.liferay.portlet.journal.model.JournalFeed;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 import java.util.Date;
 
@@ -31,11 +37,36 @@ import java.util.Date;
  * @see JournalFeed
  * @generated
  */
+@ProviderType
 public class JournalFeedCacheModel implements CacheModel<JournalFeed>,
-	Serializable {
+	Externalizable {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof JournalFeedCacheModel)) {
+			return false;
+		}
+
+		JournalFeedCacheModel journalFeedCacheModel = (JournalFeedCacheModel)obj;
+
+		if (id == journalFeedCacheModel.id) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return HashUtil.hash(0, id);
+	}
+
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(47);
+		StringBundler sb = new StringBundler(45);
 
 		sb.append("{uuid=");
 		sb.append(uuid);
@@ -59,14 +90,12 @@ public class JournalFeedCacheModel implements CacheModel<JournalFeed>,
 		sb.append(name);
 		sb.append(", description=");
 		sb.append(description);
-		sb.append(", type=");
-		sb.append(type);
-		sb.append(", structureId=");
-		sb.append(structureId);
-		sb.append(", templateId=");
-		sb.append(templateId);
-		sb.append(", rendererTemplateId=");
-		sb.append(rendererTemplateId);
+		sb.append(", DDMStructureKey=");
+		sb.append(DDMStructureKey);
+		sb.append(", DDMTemplateKey=");
+		sb.append(DDMTemplateKey);
+		sb.append(", DDMRendererTemplateKey=");
+		sb.append(DDMRendererTemplateKey);
 		sb.append(", delta=");
 		sb.append(delta);
 		sb.append(", orderByCol=");
@@ -79,8 +108,8 @@ public class JournalFeedCacheModel implements CacheModel<JournalFeed>,
 		sb.append(targetPortletId);
 		sb.append(", contentField=");
 		sb.append(contentField);
-		sb.append(", feedType=");
-		sb.append(feedType);
+		sb.append(", feedFormat=");
+		sb.append(feedFormat);
 		sb.append(", feedVersion=");
 		sb.append(feedVersion);
 		sb.append("}");
@@ -88,6 +117,7 @@ public class JournalFeedCacheModel implements CacheModel<JournalFeed>,
 		return sb.toString();
 	}
 
+	@Override
 	public JournalFeed toEntityModel() {
 		JournalFeedImpl journalFeedImpl = new JournalFeedImpl();
 
@@ -145,32 +175,25 @@ public class JournalFeedCacheModel implements CacheModel<JournalFeed>,
 			journalFeedImpl.setDescription(description);
 		}
 
-		if (type == null) {
-			journalFeedImpl.setType(StringPool.BLANK);
+		if (DDMStructureKey == null) {
+			journalFeedImpl.setDDMStructureKey(StringPool.BLANK);
 		}
 		else {
-			journalFeedImpl.setType(type);
+			journalFeedImpl.setDDMStructureKey(DDMStructureKey);
 		}
 
-		if (structureId == null) {
-			journalFeedImpl.setStructureId(StringPool.BLANK);
+		if (DDMTemplateKey == null) {
+			journalFeedImpl.setDDMTemplateKey(StringPool.BLANK);
 		}
 		else {
-			journalFeedImpl.setStructureId(structureId);
+			journalFeedImpl.setDDMTemplateKey(DDMTemplateKey);
 		}
 
-		if (templateId == null) {
-			journalFeedImpl.setTemplateId(StringPool.BLANK);
+		if (DDMRendererTemplateKey == null) {
+			journalFeedImpl.setDDMRendererTemplateKey(StringPool.BLANK);
 		}
 		else {
-			journalFeedImpl.setTemplateId(templateId);
-		}
-
-		if (rendererTemplateId == null) {
-			journalFeedImpl.setRendererTemplateId(StringPool.BLANK);
-		}
-		else {
-			journalFeedImpl.setRendererTemplateId(rendererTemplateId);
+			journalFeedImpl.setDDMRendererTemplateKey(DDMRendererTemplateKey);
 		}
 
 		journalFeedImpl.setDelta(delta);
@@ -210,11 +233,11 @@ public class JournalFeedCacheModel implements CacheModel<JournalFeed>,
 			journalFeedImpl.setContentField(contentField);
 		}
 
-		if (feedType == null) {
-			journalFeedImpl.setFeedType(StringPool.BLANK);
+		if (feedFormat == null) {
+			journalFeedImpl.setFeedFormat(StringPool.BLANK);
 		}
 		else {
-			journalFeedImpl.setFeedType(feedType);
+			journalFeedImpl.setFeedFormat(feedFormat);
 		}
 
 		journalFeedImpl.setFeedVersion(feedVersion);
@@ -222,6 +245,146 @@ public class JournalFeedCacheModel implements CacheModel<JournalFeed>,
 		journalFeedImpl.resetOriginalValues();
 
 		return journalFeedImpl;
+	}
+
+	@Override
+	public void readExternal(ObjectInput objectInput) throws IOException {
+		uuid = objectInput.readUTF();
+		id = objectInput.readLong();
+		groupId = objectInput.readLong();
+		companyId = objectInput.readLong();
+		userId = objectInput.readLong();
+		userName = objectInput.readUTF();
+		createDate = objectInput.readLong();
+		modifiedDate = objectInput.readLong();
+		feedId = objectInput.readUTF();
+		name = objectInput.readUTF();
+		description = objectInput.readUTF();
+		DDMStructureKey = objectInput.readUTF();
+		DDMTemplateKey = objectInput.readUTF();
+		DDMRendererTemplateKey = objectInput.readUTF();
+		delta = objectInput.readInt();
+		orderByCol = objectInput.readUTF();
+		orderByType = objectInput.readUTF();
+		targetLayoutFriendlyUrl = objectInput.readUTF();
+		targetPortletId = objectInput.readUTF();
+		contentField = objectInput.readUTF();
+		feedFormat = objectInput.readUTF();
+		feedVersion = objectInput.readDouble();
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput objectOutput)
+		throws IOException {
+		if (uuid == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(uuid);
+		}
+
+		objectOutput.writeLong(id);
+		objectOutput.writeLong(groupId);
+		objectOutput.writeLong(companyId);
+		objectOutput.writeLong(userId);
+
+		if (userName == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(userName);
+		}
+
+		objectOutput.writeLong(createDate);
+		objectOutput.writeLong(modifiedDate);
+
+		if (feedId == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(feedId);
+		}
+
+		if (name == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(name);
+		}
+
+		if (description == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(description);
+		}
+
+		if (DDMStructureKey == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(DDMStructureKey);
+		}
+
+		if (DDMTemplateKey == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(DDMTemplateKey);
+		}
+
+		if (DDMRendererTemplateKey == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(DDMRendererTemplateKey);
+		}
+
+		objectOutput.writeInt(delta);
+
+		if (orderByCol == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(orderByCol);
+		}
+
+		if (orderByType == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(orderByType);
+		}
+
+		if (targetLayoutFriendlyUrl == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(targetLayoutFriendlyUrl);
+		}
+
+		if (targetPortletId == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(targetPortletId);
+		}
+
+		if (contentField == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(contentField);
+		}
+
+		if (feedFormat == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(feedFormat);
+		}
+
+		objectOutput.writeDouble(feedVersion);
 	}
 
 	public String uuid;
@@ -235,16 +398,15 @@ public class JournalFeedCacheModel implements CacheModel<JournalFeed>,
 	public String feedId;
 	public String name;
 	public String description;
-	public String type;
-	public String structureId;
-	public String templateId;
-	public String rendererTemplateId;
+	public String DDMStructureKey;
+	public String DDMTemplateKey;
+	public String DDMRendererTemplateKey;
 	public int delta;
 	public String orderByCol;
 	public String orderByType;
 	public String targetLayoutFriendlyUrl;
 	public String targetPortletId;
 	public String contentField;
-	public String feedType;
+	public String feedFormat;
 	public double feedVersion;
 }

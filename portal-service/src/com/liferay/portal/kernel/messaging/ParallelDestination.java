@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -37,15 +37,17 @@ public class ParallelDestination extends BaseAsyncDestination {
 	}
 
 	/**
-	 * @deprecated
+	 * @deprecated As of 6.1.0
 	 */
+	@Deprecated
 	public ParallelDestination(String name) {
 		super(name);
 	}
 
 	/**
-	 * @deprecated
+	 * @deprecated As of 6.1.0
 	 */
+	@Deprecated
 	public ParallelDestination(
 		String name, int workersCoreSize, int workersMaxSize) {
 
@@ -56,11 +58,14 @@ public class ParallelDestination extends BaseAsyncDestination {
 	protected void dispatch(
 		Set<MessageListener> messageListeners, final Message message) {
 
+		final Thread currentThread = Thread.currentThread();
+
 		ThreadPoolExecutor threadPoolExecutor = getThreadPoolExecutor();
 
 		for (final MessageListener messageListener : messageListeners) {
 			Runnable runnable = new MessageRunnable(message) {
 
+				@Override
 				public void run() {
 					try {
 						populateThreadLocalsFromMessage(message);
@@ -71,9 +76,12 @@ public class ParallelDestination extends BaseAsyncDestination {
 						_log.error("Unable to process message " + message, mle);
 					}
 					finally {
-						ThreadLocalCacheManager.clearAll(Lifecycle.REQUEST);
+						if (Thread.currentThread() != currentThread) {
+							ThreadLocalCacheManager.clearAll(Lifecycle.REQUEST);
 
-						CentralizedThreadLocal.clearShortLivedThreadLocals();
+							CentralizedThreadLocal.
+								clearShortLivedThreadLocals();
+						}
 					}
 				}
 
@@ -83,6 +91,7 @@ public class ParallelDestination extends BaseAsyncDestination {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ParallelDestination.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ParallelDestination.class);
 
 }

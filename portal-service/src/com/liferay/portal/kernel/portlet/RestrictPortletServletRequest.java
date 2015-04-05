@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,6 +17,7 @@ package com.liferay.portal.kernel.portlet;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.PersistentHttpServletRequestWrapper;
+import com.liferay.portal.kernel.servlet.RequestDispatcherAttributeNames;
 import com.liferay.portal.kernel.util.Mergeable;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
@@ -45,6 +46,10 @@ public class RestrictPortletServletRequest
 
 	@Override
 	public Object getAttribute(String name) {
+		if (RequestDispatcherAttributeNames.contains(name)) {
+			return super.getAttribute(name);
+		}
+
 		Object value = _attributes.get(name);
 
 		if (value == _nullValue) {
@@ -66,7 +71,7 @@ public class RestrictPortletServletRequest
 			return superEnumeration;
 		}
 
-		Set<String> names = new HashSet<String>();
+		Set<String> names = new HashSet<>();
 
 		while (superEnumeration.hasMoreElements()) {
 			names.add(superEnumeration.nextElement());
@@ -115,16 +120,26 @@ public class RestrictPortletServletRequest
 
 	@Override
 	public void removeAttribute(String name) {
-		_attributes.put(name, _nullValue);
+		if (RequestDispatcherAttributeNames.contains(name)) {
+			super.removeAttribute(name);
+		}
+		else {
+			_attributes.put(name, _nullValue);
+		}
 	}
 
 	@Override
 	public void setAttribute(String name, Object value) {
-		if (value == null) {
-			value = _nullValue;
+		if (RequestDispatcherAttributeNames.contains(name)) {
+			super.setAttribute(name, value);
 		}
+		else {
+			if (value == null) {
+				value = _nullValue;
+			}
 
-		_attributes.put(name, value);
+			_attributes.put(name, value);
+		}
 	}
 
 	protected void doMergeSharedAttributes(ServletRequest servletRequest) {
@@ -190,11 +205,11 @@ public class RestrictPortletServletRequest
 	private static final String[] _REQUEST_SHARED_ATTRIBUTES =
 		PropsUtil.getArray(PropsKeys.REQUEST_SHARED_ATTRIBUTES);
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		RestrictPortletServletRequest.class);
 
-	private static Object _nullValue = new Object();
+	private static final Object _nullValue = new Object();
 
-	private Map<String, Object> _attributes = new HashMap<String, Object>();
+	private final Map<String, Object> _attributes = new HashMap<>();
 
 }

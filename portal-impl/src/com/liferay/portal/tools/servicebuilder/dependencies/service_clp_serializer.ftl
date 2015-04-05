@@ -10,9 +10,10 @@ package ${packagePath}.service;
 	</#if>
 </#list>
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.bean.PortletBeanLocatorUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.log.Log;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+@ProviderType
 public class ClpSerializer {
 
 	public static String getServletContextName() {
@@ -153,6 +155,34 @@ public class ClpSerializer {
 					if (oldModelClassName.equals("${packagePath}.model.impl.${entity.name}Impl")) {
 						return translateOutput${entity.name}(oldModel);
 					}
+					else if (oldModelClassName.endsWith("Clp")) {
+						try {
+							ClassLoader classLoader = ClpSerializer.class.getClassLoader();
+
+							Method getClpSerializerClassMethod = oldModelClass.getMethod("getClpSerializerClass");
+
+							Class<?> oldClpSerializerClass = (Class<?>)getClpSerializerClassMethod.invoke(oldModel);
+
+							Class<?> newClpSerializerClass = classLoader.loadClass(oldClpSerializerClass.getName());
+
+							Method translateOutputMethod = newClpSerializerClass.getMethod("translateOutput", BaseModel.class);
+
+							Class<?> oldModelModelClass = oldModel.getModelClass();
+
+							Method getRemoteModelMethod = oldModelClass.getMethod("get" + oldModelModelClass.getSimpleName() + "RemoteModel");
+
+							Object oldRemoteModel = getRemoteModelMethod.invoke(oldModel);
+
+							BaseModel<?> newModel = (BaseModel<?>)translateOutputMethod.invoke(null, oldRemoteModel);
+
+							return newModel;
+						}
+						catch (Throwable t) {
+							if (_log.isInfoEnabled()) {
+								_log.info("Unable to translate " + oldModelClassName, t);
+							}
+						}
+					}
 				</#if>
 			</#list>
 		</#if>
@@ -209,6 +239,13 @@ public class ClpSerializer {
 
 				return throwable;
 			}
+			catch (ClassNotFoundException cnfe) {
+				if (_log.isInfoEnabled()) {
+					_log.info("Do not use reflection to translate throwable");
+				}
+
+				_useReflectionToTranslateThrowable = false;
+			}
 			catch (SecurityException se) {
 				if (_log.isInfoEnabled()) {
 					_log.info("Do not use reflection to translate throwable");
@@ -227,17 +264,9 @@ public class ClpSerializer {
 
 		String className = clazz.getName();
 
-		if (className.equals(PortalException.class.getName())) {
-			return new PortalException();
-		}
-
-		if (className.equals(SystemException.class.getName())) {
-			return new SystemException();
-		}
-
 		<#list exceptions as exception>
 			if (className.equals("${packagePath}.${exception}Exception")) {
-				return new ${packagePath}.${exception}Exception();
+				return new ${packagePath}.${exception}Exception(throwable.getMessage(), throwable.getCause());
 			}
 		</#list>
 

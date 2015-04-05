@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -28,7 +28,7 @@ if (assetEntryId > 0) {
 
 <c:if test="<%= (assetLinks != null) && !assetLinks.isEmpty() %>">
 	<div class="taglib-asset-links">
-		<h2 class="asset-links-title"><liferay-ui:message key="related-assets" />:</h2>
+		<h2 class="asset-links-title icon-link"><liferay-ui:message key="related-assets" />:</h2>
 
 		<ul class="asset-links-list">
 
@@ -49,41 +49,68 @@ if (assetEntryId > 0) {
 
 				assetLinkEntry = assetLinkEntry.toEscapedModel();
 
-				AssetRendererFactory assetRendererFactory = AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassName(PortalUtil.getClassName(assetLinkEntry.getClassNameId()));
+				AssetRendererFactory assetRendererFactory = AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassNameId(assetLinkEntry.getClassNameId());
+
+				if (Validator.isNull(assetRendererFactory)) {
+					if (_log.isWarnEnabled()) {
+						_log.warn("No asset renderer factory found for class " + PortalUtil.getClassName(assetLinkEntry.getClassNameId()));
+					}
+
+					continue;
+				}
+
+				if (!assetRendererFactory.isActive(company.getCompanyId())) {
+					continue;
+				}
 
 				AssetRenderer assetRenderer = assetRendererFactory.getAssetRenderer(assetLinkEntry.getClassPK());
 
 				if (assetRenderer.hasViewPermission(permissionChecker)) {
 					String asseLinktEntryTitle = assetLinkEntry.getTitle(locale);
 
-					LiferayPortletURL assetPublisherURL = new PortletURLImpl(request, PortletKeys.ASSET_PUBLISHER, plid, PortletRequest.RENDER_PHASE);
+					String portletId = PortletProviderUtil.getPortletId(assetRenderer.getClassName(), PortletProvider.Action.VIEW);
 
-					assetPublisherURL.setWindowState(WindowState.MAXIMIZED);
+					LiferayPortletURL assetPublisherURL = new PortletURLImpl(request, portletId, plid, PortletRequest.RENDER_PHASE);
 
-					assetPublisherURL.setParameter("struts_action", "/asset_publisher/view_content");
+					assetPublisherURL.setParameter("mvcPath", "/view_content.jsp");
+					assetPublisherURL.setParameter("redirect", currentURL);
 					assetPublisherURL.setParameter("assetEntryId", String.valueOf(assetLinkEntry.getEntryId()));
 					assetPublisherURL.setParameter("type", assetRendererFactory.getType());
 
 					if (Validator.isNotNull(assetRenderer.getUrlTitle())) {
-						if (assetRenderer.getGroupId() != scopeGroupId) {
+						if (assetRenderer.getGroupId() != themeDisplay.getSiteGroupId()) {
 							assetPublisherURL.setParameter("groupId", String.valueOf(assetRenderer.getGroupId()));
 						}
 
 						assetPublisherURL.setParameter("urlTitle", assetRenderer.getUrlTitle());
 					}
 
+					assetPublisherURL.setWindowState(WindowState.MAXIMIZED);
+
 					String viewFullContentURLString = assetPublisherURL.toString();
 
 					viewFullContentURLString = HttpUtil.setParameter(viewFullContentURLString, "redirect", currentURL);
 
 					String urlViewInContext = assetRenderer.getURLViewInContext((LiferayPortletRequest)portletRequest, (LiferayPortletResponse)portletResponse, viewFullContentURLString);
+
+					urlViewInContext = HttpUtil.setParameter(urlViewInContext, "inheritRedirect", true);
+
+					String method = null;
+					String target = "_self";
+
+					if (themeDisplay.isStatePopUp()) {
+						method = "get";
+						target = "_blank";
+					}
 			%>
 
 					<li class="asset-links-list-item">
 						<liferay-ui:icon
+							iconCssClass="<%= assetRenderer.getIconCssClass() %>"
 							label="<%= true %>"
 							message="<%= asseLinktEntryTitle %>"
-							src="<%= assetRenderer.getIconPath(portletRequest) %>"
+							method="<%= method %>"
+							target="<%= target %>"
 							url="<%= urlViewInContext %>"
 						/>
 					</li>
@@ -96,3 +123,7 @@ if (assetEntryId > 0) {
 		</ul>
 	</div>
 </c:if>
+
+<%!
+private static Log _log = LogFactoryUtil.getLog("portal-web.docroot.html.taglib.ui.asset_links.page_jsp");
+%>

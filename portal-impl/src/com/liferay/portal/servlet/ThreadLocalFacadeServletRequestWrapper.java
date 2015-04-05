@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,11 +15,18 @@
 package com.liferay.portal.servlet;
 
 import com.liferay.portal.kernel.util.AutoResetThreadLocal;
+import com.liferay.portal.kernel.util.WebKeys;
 
 import java.io.Closeable;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.locks.Lock;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestWrapper;
 
@@ -38,8 +45,17 @@ public class ThreadLocalFacadeServletRequestWrapper
 		_servletRequestWrapper = servletRequestWrapper;
 
 		_nextServletRequestThreadLocal.set(nextServletRequest);
+
+		_locales = new ArrayList<>();
+
+		Enumeration<Locale> enumeration = nextServletRequest.getLocales();
+
+		while (enumeration.hasMoreElements()) {
+			_locales.add(enumeration.nextElement());
+		}
 	}
 
+	@Override
 	public void close() {
 		if (_servletRequestWrapper != null) {
 			ServletRequest nextServletRequest =
@@ -60,12 +76,38 @@ public class ThreadLocalFacadeServletRequestWrapper
 	public Enumeration<String> getAttributeNames() {
 		ServletRequest servletRequest = getRequest();
 
-		return servletRequest.getAttributeNames();
+		Lock lock = (Lock)servletRequest.getAttribute(
+			WebKeys.PARALLEL_RENDERING_MERGE_LOCK);
+
+		if (lock != null) {
+			lock.lock();
+		}
+
+		try {
+			return servletRequest.getAttributeNames();
+		}
+		finally {
+			if (lock != null) {
+				lock.unlock();
+			}
+		}
+	}
+
+	@Override
+	public Enumeration<Locale> getLocales() {
+		return Collections.enumeration(_locales);
 	}
 
 	@Override
 	public ServletRequest getRequest() {
 		return _nextServletRequestThreadLocal.get();
+	}
+
+	@Override
+	public RequestDispatcher getRequestDispatcher(String uri) {
+		ServletRequest servletRequest = getRequest();
+
+		return servletRequest.getRequestDispatcher(uri);
 	}
 
 	@Override
@@ -87,18 +129,20 @@ public class ThreadLocalFacadeServletRequestWrapper
 		_nextServletRequestThreadLocal.set(servletRequest);
 	}
 
-	private static ThreadLocal<ServletRequest> _nextServletRequestThreadLocal =
-		new AutoResetThreadLocal<ServletRequest>(
-			ThreadLocalFacadeServletRequestWrapper.class +
-				"._nextServletRequestThreadLocal") {
+	private static final ThreadLocal<ServletRequest>
+		_nextServletRequestThreadLocal =
+			new AutoResetThreadLocal<ServletRequest>(
+				ThreadLocalFacadeServletRequestWrapper.class +
+					"._nextServletRequestThreadLocal") {
 
-			@Override
-			protected ServletRequest copy(ServletRequest servletRequest) {
-				return servletRequest;
-			}
+				@Override
+				protected ServletRequest copy(ServletRequest servletRequest) {
+					return servletRequest;
+				}
 
-		};
+			};
 
-	private ServletRequestWrapper _servletRequestWrapper;
+	private final List<Locale> _locales;
+	private final ServletRequestWrapper _servletRequestWrapper;
 
 }

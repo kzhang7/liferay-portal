@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,11 +18,15 @@
 
 <%
 String redirect = ParamUtil.getString(request, "redirect");
+
 String backURL = ParamUtil.getString(request, "backURL", redirect);
 
 Organization organization = (Organization)request.getAttribute(WebKeys.ORGANIZATION);
 
 long organizationId = BeanParamUtil.getLong(organization, request, "organizationId");
+
+long parentOrganizationId = ParamUtil.getLong(request, "parentOrganizationSearchContainerPrimaryKeys", (organization != null) ? organization.getParentOrganizationId() : OrganizationConstants.DEFAULT_PARENT_ORGANIZATION_ID);
+String type = BeanParamUtil.getString(organization, request, "type");
 
 String[] mainSections = PropsValues.ORGANIZATIONS_FORM_ADD_MAIN;
 String[] identificationSections = PropsValues.ORGANIZATIONS_FORM_ADD_IDENTIFICATION;
@@ -30,30 +34,72 @@ String[] miscellaneousSections = PropsValues.ORGANIZATIONS_FORM_ADD_MISCELLANEOU
 
 if (organization != null) {
 	mainSections = PropsUtil.getArray(PropsKeys.ORGANIZATIONS_FORM_UPDATE_MAIN, new Filter(organization.getType()));
+
+	Group group = organization.getGroup();
+
+	if (group.isSite()) {
+		mainSections = ArrayUtil.remove(mainSections, "organization-site");
+	}
+
 	identificationSections = PropsUtil.getArray(PropsKeys.ORGANIZATIONS_FORM_UPDATE_IDENTIFICATION, new Filter(organization.getType()));
 	miscellaneousSections = PropsUtil.getArray(PropsKeys.ORGANIZATIONS_FORM_UPDATE_MISCELLANEOUS, new Filter(organization.getType()));
+
 }
 
 String[][] categorySections = {mainSections, identificationSections, miscellaneousSections};
+
+if (organization != null) {
+	UsersAdminUtil.addPortletBreadcrumbEntries(organization, request, renderResponse);
+}
+else if (parentOrganizationId > 0) {
+	Organization parentOrganization = OrganizationServiceUtil.getOrganization(parentOrganizationId);
+
+	UsersAdminUtil.addPortletBreadcrumbEntries(parentOrganization, request, renderResponse);
+}
 %>
 
-<liferay-util:include page="/html/portlet/users_admin/toolbar.jsp">
-	<liferay-util:param name="toolbarItem" value='<%= (organization == null) ? "add" : "view" %>' />
-</liferay-util:include>
+<aui:nav-bar>
+	<liferay-util:include page="/html/portlet/users_admin/toolbar.jsp">
+		<liferay-util:param name="toolbarItem" value='<%= (organization == null) ? "add" : "view" %>' />
+	</liferay-util:include>
+</aui:nav-bar>
+
+<div id="breadcrumb">
+	<liferay-ui:breadcrumb showCurrentGroup="<%= false %>" showGuestGroup="<%= false %>" showLayout="<%= false %>" showPortletBreadcrumb="<%= true %>" />
+</div>
+
+<%
+String headerTitle = null;
+
+if (organization != null) {
+	headerTitle = LanguageUtil.format(request, "edit-x", organization.getName(), false);
+}
+else if (Validator.isNotNull(type)) {
+	headerTitle = LanguageUtil.format(request, "add-x", type);
+}
+else {
+	headerTitle = LanguageUtil.get(request, "add-organization");
+}
+%>
 
 <liferay-ui:header
 	backURL="<%= backURL %>"
 	localizeTitle="<%= (organization == null) %>"
-	title='<%= (organization == null) ? "new-organization" : organization.getName() %>'
+	title="<%= headerTitle %>"
 />
 
-<portlet:actionURL var="editOrganizationURL">
+<portlet:actionURL var="editOrganizationActionURL">
 	<portlet:param name="struts_action" value="/users_admin/edit_organization" />
 </portlet:actionURL>
 
-<aui:form action="<%= editOrganizationURL %>" method="post" name="fm" onSubmit='<%= "event.preventDefault(); " + renderResponse.getNamespace() + "saveOrganization();" %>'>
-	<aui:input name="<%= Constants.CMD %>" type="hidden" />
-	<aui:input name="redirect" type="hidden" />
+<portlet:renderURL var="editOrganizationRenderURL">
+	<portlet:param name="struts_action" value="/users_admin/edit_organization" />
+	<portlet:param name="backURL" value="<%= backURL %>" />
+</portlet:renderURL>
+
+<aui:form action="<%= editOrganizationActionURL %>" method="post" name="fm">
+	<aui:input name="<%= Constants.CMD %>" type="hidden" value="<%= (organization == null) ? Constants.ADD : Constants.UPDATE %>" />
+	<aui:input name="redirect" type="hidden" value="<%= editOrganizationRenderURL %>" />
 	<aui:input name="backURL" type="hidden" value="<%= backURL %>" />
 	<aui:input name="organizationId" type="hidden" value="<%= organizationId %>" />
 
@@ -77,7 +123,7 @@ String[][] categorySections = {mainSections, identificationSections, miscellaneo
 
 			<div class="organization-info">
 				<div class="float-container">
-					<img alt="<%= HtmlUtil.escape(organization.getName()) %>" class="organization-logo" src="<%= themeDisplay.getPathImage() %>/organization_logo?img_id=<%= logoId %>&t=<%= WebServerServletTokenUtil.getToken(logoId) %>" />
+					<img alt="<%= HtmlUtil.escapeAttribute(organization.getName()) %>" class="organization-logo" src="<%= themeDisplay.getPathImage() %>/organization_logo?img_id=<%= logoId %>&t=<%= WebServerServletTokenUtil.getToken(logoId) %>" />
 
 					<span class="organization-name"><%= HtmlUtil.escape(organization.getName()) %></span>
 				</div>
@@ -97,38 +143,9 @@ String[][] categorySections = {mainSections, identificationSections, miscellaneo
 <aui:script>
 	function <portlet:namespace />createURL(href, value, onclick) {
 		return '<a href="' + href + '"' + (onclick ? ' onclick="' + onclick + '" ' : '') + '>' + value + '</a>';
-	};
-
-	function <portlet:namespace />saveOrganization() {
-		document.<portlet:namespace />fm.<portlet:namespace /><%= Constants.CMD %>.value = "<%= (organization == null) ? Constants.ADD : Constants.UPDATE %>";
-
-		var redirect = "<portlet:renderURL><portlet:param name="struts_action" value="/users_admin/edit_organization" /><portlet:param name="backURL" value="<%= backURL %>"></portlet:param></portlet:renderURL>";
-
-		if (location.hash) {
-			redirect += location.hash.replace('#_LFR_FN_', '&<portlet:namespace />historyKey=');
-		}
-
-		document.<portlet:namespace />fm.<portlet:namespace />redirect.value = redirect;
-
-		submitForm(document.<portlet:namespace />fm);
 	}
-
-	<c:if test="<%= windowState.equals(WindowState.MAXIMIZED) %>">
-		Liferay.Util.focusFormField(document.<portlet:namespace />fm.<portlet:namespace />name);
-	</c:if>
 </aui:script>
 
-<%
-if (organization != null) {
-	UsersAdminUtil.addPortletBreadcrumbEntries(organization, request, renderResponse);
-
-	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(pageContext, "edit"), currentURL);
-}
-else {
-	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(pageContext, "add-organization"), currentURL);
-}
-%>
-
 <%!
-private static String[] _CATEGORY_NAMES = {"organization-information", "identification", "miscellaneous"};
+private static final String[] _CATEGORY_NAMES = {"organization-information", "identification", "miscellaneous"};
 %>

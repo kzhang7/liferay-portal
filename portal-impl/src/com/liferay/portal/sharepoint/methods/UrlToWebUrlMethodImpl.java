@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -30,6 +30,7 @@ import java.util.List;
  */
 public class UrlToWebUrlMethodImpl extends BaseMethodImpl {
 
+	@Override
 	public String getMethodName() {
 		return _METHOD_NAME;
 	}
@@ -38,7 +39,7 @@ public class UrlToWebUrlMethodImpl extends BaseMethodImpl {
 	protected List<ResponseElement> getElements(
 		SharepointRequest sharepointRequest) {
 
-		List<ResponseElement> elements = new ArrayList<ResponseElement>();
+		List<ResponseElement> elements = new ArrayList<>();
 
 		String url = sharepointRequest.getParameterValue("url");
 
@@ -65,7 +66,7 @@ public class UrlToWebUrlMethodImpl extends BaseMethodImpl {
 
 	private static final String _METHOD_NAME = "url to web url";
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		UrlToWebUrlMethodImpl.class);
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
 import com.liferay.portal.kernel.dao.shard.ShardUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
@@ -39,6 +40,7 @@ import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.service.ShardLocalServiceUtil;
 import com.liferay.portal.service.UserLocalServiceUtil;
 import com.liferay.portal.service.impl.GroupLocalServiceImpl;
+import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsValues;
 import com.liferay.portal.util.RobotsUtil;
@@ -47,7 +49,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Brian Wing Shun Chan
@@ -62,6 +66,7 @@ public class VerifyGroup extends VerifyProcess {
 		verifyRobots();
 		verifySites();
 		verifyStagedGroups();
+		verifyTree();
 	}
 
 	protected String getRobots(LayoutSet layoutSet) {
@@ -123,6 +128,8 @@ public class VerifyGroup extends VerifyProcess {
 
 			if (!ShardUtil.isEnabled() || shardName.equals(currentShardName)) {
 				GroupLocalServiceUtil.checkCompanyGroup(company.getCompanyId());
+
+				GroupLocalServiceUtil.checkSystemGroups(company.getCompanyId());
 			}
 		}
 	}
@@ -135,7 +142,7 @@ public class VerifyGroup extends VerifyProcess {
 
 			User user = null;
 
-			if (group.isCompany()) {
+			if (group.isCompany() && !group.isCompanyStagingGroup()) {
 				friendlyURL = GroupConstants.GLOBAL_FRIENDLY_URL;
 			}
 			else if (group.isUser()) {
@@ -198,6 +205,14 @@ public class VerifyGroup extends VerifyProcess {
 			while (rs.next()) {
 				long groupId = rs.getLong("groupId");
 				String name = rs.getString("name");
+
+				if (name.endsWith(
+						GroupLocalServiceImpl.ORGANIZATION_NAME_SUFFIX) ||
+					name.endsWith(
+						GroupLocalServiceImpl.ORGANIZATION_STAGING_SUFFIX)) {
+
+					continue;
+				}
 
 				int pos = name.indexOf(
 					GroupLocalServiceImpl.ORGANIZATION_NAME_SUFFIX);
@@ -277,6 +292,8 @@ public class VerifyGroup extends VerifyProcess {
 			typeSettingsProperties.setProperty(
 				"stagedRemotely", Boolean.FALSE.toString());
 
+			verifyStagingTypeSettingsProperties(typeSettingsProperties);
+
 			GroupLocalServiceUtil.updateGroup(
 				group.getGroupId(), typeSettingsProperties.toString());
 
@@ -290,6 +307,42 @@ public class VerifyGroup extends VerifyProcess {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(VerifyGroup.class);
+	protected void verifyStagingTypeSettingsProperties(
+		UnicodeProperties typeSettingsProperties) {
+
+		Set<String> keys = typeSettingsProperties.keySet();
+
+		Iterator<String> iterator = keys.iterator();
+
+		while (iterator.hasNext()) {
+			String key = iterator.next();
+
+			if (ArrayUtil.contains(
+					_LEGACY_STAGED_PORTLET_TYPE_SETTINGS_KEYS, key)) {
+
+				if (_log.isInfoEnabled()) {
+					_log.info("Removing type settings property " + key);
+				}
+
+				iterator.remove();
+			}
+		}
+	}
+
+	protected void verifyTree() throws Exception {
+		long[] companyIds = PortalInstances.getCompanyIdsBySQL();
+
+		for (long companyId : companyIds) {
+			GroupLocalServiceUtil.rebuildTree(companyId);
+		}
+	}
+
+	private static final String[] _LEGACY_STAGED_PORTLET_TYPE_SETTINGS_KEYS = {
+		"staged-portlet_39", "staged-portlet_54", "staged-portlet_56",
+		"staged-portlet_59", "staged-portlet_107", "staged-portlet_108",
+		"staged-portlet_110", "staged-portlet_166", "staged-portlet_169"
+	};
+
+	private static final Log _log = LogFactoryUtil.getLog(VerifyGroup.class);
 
 }

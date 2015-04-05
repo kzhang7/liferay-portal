@@ -1,19 +1,12 @@
 <#include "../init.ftl">
 
-<#assign groupLocalService = serviceLocator.findService("com.liferay.portal.service.GroupLocalService")>
-
-<#assign controlPanelGroup = groupLocalService.getGroup(themeDisplay.getCompanyId(), "Control Panel")>
-
-<#assign layoutLocalService = serviceLocator.findService("com.liferay.portal.service.LayoutLocalService")>
-
-<#assign controlPanelPlid = layoutLocalService.getDefaultPlid(controlPanelGroup.getGroupId(), true)>
-
 <#if !(fields?? && fields.get(fieldName)??) && (fieldRawValue == "")>
 	<#assign fieldRawValue = predefinedValue>
 </#if>
 
+<#assign fieldRawValue = paramUtil.getString(request, "${namespacedFieldName}", fieldRawValue)>
+
 <#assign fileEntryTitle = "">
-<#assign fileEntryURL = "">
 
 <#if (fieldRawValue != "")>
 	<#assign fileJSONObject = getFileJSONObject(fieldRawValue)>
@@ -22,115 +15,31 @@
 
 	<#if (fileEntry != "")>
 		<#assign fileEntryTitle = fileEntry.getTitle()>
-		<#assign fileEntryURL = getFileEntryURL(fileEntry)>
 	</#if>
 </#if>
 
-<@aui["field-wrapper"]>
-	<@aui.input inlineField=true label=escape(label) name="${namespacedFieldName}Title" readonly="readonly" type="text" url=fileEntryURL value=fileEntryTitle>
+<@aui["field-wrapper"] data=data>
+	<div class="hide" id="${portletNamespace}${namespacedFieldName}UploadContainer"></div>
+
+	<@aui.input helpMessage=escape(fieldStructure.tip) inlineField=true label=escape(label) name="${namespacedFieldName}Title" readonly="readonly" type="text" value=(fileEntryTitle?has_content)?string(fileEntryTitle, languageUtil.get(locale, "drag-file-here"))>
 		<#if required>
 			<@aui.validator name="required" />
 		</#if>
 	</@aui.input>
 
-	<@aui["button-row"]>
-		<@aui.button id=namespacedFieldName value="select" />
-
-		<@aui.button onClick="window['${portletNamespace}${namespacedFieldName}downloadFileEntry']();" value="download" />
-
-		<@aui.button onClick="window['${portletNamespace}${namespacedFieldName}clearFileEntry']();" value="clear" />
-	</@>
+	<div class="file-entry-upload-progress hide" id="${portletNamespace}${namespacedFieldName}Progress">
+		<div aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="progress-bar" role="progressbar"></div>
+	</div>
 
 	<@aui.input name=namespacedFieldName type="hidden" value=fieldRawValue />
-</@>
 
-<@aui.script>
-	window['${portletNamespace}${namespacedFieldName}clearFileEntry'] = function() {
-		window['${portletNamespace}${namespacedFieldName}setFileEntry']('', '', '', '');
-	};
+	<@aui["button-row"]>
+		<@aui.button cssClass="upload-button" id="${namespacedFieldName}UploadButton" value="upload" />
 
-	Liferay.provide(
-		window,
-		'${portletNamespace}${namespacedFieldName}downloadFileEntry',
-		function() {
-			var A = AUI();
+		<@aui.button cssClass="select-button" id="${namespacedFieldName}SelectButton" value="choose-from-document-library" />
 
-			var titleNode = A.one('#${portletNamespace}${namespacedFieldName}Title');
+		<@aui.button cssClass="clear-button ${(fieldRawValue?has_content)?string('', 'hide')}" id="${namespacedFieldName}ClearButton" value="clear" />
+	</@>
 
-			if (titleNode) {
-				var url = titleNode.attr('url');
-
-				if (url) {
-					location.href = url;
-				}
-			}
-		},
-		['aui-base']
-	);
-
-	Liferay.provide(
-		window,
-		'${portletNamespace}${namespacedFieldName}setFileEntry',
-		function(url, uuid, title, version) {
-			var A = AUI();
-
-			var inputNode = A.one('#${portletNamespace}${namespacedFieldName}');
-
-			if (inputNode) {
-				if (uuid) {
-					inputNode.val(
-						A.JSON.stringify(
-							{
-								groupId: ${scopeGroupId?c},
-								uuid: uuid,
-								version: version
-							}
-						)
-					);
-				}
-				else {
-					inputNode.val('');
-				}
-			}
-
-			var titleNode = A.one('#${portletNamespace}${namespacedFieldName}Title');
-
-			if (titleNode) {
-				titleNode.attr('url', url);
-				titleNode.val(title);
-			}
-		},
-		['json']
-	);
-</@>
-
-<@aui.script use="liferay-portlet-url">
-	var namespacedField = A.one('#${namespacedFieldName}');
-
-	if (namespacedField) {
-		namespacedField.on(
-			'click',
-			function(event) {
-				var portletURL = Liferay.PortletURL.createRenderURL();
-
-				portletURL.setParameter('groupId', ${scopeGroupId?c});
-				portletURL.setParameter('struts_action', '/journal/select_document_library');
-
-				portletURL.setPlid(${controlPanelPlid?c});
-
-				portletURL.setPortletId('15');
-
-				portletURL.setWindowState('pop_up');
-
-				Liferay.Util.openWindow(
-					{
-						id: '${portletNamespace}selectDocumentLibrary',
-						uri: portletURL.toString()
-					}
-				);
-
-				window['${portalUtil.getPortletNamespace("15")}selectDocumentLibrary'] = window['${portletNamespace}${namespacedFieldName}setFileEntry'];
-			}
-		);
-	}
+	${fieldStructure.children}
 </@>

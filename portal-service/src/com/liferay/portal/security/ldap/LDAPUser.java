@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -127,7 +127,11 @@ public class LDAPUser {
 		return _portraitBytes;
 	}
 
-	public int getPrefixId() {
+	public long getPortraitId() {
+		return _user.getPortraitId();
+	}
+
+	public long getPrefixId() {
 		return _contact.getPrefixId();
 	}
 
@@ -159,7 +163,11 @@ public class LDAPUser {
 		return _contact.getSmsSn();
 	}
 
-	public int getSuffixId() {
+	public int getStatus() {
+		return _user.getStatus();
+	}
+
+	public long getSuffixId() {
 		return _contact.getSuffixId();
 	}
 
@@ -203,8 +211,12 @@ public class LDAPUser {
 		return _contact.isMale();
 	}
 
+	/**
+	 * @deprecated As of 6.2.0, replaced by {@link #setMale(boolean)}
+	 */
+	@Deprecated
 	public void isMale(boolean male) {
-		_contact.setMale(male);
+		setMale(male);
 	}
 
 	public boolean isPasswordReset() {
@@ -305,6 +317,10 @@ public class LDAPUser {
 		_user.setLanguageId(LocaleUtil.toLanguageId(locale));
 	}
 
+	public void setMale(boolean male) {
+		_contact.setMale(male);
+	}
+
 	public void setMiddleName(String middleName) {
 		_user.setMiddleName(middleName);
 	}
@@ -333,7 +349,7 @@ public class LDAPUser {
 		_portraitBytes = portraitBytes;
 	}
 
-	public void setPrefixId(int prefixId) {
+	public void setPrefixId(long prefixId) {
 		_contact.setPrefixId(prefixId);
 	}
 
@@ -369,7 +385,11 @@ public class LDAPUser {
 		_contact.setSmsSn(smsSn);
 	}
 
-	public void setSuffixId(int suffixId) {
+	public void setStatus(int status) {
+		_user.setStatus(status);
+	}
+
+	public void setSuffixId(long suffixId) {
 		_contact.setSuffixId(suffixId);
 	}
 

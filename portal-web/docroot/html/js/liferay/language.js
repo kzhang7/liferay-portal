@@ -1,41 +1,53 @@
-Liferay.Language = {
-	get: function(key, extraParams) {
-		var instance = this;
+;(function(A, Liferay) {
+	var Language = {};
 
-		var url = themeDisplay.getPathContext() + '/language/' + themeDisplay.getLanguageId() + '/' + key + '/';
+	Language.get = function(key) {
+		return key;
+	};
 
-		if (extraParams) {
-			if (typeof extraParams == 'string') {
-				url += extraParams;
-			}
-			else if (Liferay.Util.isArray(extraParams)) {
-				url += extraParams.join('/');
-			}
-		}
+	A.use(
+		'io-base',
+		function(A) {
+			Language.get = A.cached(
+				function(key, extraParams) {
+					var instance = this;
 
-		var value = instance._cache[url];
+					var url = themeDisplay.getPathContext() + '/language/' + themeDisplay.getLanguageId() + '/' + key + '/';
 
-		if (value) {
-			return value;
-		}
-
-		AUI().use('aui-io').io(
-			url,
-			{
-				sync: true,
-				on: {
-					complete: function(i, o) {
-						value = o.responseText;
+					if (extraParams) {
+						if (typeof extraParams == 'string') {
+							url += extraParams;
+						}
+						else if (A.Lang.isArray(extraParams)) {
+							url += extraParams.join('/');
+						}
 					}
-				},
-				type: 'GET'
-			}
-		);
 
-		instance._cache[url] = value;
+					var headers = {
+						'X-CSRF-Token': Liferay.authToken
+					};
 
-		return value;
-	},
+					var value = '';
 
-	_cache: {}
-};
+					A.io(
+						url,
+						{
+							headers: headers,
+							method: 'GET',
+							on: {
+								complete: function(i, o) {
+									value = o.responseText;
+								}
+							},
+							sync: true
+						}
+					);
+
+					return value;
+				}
+			);
+		}
+	);
+
+	Liferay.Language = Language;
+})(AUI(), Liferay);

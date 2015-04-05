@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -55,12 +55,12 @@ for (int i = 0; i < activityCounters.size(); i++) {
 Format format = FastDateFormatFactoryUtil.getSimpleDateFormat("MMM d");
 %>
 
-<aui:layout>
-	<aui:column columnWidth="<%= chartWidth %>" cssClass="chart-column" first="<%= true %>">
+<aui:row>
+	<aui:col cssClass="chart-column" width="<%= chartWidth %>">
 		<div class="group-statistics-chart" id="groupStatisticsChart<%= displayActivityCounterNameIndex %>" style="height: <%= displayHeight - 2 %>px;"></div>
-	</aui:column>
+	</aui:col>
 
-	<aui:column columnWidth="<%= 100 - chartWidth %>" cssClass="info-column">
+	<aui:col cssClass="info-column" width="<%= 100 - chartWidth %>">
 		<div class="group-statistics-info">
 			<liferay-ui:message key="current-value" />: <%= currentValue %><br />
 
@@ -98,8 +98,8 @@ Format format = FastDateFormatFactoryUtil.getSimpleDateFormat("MMM d");
 
 			(<%= lowestActivityCounter.getCurrentValue() %>)<br />
 		</div>
-	</aui:column>
-</aui:layout>
+	</aui:col>
+</aui:row>
 
 <aui:script use="charts">
 	var categories = [<%= StringUtil.merge(categories) %>];
@@ -131,19 +131,22 @@ Format format = FastDateFormatFactoryUtil.getSimpleDateFormat("MMM d");
 		}
 	};
 
+	var chartType;
+	var customConfig;
+
 	<c:choose>
 		<c:when test='<%= chartType.equals("area") %>'>
-			var chartType = 'combo';
+			chartType = 'combo';
 
-			var customConfig = {
+			customConfig = {
 				showAreaFill: true,
 				showMarkers: true,
 				styles: {
 					series: {
 						values: {
 							area: {
-								color: '#5CC0FF',
-								alpha: 0.4
+								alpha: 0.4,
+								color: '#5CC0FF'
 							},
 							line: {
 								color: '#4572A7',
@@ -161,9 +164,9 @@ Format format = FastDateFormatFactoryUtil.getSimpleDateFormat("MMM d");
 			};
 		</c:when>
 		<c:otherwise>
-			var chartType = '<%= chartType %>';
+			chartType = '<%= HtmlUtil.escapeJS(chartType) %>';
 
-			var customConfig = {
+			customConfig = {
 				showAreaFill: true,
 				showMarkers: true
 			};

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -28,6 +28,7 @@ import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchEngineUtil;
 import com.liferay.portal.kernel.search.Summary;
 import com.liferay.portal.kernel.search.TermQueryFactoryUtil;
+import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties;
 import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringBundler;
@@ -41,7 +42,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
-import javax.portlet.PortletURL;
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
 
 /**
  * @author Jorge Ferrer
@@ -49,22 +51,22 @@ import javax.portlet.PortletURL;
  * @author Bruno Farache
  * @author Raymond Augé
  */
+@OSGiBeanProperties
 public class PluginPackageIndexer extends BaseIndexer {
 
-	public static final String[] CLASS_NAMES = {PluginPackage.class.getName()};
-
-	public static final String PORTLET_ID = "PluginPackageIndexer";
+	public static final String CLASS_NAME = PluginPackage.class.getName();
 
 	public PluginPackageIndexer() {
+		setCommitImmediately(true);
+		setDefaultSelectedFieldNames(
+			Field.COMPANY_ID, Field.CONTENT, Field.ENTRY_CLASS_NAME,
+			Field.ENTRY_CLASS_PK, Field.TITLE, Field.UID);
 		setStagingAware(false);
 	}
 
-	public String[] getClassNames() {
-		return CLASS_NAMES;
-	}
-
-	public String getPortletId() {
-		return PORTLET_ID;
+	@Override
+	public String getClassName() {
+		return CLASS_NAME;
 	}
 
 	@Override
@@ -80,7 +82,7 @@ public class PluginPackageIndexer extends BaseIndexer {
 
 		Document document = new DocumentImpl();
 
-		document.addUID(PORTLET_ID, pluginPackage.getModuleId());
+		document.addUID(CLASS_NAME, pluginPackage.getModuleId());
 
 		document.addKeyword(Field.COMPANY_ID, CompanyConstants.SYSTEM);
 
@@ -114,7 +116,6 @@ public class PluginPackageIndexer extends BaseIndexer {
 		document.addKeyword(Field.GROUP_ID, moduleIdObj.getGroupId());
 
 		document.addDate(Field.MODIFIED_DATE, pluginPackage.getModifiedDate());
-		document.addKeyword(Field.PORTLET_ID, PORTLET_ID);
 
 		String[] statusAndInstalledVersion =
 			PluginPackageUtil.getStatusAndInstalledVersion(pluginPackage);
@@ -132,8 +133,7 @@ public class PluginPackageIndexer extends BaseIndexer {
 
 		document.addKeyword(
 			"license",
-			StringUtil.split(
-				ListUtil.toString(licenses, License.NAME_ACCESSOR)));
+			ListUtil.toArray(licenses, License.NAME_ACCESSOR));
 
 		document.addText("longDescription", longDescription);
 		document.addKeyword("moduleId", pluginPackage.getModuleId());
@@ -171,7 +171,7 @@ public class PluginPackageIndexer extends BaseIndexer {
 	@Override
 	protected Summary doGetSummary(
 		Document document, Locale locale, String snippet,
-		PortletURL portletURL) {
+		PortletRequest portletRequest, PortletResponse portletResponse) {
 
 		String title = document.get(Field.TITLE);
 
@@ -181,15 +181,7 @@ public class PluginPackageIndexer extends BaseIndexer {
 			content = StringUtil.shorten(document.get(Field.CONTENT), 200);
 		}
 
-		String moduleId = document.get("moduleId");
-		String repositoryURL = document.get("repositoryURL");
-
-		portletURL.setParameter("struts_action", "/admin/view");
-		portletURL.setParameter("tabs2", "repositories");
-		portletURL.setParameter("moduleId", moduleId);
-		portletURL.setParameter("repositoryURL", repositoryURL);
-
-		return new Summary(title, content, portletURL);
+		return new Summary(title, content);
 	}
 
 	@Override
@@ -199,7 +191,8 @@ public class PluginPackageIndexer extends BaseIndexer {
 		Document document = getDocument(pluginPackage);
 
 		SearchEngineUtil.updateDocument(
-			getSearchEngineId(), CompanyConstants.SYSTEM, document);
+			getSearchEngineId(), CompanyConstants.SYSTEM, document,
+			isCommitImmediately());
 	}
 
 	@Override
@@ -208,10 +201,11 @@ public class PluginPackageIndexer extends BaseIndexer {
 
 	@Override
 	protected void doReindex(String[] ids) throws Exception {
-		SearchEngineUtil.deletePortletDocuments(
-			getSearchEngineId(), CompanyConstants.SYSTEM, PORTLET_ID);
+		SearchEngineUtil.deleteEntityDocuments(
+			getSearchEngineId(), CompanyConstants.SYSTEM, CLASS_NAME,
+			isCommitImmediately());
 
-		Collection<Document> documents = new ArrayList<Document>();
+		Collection<Document> documents = new ArrayList<>();
 
 		for (PluginPackage pluginPackage :
 				PluginPackageUtil.getAllAvailablePluginPackages()) {
@@ -222,12 +216,8 @@ public class PluginPackageIndexer extends BaseIndexer {
 		}
 
 		SearchEngineUtil.updateDocuments(
-			getSearchEngineId(), CompanyConstants.SYSTEM, documents);
-	}
-
-	@Override
-	protected String getPortletId(SearchContext searchContext) {
-		return PORTLET_ID;
+			getSearchEngineId(), CompanyConstants.SYSTEM, documents,
+			isCommitImmediately());
 	}
 
 	@Override
@@ -285,26 +275,27 @@ public class PluginPackageIndexer extends BaseIndexer {
 
 		String status = (String)searchContext.getAttribute(Field.STATUS);
 
-		if (Validator.isNotNull(status) && !status.equals("all")) {
-			BooleanQuery searchQuery = BooleanQueryFactoryUtil.create(
-				searchContext);
-
-			if (status.equals(
-					PluginPackageImpl.
-						STATUS_NOT_INSTALLED_OR_OLDER_VERSION_INSTALLED)) {
-
-				searchQuery.addExactTerm(
-					Field.STATUS, PluginPackageImpl.STATUS_NOT_INSTALLED);
-				searchQuery.addExactTerm(
-					Field.STATUS,
-					PluginPackageImpl.STATUS_OLDER_VERSION_INSTALLED);
-			}
-			else {
-				searchQuery.addExactTerm(Field.STATUS, status);
-			}
-
-			fullQuery.add(searchQuery, BooleanClauseOccur.MUST);
+		if (Validator.isNull(status) || status.equals("all")) {
+			return;
 		}
+
+		BooleanQuery searchQuery = BooleanQueryFactoryUtil.create(
+			searchContext);
+
+		if (status.equals(
+				PluginPackageImpl.
+					STATUS_NOT_INSTALLED_OR_OLDER_VERSION_INSTALLED)) {
+
+			searchQuery.addExactTerm(
+				Field.STATUS, PluginPackageImpl.STATUS_NOT_INSTALLED);
+			searchQuery.addExactTerm(
+				Field.STATUS, PluginPackageImpl.STATUS_OLDER_VERSION_INSTALLED);
+		}
+		else {
+			searchQuery.addExactTerm(Field.STATUS, status);
+		}
+
+		fullQuery.add(searchQuery, BooleanClauseOccur.MUST);
 	}
 
 }

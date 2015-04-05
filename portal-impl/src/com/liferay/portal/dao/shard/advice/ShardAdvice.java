@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,10 +17,11 @@ package com.liferay.portal.dao.shard.advice;
 import com.liferay.portal.dao.shard.ShardDataSourceTargetSource;
 import com.liferay.portal.dao.shard.ShardSelector;
 import com.liferay.portal.dao.shard.ShardSessionFactoryTargetSource;
+import com.liferay.portal.kernel.exception.LoggedExceptionInInitializerError;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.InfrastructureUtil;
 import com.liferay.portal.kernel.util.InitialThreadLocal;
 import com.liferay.portal.model.Company;
@@ -29,7 +30,6 @@ import com.liferay.portal.security.auth.CompanyThreadLocal;
 import com.liferay.portal.service.ShardLocalServiceUtil;
 import com.liferay.portal.util.PropsValues;
 
-import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -60,7 +60,7 @@ public class ShardAdvice {
 	public String getCompanyShardName(
 		String webId, String virtualHostname, String mx, String shardName) {
 
-		Map<String, String> shardParams = new HashMap<String, String>();
+		Map<String, String> shardParams = new HashMap<>();
 
 		shardParams.put("webId", webId);
 		shardParams.put("mx", mx);
@@ -76,19 +76,14 @@ public class ShardAdvice {
 	}
 
 	public String getCurrentShardName() {
-		String shardName = null;
+		Stack<String> stack = _getCompanyServiceStack();
 
-		try {
-			shardName = _getCompanyServiceStack().peek();
-		}
-		catch (EmptyStackException ese) {
+		if (stack.isEmpty()) {
+			return PropsValues.SHARD_DEFAULT_NAME;
 		}
 
-		if (shardName == null) {
-			shardName = PropsValues.SHARD_DEFAULT_NAME;
-		}
-
-		return shardName;
+		return GetterUtil.getString(
+			stack.peek(), PropsValues.SHARD_DEFAULT_NAME);
 	}
 
 	public DataSource getDataSource() {
@@ -145,19 +140,20 @@ public class ShardAdvice {
 		_shardDataSourceTargetSource = shardDataSourceTargetSource;
 	}
 
-	public void setShardNameByCompany() throws Throwable {
+	public String setShardNameByCompany() throws Throwable {
 		Stack<String> companyServiceStack = _getCompanyServiceStack();
 
 		if (companyServiceStack.isEmpty()) {
 			long companyId = CompanyThreadLocal.getCompanyId();
 
-			_setShardNameByCompanyId(companyId);
+			return _setShardNameByCompanyId(companyId);
 		}
-		else {
-			String shardName = companyServiceStack.peek();
 
-			_setShardName(shardName);
-		}
+		String shardName = companyServiceStack.peek();
+
+		_setShardName(shardName);
+
+		return shardName;
 	}
 
 	public void setShardSessionFactoryTargetSource(
@@ -170,7 +166,7 @@ public class ShardAdvice {
 		Stack<String> companyServiceStack = _companyServiceStack.get();
 
 		if (companyServiceStack == null) {
-			companyServiceStack = new Stack<String>();
+			companyServiceStack = new Stack<>();
 
 			_companyServiceStack.set(companyServiceStack);
 		}
@@ -182,43 +178,45 @@ public class ShardAdvice {
 		_shardName.set(shardName);
 	}
 
-	private void _setShardNameByCompanyId(long companyId)
-		throws PortalException, SystemException {
+	private String _setShardNameByCompanyId(long companyId)
+		throws PortalException {
 
-		if (companyId == 0) {
-			_setShardName(PropsValues.SHARD_DEFAULT_NAME);
-		}
-		else {
+		String shardName = PropsValues.SHARD_DEFAULT_NAME;
+
+		if (companyId != 0) {
 			Shard shard = ShardLocalServiceUtil.getShard(
 				Company.class.getName(), companyId);
 
-			String shardName = shard.getName();
-
-			_setShardName(shardName);
+			shardName = shard.getName();
 		}
+
+		_setShardName(shardName);
+
+		return shardName;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ShardAdvice.class);
+	private static final Log _log = LogFactoryUtil.getLog(ShardAdvice.class);
 
-	private static ThreadLocal<Stack<String>> _companyServiceStack =
-		new ThreadLocal<Stack<String>>();
-	private static ThreadLocal<Object> _globalCall = new ThreadLocal<Object>();
-	private static ThreadLocal<String> _shardName =
-		new InitialThreadLocal<String>(
+	private static final ThreadLocal<Stack<String>> _companyServiceStack =
+		new ThreadLocal<>();
+	private static final ThreadLocal<Object> _globalCall = new ThreadLocal<>();
+	private static final ThreadLocal<String> _shardName =
+		new InitialThreadLocal<>(
 			ShardAdvice.class + "._shardName", PropsValues.SHARD_DEFAULT_NAME);
-	private static ShardSelector _shardSelector;
-
-	private ShardDataSourceTargetSource _shardDataSourceTargetSource;
-	private ShardSessionFactoryTargetSource _shardSessionFactoryTargetSource;
+	private static final ShardSelector _shardSelector;
 
 	static {
 		try {
-			_shardSelector = (ShardSelector)Class.forName(
-				PropsValues.SHARD_SELECTOR).newInstance();
+			Class<?> clazz = Class.forName(PropsValues.SHARD_SELECTOR);
+
+			_shardSelector = (ShardSelector)clazz.newInstance();
 		}
 		catch (Exception e) {
-			_log.error(e, e);
+			throw new LoggedExceptionInInitializerError(e);
 		}
 	}
+
+	private ShardDataSourceTargetSource _shardDataSourceTargetSource;
+	private ShardSessionFactoryTargetSource _shardSessionFactoryTargetSource;
 
 }

@@ -7,9 +7,9 @@ AUI.add(
 
 		var CONTENT_BOX = 'contentBox';
 
-		var NAME = 'listview';
-
 		var CSS_DATA_CONTAINER = 'lfr-list-view-data-container';
+
+		var NAME = 'listview';
 
 		var STR_BOTTOM = 'bottom';
 
@@ -21,7 +21,7 @@ AUI.add(
 
 		var STR_TOP = 'top';
 
-		var TPL_DATA_CONTAINER = '<div class="' + CSS_DATA_CONTAINER + ' aui-helper-hidden"></div>';
+		var TPL_DATA_CONTAINER = '<div class="' + CSS_DATA_CONTAINER + ' hide"></div>';
 
 		var UI_SRC = A.Widget.UI_SRC;
 
@@ -162,20 +162,6 @@ AUI.add(
 						dataContainer.empty();
 					},
 
-					_onItemChosen: function(event) {
-						var instance = this;
-
-						event.preventDefault();
-
-						instance.set(
-							'item',
-							event.currentTarget,
-							{
-								src: UI_SRC
-							}
-						);
-					},
-
 					_moveContainer: function() {
 						var instance = this;
 
@@ -192,6 +178,20 @@ AUI.add(
 						var transitionConfig = instance.get('transitionConfig');
 
 						dataContainer.transition(transitionConfig, instance._transitionCompleteProxy);
+					},
+
+					_onItemChosen: function(event) {
+						var instance = this;
+
+						event.preventDefault();
+
+						instance.set(
+							'item',
+							event.currentTarget,
+							{
+								src: UI_SRC
+							}
+						);
 					},
 
 					_setData: function(value) {

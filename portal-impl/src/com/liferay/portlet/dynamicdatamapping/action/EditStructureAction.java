@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,7 +16,9 @@ package com.liferay.portlet.dynamicdatamapping.action;
 
 import com.liferay.portal.LocaleException;
 import com.liferay.portal.kernel.servlet.SessionErrors;
+import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.util.Constants;
+import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -31,12 +33,15 @@ import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.PortletURLImpl;
 import com.liferay.portlet.dynamicdatamapping.NoSuchStructureException;
 import com.liferay.portlet.dynamicdatamapping.RequiredStructureException;
+import com.liferay.portlet.dynamicdatamapping.StructureDefinitionException;
 import com.liferay.portlet.dynamicdatamapping.StructureDuplicateElementException;
 import com.liferay.portlet.dynamicdatamapping.StructureNameException;
-import com.liferay.portlet.dynamicdatamapping.StructureXsdException;
+import com.liferay.portlet.dynamicdatamapping.model.DDMForm;
+import com.liferay.portlet.dynamicdatamapping.model.DDMFormLayout;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructureConstants;
 import com.liferay.portlet.dynamicdatamapping.service.DDMStructureServiceUtil;
+import com.liferay.portlet.dynamicdatamapping.util.DDMUtil;
 
 import java.util.Locale;
 import java.util.Map;
@@ -61,8 +66,9 @@ public class EditStructureAction extends PortletAction {
 
 	@Override
 	public void processAction(
-			ActionMapping mapping, ActionForm form, PortletConfig portletConfig,
-			ActionRequest actionRequest, ActionResponse actionResponse)
+			ActionMapping actionMapping, ActionForm actionForm,
+			PortletConfig portletConfig, ActionRequest actionRequest,
+			ActionResponse actionResponse)
 		throws Exception {
 
 		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
@@ -80,6 +86,19 @@ public class EditStructureAction extends PortletAction {
 			if (Validator.isNotNull(cmd)) {
 				String redirect = ParamUtil.getString(
 					actionRequest, "redirect");
+				String closeRedirect = ParamUtil.getString(
+					actionRequest, "closeRedirect");
+
+				if (Validator.isNotNull(closeRedirect)) {
+					redirect = HttpUtil.setParameter(
+						redirect, "closeRedirect", closeRedirect);
+
+					SessionMessages.add(
+						actionRequest,
+						PortalUtil.getPortletId(actionRequest) +
+							SessionMessages.KEY_SUFFIX_CLOSE_REDIRECT,
+						closeRedirect);
+				}
 
 				if (structure != null) {
 					boolean saveAndContinue = ParamUtil.getBoolean(
@@ -104,9 +123,9 @@ public class EditStructureAction extends PortletAction {
 			}
 			else if (e instanceof LocaleException ||
 					 e instanceof RequiredStructureException ||
+					 e instanceof StructureDefinitionException ||
 					 e instanceof StructureDuplicateElementException ||
-					 e instanceof StructureNameException ||
-					 e instanceof StructureXsdException) {
+					 e instanceof StructureNameException) {
 
 				SessionErrors.add(actionRequest, e.getClass(), e);
 
@@ -127,8 +146,9 @@ public class EditStructureAction extends PortletAction {
 
 	@Override
 	public ActionForward render(
-			ActionMapping mapping, ActionForm form, PortletConfig portletConfig,
-			RenderRequest renderRequest, RenderResponse renderResponse)
+			ActionMapping actionMapping, ActionForm actionForm,
+			PortletConfig portletConfig, RenderRequest renderRequest,
+			RenderResponse renderResponse)
 		throws Exception {
 
 		try {
@@ -150,7 +170,7 @@ public class EditStructureAction extends PortletAction {
 
 				SessionErrors.add(renderRequest, e.getClass());
 
-				return mapping.findForward(
+				return actionMapping.findForward(
 					"portlet.dynamic_data_mapping.error");
 			}
 			else {
@@ -158,7 +178,7 @@ public class EditStructureAction extends PortletAction {
 			}
 		}
 
-		return mapping.findForward(
+		return actionMapping.findForward(
 			getForward(
 				renderRequest, "portlet.dynamic_data_mapping.edit_structure"));
 	}
@@ -193,14 +213,11 @@ public class EditStructureAction extends PortletAction {
 
 		String availableFields = ParamUtil.getString(
 			actionRequest, "availableFields");
-		String saveCallback = ParamUtil.getString(
-			actionRequest, "saveCallback");
+		String eventName = ParamUtil.getString(actionRequest, "eventName");
 
 		PortletURLImpl portletURL = new PortletURLImpl(
 			actionRequest, portletConfig.getPortletName(),
 			themeDisplay.getPlid(), PortletRequest.RENDER_PHASE);
-
-		portletURL.setWindowState(actionRequest.getWindowState());
 
 		portletURL.setParameter(Constants.CMD, Constants.UPDATE, false);
 		portletURL.setParameter(
@@ -217,7 +234,8 @@ public class EditStructureAction extends PortletAction {
 		portletURL.setParameter(
 			"classPK", String.valueOf(structure.getStructureId()), false);
 		portletURL.setParameter("availableFields", availableFields, false);
-		portletURL.setParameter("saveCallback", saveCallback, false);
+		portletURL.setParameter("eventName", eventName, false);
+		portletURL.setWindowState(actionRequest.getWindowState());
 
 		return portletURL.toString();
 	}
@@ -232,11 +250,17 @@ public class EditStructureAction extends PortletAction {
 		long groupId = ParamUtil.getLong(actionRequest, "groupId");
 		long scopeClassNameId = ParamUtil.getLong(
 			actionRequest, "scopeClassNameId");
+		String structureKey = ParamUtil.getString(
+			actionRequest, "structureKey");
+		long parentStructureId = ParamUtil.getLong(
+			actionRequest, "parentStructureId",
+			DDMStructureConstants.DEFAULT_PARENT_STRUCTURE_ID);
 		Map<Locale, String> nameMap = LocalizationUtil.getLocalizationMap(
 			actionRequest, "name");
 		Map<Locale, String> descriptionMap =
 			LocalizationUtil.getLocalizationMap(actionRequest, "description");
-		String xsd = ParamUtil.getString(actionRequest, "xsd");
+		DDMForm ddmForm = DDMUtil.getDDMForm(actionRequest);
+		DDMFormLayout ddmFormLayout = DDMUtil.getDefaultDDMFormLayout(ddmForm);
 		String storageType = ParamUtil.getString(actionRequest, "storageType");
 
 		ServiceContext serviceContext = ServiceContextFactory.getInstance(
@@ -246,13 +270,14 @@ public class EditStructureAction extends PortletAction {
 
 		if (cmd.equals(Constants.ADD)) {
 			structure = DDMStructureServiceUtil.addStructure(
-				groupId, scopeClassNameId, null, nameMap, descriptionMap, xsd,
-				storageType, DDMStructureConstants.TYPE_DEFAULT,
-				serviceContext);
+				groupId, parentStructureId, scopeClassNameId, structureKey,
+				nameMap, descriptionMap, ddmForm, ddmFormLayout, storageType,
+				DDMStructureConstants.TYPE_DEFAULT, serviceContext);
 		}
 		else if (cmd.equals(Constants.UPDATE)) {
 			structure = DDMStructureServiceUtil.updateStructure(
-				classPK, nameMap, descriptionMap, xsd, serviceContext);
+				classPK, parentStructureId, nameMap, descriptionMap, ddmForm,
+				ddmFormLayout, serviceContext);
 		}
 
 		return structure;

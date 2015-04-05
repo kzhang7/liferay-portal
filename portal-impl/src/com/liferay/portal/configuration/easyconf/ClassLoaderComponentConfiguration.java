@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -20,10 +20,10 @@ import com.germinus.easyconf.ComponentProperties;
 import com.germinus.easyconf.ConfigurationNotFoundException;
 import com.germinus.easyconf.Conventions;
 
+import com.liferay.portal.kernel.exception.LoggedExceptionInInitializerError;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.util.SystemProperties;
-import com.liferay.portal.security.lang.PortalSecurityManagerThreadLocal;
 
 import java.lang.reflect.Constructor;
 
@@ -44,12 +44,12 @@ public class ClassLoaderComponentConfiguration extends ComponentConfiguration {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof ComponentConfiguration)) {
-			return false;
-		}
-
 		if (this == obj) {
 			return true;
+		}
+
+		if (!(obj instanceof ComponentConfiguration)) {
+			return false;
 		}
 
 		ComponentConfiguration componentConfiguration =
@@ -126,44 +126,41 @@ public class ClassLoaderComponentConfiguration extends ComponentConfiguration {
 					classLoaderAggregateProperties.loadedSources());
 		}
 
-		boolean enabled = PortalSecurityManagerThreadLocal.isEnabled();
-
 		try {
-			PortalSecurityManagerThreadLocal.setEnabled(false);
-
-			_properties = _constructor.newInstance(
+			_properties = _CONSTRUCTOR.newInstance(
 				new Object[] {classLoaderAggregateProperties});
 		}
 		catch (Exception e) {
 			_log.error(e, e);
 		}
-		finally {
-			PortalSecurityManagerThreadLocal.setEnabled(enabled);
-		}
 
 		return _properties;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Constructor<ComponentProperties> _CONSTRUCTOR;
+
+	private static final Log _log = LogFactoryUtil.getLog(
 		ClassLoaderComponentConfiguration.class);
 
-	private static Constructor<ComponentProperties> _constructor;
-
 	static {
+		Constructor<ComponentProperties> constructor = null;
+
 		try {
-			_constructor = ComponentProperties.class.getDeclaredConstructor(
+			constructor = ComponentProperties.class.getDeclaredConstructor(
 				AggregatedProperties.class);
 
-			_constructor.setAccessible(true);
+			constructor.setAccessible(true);
 		}
 		catch (Exception e) {
-			_log.error(e, e);
+			throw new LoggedExceptionInInitializerError(e);
 		}
+
+		_CONSTRUCTOR = constructor;
 	}
 
-	private ClassLoader _classLoader;
-	private String _companyId;
-	private String _componentName;
+	private final ClassLoader _classLoader;
+	private final String _companyId;
+	private final String _componentName;
 	private ComponentProperties _properties;
 
 }

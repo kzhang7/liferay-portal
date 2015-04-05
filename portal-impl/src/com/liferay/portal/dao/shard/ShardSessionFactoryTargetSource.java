@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -33,39 +33,9 @@ import org.springframework.aop.TargetSource;
  */
 public class ShardSessionFactoryTargetSource implements TargetSource {
 
-	public Map<String, SessionFactory> getSessionFactories() {
-		return _sessionFactories;
-	}
-
-	public SessionFactory getSessionFactory() {
-		return _sessionFactory.get();
-	}
-
-	public Object getTarget() throws Exception {
-		return getSessionFactory();
-	}
-
-	public Class<?> getTargetClass() {
-		return _sessionFactories.get(PropsValues.SHARD_DEFAULT_NAME).getClass();
-	}
-
-	public boolean isStatic() {
-		return false;
-	}
-
-	public void releaseTarget(Object target) throws Exception {
-	}
-
-	public void setSessionFactory(String shardName) {
-		_sessionFactory.set(_sessionFactories.get(shardName));
-	}
-
-	public void setShardDataSourceTargetSource(
-			ShardDataSourceTargetSource shardDataSourceTargetSource)
-		throws Exception {
-
+	public void afterPropertiesSet() throws Exception {
 		Map<String, DataSource> dataSources =
-			shardDataSourceTargetSource.getDataSources();
+			_shardDataSourceTargetSource.getDataSources();
 
 		for (String shardName : dataSources.keySet()) {
 			DataSource dataSource = dataSources.get(shardName);
@@ -82,10 +52,47 @@ public class ShardSessionFactoryTargetSource implements TargetSource {
 		}
 	}
 
-	private static Map<String, SessionFactory> _sessionFactories =
-		new HashMap<String, SessionFactory>();
+	public Map<String, SessionFactory> getSessionFactories() {
+		return _sessionFactories;
+	}
 
-	private static ThreadLocal<SessionFactory> _sessionFactory =
+	public SessionFactory getSessionFactory() {
+		return _sessionFactory.get();
+	}
+
+	@Override
+	public Object getTarget() throws Exception {
+		return getSessionFactory();
+	}
+
+	@Override
+	public Class<?> getTargetClass() {
+		return _sessionFactories.get(PropsValues.SHARD_DEFAULT_NAME).getClass();
+	}
+
+	@Override
+	public boolean isStatic() {
+		return false;
+	}
+
+	@Override
+	public void releaseTarget(Object target) throws Exception {
+	}
+
+	public void setSessionFactory(String shardName) {
+		_sessionFactory.set(_sessionFactories.get(shardName));
+	}
+
+	public void setShardDataSourceTargetSource(
+		ShardDataSourceTargetSource shardDataSourceTargetSource) {
+
+		_shardDataSourceTargetSource = shardDataSourceTargetSource;
+	}
+
+	private static final Map<String, SessionFactory> _sessionFactories =
+		new HashMap<>();
+
+	private static final ThreadLocal<SessionFactory> _sessionFactory =
 		new CentralizedThreadLocal<SessionFactory>(false) {
 
 		@Override
@@ -94,5 +101,7 @@ public class ShardSessionFactoryTargetSource implements TargetSource {
 		}
 
 	};
+
+	private ShardDataSourceTargetSource _shardDataSourceTargetSource;
 
 }

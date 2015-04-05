@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -85,6 +85,16 @@ public class ReleaseInfo {
 
 	public static final int RELEASE_6_2_0_BUILD_NUMBER = 6200;
 
+	public static final int RELEASE_6_2_1_BUILD_NUMBER = 6201;
+
+	public static final int RELEASE_6_2_2_BUILD_NUMBER = 6202;
+
+	public static final int RELEASE_6_2_10_BUILD_NUMBER = 6210;
+
+	public static final int RELEASE_7_0_0_BUILD_NUMBER = 7000;
+
+	public static final int RELEASE_7_0_10_BUILD_NUMBER = 7010;
+
 	public static final Date getBuildDate() {
 		DateFormat df = DateFormat.getDateInstance(DateFormat.LONG);
 
@@ -134,29 +144,29 @@ public class ReleaseInfo {
 		return _VERSION;
 	}
 
-	private static final String _BUILD = "6200";
+	private static final String _BUILD = "7000";
 
 	private static final int _BUILD_NUMBER = GetterUtil.getInteger(_BUILD);
 
-	private static final String _CODE_NAME = "Newton";
+	private static final String _CODE_NAME = "Wilberforce";
 
-	private static final String _DATE = "June 1, 2012";
+	private static final String _DATE = "February 17, 2015";
 
 	private static final String _NAME = "Liferay Portal Community Edition";
 
 	private static final int _PARENT_BUILD_NUMBER = _BUILD_NUMBER;
 
 	private static final String _RELEASE_INFO_PREFIX = System.getProperty(
-		"liferay.release.info.prefix" , StringPool.BLANK);
+		"liferay.release.info.prefix", StringPool.BLANK);
 
 	private static final String _RELEASE_INFO_SUFFIX = System.getProperty(
-		"liferay.release.info.suffix" , StringPool.BLANK);
+		"liferay.release.info.suffix", StringPool.BLANK);
 
 	private static final String _VENDOR = "Liferay, Inc.";
 
-	private static final String _VERSION = "6.2.0";
+	private static final String _VERSION = "7.0.0";
 
-	private static final String _VERSION_DISPLAY_NAME = "6.2.0 CE";
+	private static final String _VERSION_DISPLAY_NAME = "7.0.0 CE M4";
 
 	private static String _releaseInfo;
 	private static String _serverInfo;

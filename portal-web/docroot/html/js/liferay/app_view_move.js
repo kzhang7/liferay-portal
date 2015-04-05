@@ -10,6 +10,8 @@ AUI.add(
 
 		var CSS_ACTIVE_AREA_PROXY = 'active-area-proxy';
 
+		var CSS_ICON_REPLY = 'icon-reply-all';
+
 		var DATA_FOLDER_ID = 'data-folder-id';
 
 		var SELECTOR_DRAGGABLE_NODES = '[data-draggable]';
@@ -19,6 +21,8 @@ AUI.add(
 		var STR_DATA = 'data';
 
 		var STR_DELETE = 'delete';
+
+		var STR_DELETE_ENTRIES = 'deleteEntries';
 
 		var STR_DISPLAY_STYLE = 'displayStyleCSSClass';
 
@@ -30,7 +34,13 @@ AUI.add(
 
 		var STR_MOVE = 'move';
 
+		var STR_MOVE_ENTRIES = 'moveEntries';
+
+		var STR_MOVE_ENTRIES_TO_TRASH = 'moveEntriesToTrash';
+
 		var STR_MOVE_ENTRY_URL = 'moveEntryRenderUrl';
+
+		var STR_MOVE_TO_TRASH = 'move_to_trash';
 
 		var STR_NODE = 'node';
 
@@ -94,6 +104,10 @@ AUI.add(
 						validator: Lang.isObject
 					},
 
+					trashLinkId: {
+						validator: Lang.isString
+					},
+
 					updateable: {
 						validator: Lang.isBoolean
 					}
@@ -116,15 +130,12 @@ AUI.add(
 						instance._eventEditEntry = instance.ns('editEntry');
 
 						var eventHandles = [
-							Liferay.on(instance._eventEditEntry, instance._editEntry, instance),
-							Liferay.on('liferay-app-view-folders:setEntries', instance._initDropTargets, instance)
+							Liferay.on(instance._eventEditEntry, instance._editEntry, instance)
 						];
 
 						instance._eventHandles = eventHandles;
 
-						if (themeDisplay.isSignedIn() && this.get('updateable')) {
-							instance._initDragDrop();
-						}
+						instance._registerDragDrop();
 					},
 
 					destructor: function() {
@@ -132,7 +143,9 @@ AUI.add(
 
 						A.Array.invoke(instance._eventHandles, 'detach');
 
-						instance._ddHandler.destroy();
+						if (instance._ddHandler) {
+							instance._ddHandler.destroy();
+						}
 					},
 
 					_editEntry: function(event) {
@@ -142,7 +155,7 @@ AUI.add(
 
 						var url = instance.get('editEntryUrl');
 
-						if (action === STR_MOVE) {
+						if (action === STR_MOVE || action === STR_MOVE_ENTRIES) {
 							url = instance.get(STR_MOVE_ENTRY_URL);
 						}
 
@@ -178,10 +191,10 @@ AUI.add(
 								container: instance._portletContainer,
 								nodes: SELECTOR_DRAGGABLE_NODES,
 								on: {
-									'drag:drophit': A.bind(instance._onDragDropHit, instance),
-									'drag:enter': A.bind(instance._onDragEnter, instance),
-									'drag:exit': A.bind(instance._onDragExit, instance),
-									'drag:start': A.bind(instance._onDragStart, instance)
+									'drag:drophit': A.bind('_onDragDropHit', instance),
+									'drag:enter': A.bind('_onDragEnter', instance),
+									'drag:exit': A.bind('_onDragExit', instance),
+									'drag:start': A.bind('_onDragStart', instance)
 								}
 							}
 						);
@@ -201,32 +214,33 @@ AUI.add(
 										moveOnEnd: false
 									},
 									fn: A.Plugin.DDProxy
-								},
-								{
-									cfg: {
-										constrain2node: instance._portletContainer
-									},
-									fn: A.Plugin.DDConstrained
 								}
 							]
 						);
 
-						if (TOUCH) {
-							instance._dragTask = A.debounce(
-								function(entryLink) {
-									if (entryLink) {
-										entryLink.simulate('click');
+						var trashLink = A.one('#' + instance.get('trashLinkId'));
+
+						if (trashLink) {
+							trashLink.attr('data-title', Liferay.Language.get('recycle-bin'));
+
+							trashLink.plug(
+								A.Plugin.Drop,
+								{
+									groups: dd.get('groups')
+								}
+							).drop.on(
+								{
+									'drop:hit': function(event) {
+										instance._moveEntriesToTrash();
 									}
-								},
-								A.DD.DDM.get('clickTimeThresh')
+								}
 							);
 
-							dd.after(
-								'afterMouseDown',
+							ddHandler.on(
+								['drag:start', 'drag:end'],
 								function(event) {
-									instance._dragTask(event.target.get(STR_NODE).one(instance.get('draggableCSSClass')));
-								},
-								instance
+									trashLink.toggleClass('app-view-drop-active', (event.type == 'drag:start'));
+								}
 							);
 						}
 
@@ -242,7 +256,7 @@ AUI.add(
 							var items = instance._portletContainer.all('[data-folder="true"]');
 
 							items.each(
-								function(item, index, collection) {
+								function(item, index) {
 									item.plug(
 										A.Plugin.Drop,
 										{
@@ -265,25 +279,36 @@ AUI.add(
 						instance._processEntryAction(STR_MOVE, this.get(STR_MOVE_ENTRY_URL));
 					},
 
+					_moveEntriesToTrash: function() {
+						var instance = this;
+
+						instance._processEntryAction(STR_MOVE_TO_TRASH, instance.get('editEntryUrl'));
+					},
+
 					_onDragDropHit: function(event) {
 						var instance = this;
 
 						var proxyNode = event.target.get(STR_DRAG_NODE);
 
 						proxyNode.removeClass(CSS_ACTIVE_AREA_PROXY);
+						proxyNode.removeClass(CSS_ICON_REPLY);
 
 						proxyNode.empty();
 
 						var dropTarget = event.drop.get(STR_NODE);
 
+						dropTarget.removeClass(CSS_ACTIVE_AREA);
+
 						var folderId = dropTarget.attr(DATA_FOLDER_ID);
 
-						var folderContainer = dropTarget.ancestor(STR_DOT + instance.get(STR_DISPLAY_STYLE));
+						if (folderId) {
+							var folderContainer = dropTarget.ancestor(STR_DOT + instance.get(STR_DISPLAY_STYLE));
 
-						var selectedItems = instance._ddHandler.dd.get(STR_DATA).selectedItems;
+							var selectedItems = instance._ddHandler.dd.get(STR_DATA).selectedItems;
 
-						if (selectedItems.indexOf(folderContainer) == -1) {
-							instance._moveEntries(folderId);
+							if (selectedItems.indexOf(folderContainer) == -1) {
+								instance._moveEntries(folderId);
+							}
 						}
 					},
 
@@ -308,7 +333,7 @@ AUI.add(
 
 							var itemTitle = Lang.trim(dropTarget.attr('data-title'));
 
-							proxyNode.html(Lang.sub(moveText, [selectedItemsCount, itemTitle]));
+							proxyNode.html(Lang.sub(moveText, [selectedItemsCount, A.Lang.String.escapeHTML(itemTitle)]));
 						}
 					},
 
@@ -332,10 +357,6 @@ AUI.add(
 
 					_onDragStart: function(event) {
 						var instance = this;
-
-						if (instance._dragTask) {
-							instance._dragTask.cancel();
-						}
 
 						var target = event.target;
 
@@ -366,14 +387,15 @@ AUI.add(
 						proxyNode.html(Lang.sub(moveText, [selectedItemsCount]));
 
 						proxyNode.addClass(CSS_ACTIVE_AREA_PROXY);
+						proxyNode.addClass(CSS_ICON_REPLY);
 
 						var dd = instance._ddHandler.dd;
 
 						dd.set(
 							STR_DATA,
 							{
-								selectedItemsCount: selectedItemsCount,
-								selectedItems: selectedItems
+								selectedItems: selectedItems,
+								selectedItemsCount: selectedItemsCount
 							}
 						);
 					},
@@ -385,18 +407,24 @@ AUI.add(
 
 						var redirectUrl = location.href;
 
-						if (action === STR_DELETE && !History.HTML5 && location.hash) {
+						if ((action === STR_DELETE || action === STR_DELETE_ENTRIES || action === STR_MOVE_TO_TRASH) || action === STR_MOVE_ENTRIES_TO_TRASH && !History.HTML5 && location.hash) {
 							redirectUrl = instance._updateFolderIdRedirectUrl(redirectUrl);
 						}
 
 						form.attr('method', instance.get(STR_FORM).method);
 
-						form.get(instance.ns('cmd')).val(action);
+						if (form.get(instance.ns('javax-portlet-action'))) {
+							form.get(instance.ns('javax-portlet-action')).val(action);
+						}
+						else {
+							form.get(instance.ns('cmd')).val(action);
+						}
+
 						form.get(instance.ns('redirect')).val(redirectUrl);
 
 						var allRowIds = instance.get('allRowIds');
 
-						var allRowsIdCheckbox = instance.ns(allRowIds + 'Checkbox');
+						var allRowsIdCheckbox = instance.ns(allRowIds);
 
 						var processEntryIds = instance.get('processEntryIds');
 
@@ -404,13 +432,23 @@ AUI.add(
 
 						var checkBoxesIds = processEntryIds.checkBoxesIds;
 
-						for (var i = 0, checkBoxesIdsLength = checkBoxesIds.length; i < checkBoxesIdsLength; i++) {
+						for (var i = 0; i < checkBoxesIds.length; i++) {
 							var listEntryIds = Util.listCheckedExcept(form, allRowsIdCheckbox, checkBoxesIds[i]);
 
 							form.get(entryIds[i]).val(listEntryIds);
 						}
 
 						submitForm(form, url);
+					},
+
+					_registerDragDrop: function() {
+						var instance = this;
+
+						instance._eventHandles.push(Liferay.after(instance.ns('dataRetrieveSuccess'), instance._initDropTargets, instance));
+
+						if (themeDisplay.isSignedIn() && this.get('updateable')) {
+							instance._initDragDrop();
+						}
 					},
 
 					_updateFolderIdRedirectUrl: function(redirectUrl) {
@@ -439,6 +477,6 @@ AUI.add(
 	},
 	'',
 	{
-		requires: ['aui-base', 'dd-constrain', 'dd-delegate', 'dd-drag', 'dd-drop', 'dd-proxy', 'liferay-history-manager', 'liferay-portlet-base', 'liferay-util-list-fields']
+		requires: ['aui-base', 'dd-constrain', 'dd-delegate', 'dd-drag', 'dd-drop', 'dd-proxy', 'liferay-history-manager', 'liferay-portlet-base']
 	}
 );

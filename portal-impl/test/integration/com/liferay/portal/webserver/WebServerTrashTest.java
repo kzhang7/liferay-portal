@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,11 +14,22 @@
 
 package com.liferay.portal.webserver;
 
-import com.liferay.portal.NoSuchRoleException;
+import com.liferay.portal.kernel.provider.PortletProvider;
+import com.liferay.portal.kernel.provider.PortletProviderUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
+import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
+import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.RoleTestUtil;
+import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.test.util.UserTestUtil;
+import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
+import com.liferay.portal.kernel.webdav.methods.Method;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.model.GroupConstants;
 import com.liferay.portal.model.ResourceConstants;
 import com.liferay.portal.model.Role;
 import com.liferay.portal.model.RoleConstants;
@@ -27,77 +38,82 @@ import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.security.permission.PermissionChecker;
 import com.liferay.portal.security.permission.PermissionCheckerFactoryUtil;
 import com.liferay.portal.security.permission.PermissionThreadLocal;
-import com.liferay.portal.service.ResourcePermissionLocalServiceUtil;
 import com.liferay.portal.service.RoleLocalServiceUtil;
-import com.liferay.portal.service.ServiceTestUtil;
-import com.liferay.portal.service.UserLocalServiceUtil;
-import com.liferay.portal.test.ExecutionTestListeners;
-import com.liferay.portal.test.LiferayIntegrationJUnitTestRunner;
-import com.liferay.portal.test.MainServletExecutionTestListener;
-import com.liferay.portal.util.PortletKeys;
-import com.liferay.portal.util.TestPropsValues;
-import com.liferay.portal.webdav.methods.Method;
+import com.liferay.portal.service.ServiceContext;
+import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
+import com.liferay.portal.test.rule.MainServletTestRule;
+import com.liferay.portlet.documentlibrary.service.DLAppLocalServiceUtil;
 import com.liferay.portlet.documentlibrary.service.DLAppServiceUtil;
+import com.liferay.portlet.documentlibrary.service.permission.DLPermission;
+import com.liferay.portlet.trash.model.TrashEntry;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import org.springframework.mock.web.MockHttpServletResponse;
 
 /**
  * @author Eduardo Garcia
  */
-@ExecutionTestListeners(listeners = {MainServletExecutionTestListener.class})
-@RunWith(LiferayIntegrationJUnitTestRunner.class)
 public class WebServerTrashTest extends BaseWebServerTestCase {
+
+	@ClassRule
+	@Rule
+	public static final AggregateTestRule aggregateTestRule =
+		new AggregateTestRule(
+			new LiferayIntegrationTestRule(), MainServletTestRule.INSTANCE);
 
 	@Override
 	public void setUp() throws Exception {
 		super.setUp();
 
-		_user = ServiceTestUtil.addUser(
-			null, true, new long[] {TestPropsValues.getGroupId()});
+		_user = UserTestUtil.addUser(null, group.getGroupId());
 
-		try {
-			_role = RoleLocalServiceUtil.getRole(
-				TestPropsValues.getCompanyId(), "Trash Admin");
-		}
-		catch (NoSuchRoleException nsre) {
-			_role = RoleLocalServiceUtil.addRole(
-				TestPropsValues.getUserId(), TestPropsValues.getCompanyId(),
-				"Trash Admin", null, null, RoleConstants.TYPE_REGULAR);
-		}
+		String portletId = PortletProviderUtil.getPortletId(
+			TrashEntry.class.getName(), PortletProvider.Action.VIEW);
 
-		ResourcePermissionLocalServiceUtil.addResourcePermission(
-			_user.getCompanyId(), PortletKeys.TRASH,
+		_role = RoleTestUtil.addRole(
+			"Trash Admin", RoleConstants.TYPE_REGULAR, portletId,
 			ResourceConstants.SCOPE_COMPANY,
-			String.valueOf(TestPropsValues.getCompanyId()), _role.getRoleId(),
+			String.valueOf(TestPropsValues.getCompanyId()),
 			ActionKeys.ACCESS_IN_CONTROL_PANEL);
 
+		RoleTestUtil.addResourcePermission(
+			RoleConstants.GUEST, DLPermission.RESOURCE_NAME,
+			ResourceConstants.SCOPE_GROUP_TEMPLATE,
+			String.valueOf(GroupConstants.DEFAULT_PARENT_GROUP_ID),
+			ActionKeys.VIEW);
 	}
 
 	@Override
 	public void tearDown() throws Exception {
 		super.tearDown();
 
-		if (_user != null) {
-			UserLocalServiceUtil.deleteUser(_user.getUserId());
-		}
-
-		if (_role !=null) {
-			RoleLocalServiceUtil.deleteRole(_role.getRoleId());
-		}
+		RoleTestUtil.removeResourcePermission(
+			RoleConstants.GUEST, DLPermission.RESOURCE_NAME,
+			ResourceConstants.SCOPE_GROUP_TEMPLATE,
+			String.valueOf(GroupConstants.DEFAULT_PARENT_GROUP_ID),
+			ActionKeys.VIEW);
 	}
 
 	@Test
 	public void testRequestFileInTrash() throws Exception {
-		FileEntry fileEntry = addFileEntry(false, "Test Trash.txt");
+		ServiceContext serviceContext =
+			ServiceContextTestUtil.getServiceContext(
+				group.getGroupId(), TestPropsValues.getUserId());
 
-		MockHttpServletResponse mockHttpServletResponse =  testRequestFile(
+		FileEntry fileEntry = DLAppLocalServiceUtil.addFileEntry(
+			TestPropsValues.getUserId(), group.getGroupId(),
+			parentFolder.getFolderId(), "Test Trash.txt",
+			ContentTypes.TEXT_PLAIN, RandomTestUtil.randomBytes(),
+			serviceContext);
+
+		MockHttpServletResponse mockHttpServletResponse = testRequestFile(
 			fileEntry, _user, false);
 
 		Assert.assertEquals(
@@ -146,7 +162,7 @@ public class WebServerTrashTest extends BaseWebServerTestCase {
 
 		String path = sb.toString();
 
-		Map<String, String> params = new HashMap<String, String>();
+		Map<String, String> params = new HashMap<>();
 
 		if (statusInTrash) {
 			params.put(
@@ -161,7 +177,10 @@ public class WebServerTrashTest extends BaseWebServerTestCase {
 		return mockHttpServletResponse;
 	}
 
+	@DeleteAfterTestRun
 	private Role _role;
+
+	@DeleteAfterTestRun
 	private User _user;
 
 }

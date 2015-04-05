@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -25,7 +25,15 @@ DDLRecordSet recordSet = record.getRecordSet();
 
 DDMStructure ddmStructure = recordSet.getDDMStructure();
 
-Fields fields = StorageEngineUtil.getFields(recordVersion.getDDMStorageId());
+DDMFormValues ddmFormValues = StorageEngineUtil.getDDMFormValues(recordVersion.getDDMStorageId());
+
+Fields fields = DDMFormValuesToFieldsConverterUtil.convert(ddmStructure, ddmFormValues);
 %>
 
-<%= DDMXSDUtil.getHTML(pageContext, ddmStructure.getXsd(), fields, "", true, locale) %>
+<liferay-ddm:html
+	classNameId="<%= PortalUtil.getClassNameId(DDMStructure.class) %>"
+	classPK="<%= ddmStructure.getPrimaryKey() %>"
+	fields="<%= fields %>"
+	readOnly="<%= true %>"
+	requestedLocale="<%= locale %>"
+/>

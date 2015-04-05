@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -64,7 +64,7 @@ public class ReaderInputStream extends InputStream {
 		if (outputBufferSize < _maxBytesPerChar) {
 			throw new IllegalArgumentException(
 				"Output buffer size " + outputBufferSize + " is less than " +
-				_maxBytesPerChar);
+					_maxBytesPerChar);
 		}
 
 		_outputBuffer = ByteBuffer.allocate(outputBufferSize);
@@ -246,11 +246,11 @@ public class ReaderInputStream extends InputStream {
 
 	private static final int _DEFAULT_OUTPUT_BUFFER_SIZE = 1024;
 
-	private CharsetEncoder _charsetEncoder;
-	private String _charsetName;
+	private final CharsetEncoder _charsetEncoder;
+	private final String _charsetName;
 	private CharBuffer _inputBuffer;
-	private int _maxBytesPerChar;
+	private final int _maxBytesPerChar;
 	private ByteBuffer _outputBuffer;
-	private Reader _reader;
+	private final Reader _reader;
 
 }

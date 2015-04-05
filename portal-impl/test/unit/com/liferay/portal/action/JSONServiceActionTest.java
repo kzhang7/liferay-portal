@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,12 +16,15 @@ package com.liferay.portal.action;
 
 import com.liferay.portal.json.JSONFactoryImpl;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.service.GroupServiceUtil;
 import com.liferay.portlet.messageboards.service.MBMessageServiceUtil;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
 import junit.framework.TestCase;
+
+import org.junit.Test;
 
 import org.springframework.mock.web.MockHttpServletRequest;
 
@@ -32,9 +35,12 @@ public class JSONServiceActionTest extends TestCase {
 
 	@Override
 	public void setUp() throws Exception {
-		new JSONFactoryUtil().setJSONFactory(new JSONFactoryImpl());
+		JSONFactoryUtil jsonFactoryUtil = new JSONFactoryUtil();
+
+		jsonFactoryUtil.setJSONFactory(new JSONFactoryImpl());
 	}
 
+	@Test
 	public void testGetArgumentValue() throws Exception {
 		JSONServiceAction jsonServiceAction = new JSONServiceAction();
 
@@ -65,7 +71,8 @@ public class JSONServiceActionTest extends TestCase {
 
 		mockHttpServletRequest.setParameter(
 			"inputStreamOVPs",
-			"{'class' : 'com.liferay.portal.kernel.dao.orm.EntityCacheUtil'}");
+			"{\"class\": " +
+				"\"com.liferay.portal.kernel.dao.orm.EntityCacheUtil\"}");
 
 		value = jsonServiceAction.getArgValue(
 			mockHttpServletRequest, MBMessageServiceUtil.class,
@@ -74,6 +81,37 @@ public class JSONServiceActionTest extends TestCase {
 		assertEquals(
 			"{class=com.liferay.portal.kernel.dao.orm.EntityCacheUtil}",
 			value.toString());
+	}
+
+	@Test
+	public void testGetArgumentWithArrayValue() throws Exception {
+		JSONServiceAction jsonServiceAction = new JSONServiceAction();
+
+		String[] parameters = {"roleId", "groupIds"};
+
+		Object[] methodAndParameterTypes =
+			jsonServiceAction.getMethodAndParameterTypes(
+				GroupServiceUtil.class, "addRoleGroups", parameters,
+				new String[0]);
+
+		Method method = (Method)methodAndParameterTypes[0];
+		Type[] parameterTypes = (Type[])methodAndParameterTypes[1];
+
+		MockHttpServletRequest mockHttpServletRequest =
+			new MockHttpServletRequest();
+
+		mockHttpServletRequest.setParameter(parameters[0], "11111");
+		mockHttpServletRequest.setParameter(parameters[1], "11111,22222,33333");
+
+		Object value = jsonServiceAction.getArgValue(
+			mockHttpServletRequest, GroupServiceUtil.class, method.getName(),
+			parameters[1], parameterTypes[1]);
+
+		assertTrue(value.getClass().isArray());
+
+		long[] arrayValue = (long[])value;
+
+		assertEquals(3, arrayValue.length);
 	}
 
 }

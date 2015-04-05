@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,7 @@
 
 package com.liferay.portal.search.lucene.cluster;
 
-import com.liferay.portal.kernel.cluster.Address;
+import com.liferay.portal.kernel.cluster.ClusterNode;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -29,24 +29,21 @@ import java.io.InputStream;
  */
 public class LuceneClusterUtil {
 
-	public static void loadIndexesFromCluster(long companyId)
-		throws SystemException {
-
+	public static void loadIndexesFromCluster(long companyId) {
 		LuceneHelperUtil.loadIndexesFromCluster(companyId);
 	}
 
 	public static void loadIndexesFromCluster(
-			long[] companyIds, Address bootupAddress)
-		throws SystemException {
+		long[] companyIds, ClusterNode clusterNode) {
 
-		if (bootupAddress == null) {
+		if (clusterNode == null) {
 			return;
 		}
 
 		if (_log.isInfoEnabled()) {
 			_log.info(
 				"Start loading Lucene index files from cluster node " +
-					bootupAddress);
+					clusterNode);
 		}
 
 		InputStream inputStream = null;
@@ -55,7 +52,7 @@ public class LuceneClusterUtil {
 			try {
 				inputStream =
 					LuceneHelperUtil.getLoadIndexesInputStreamFromCluster(
-						companyId, bootupAddress);
+						companyId, clusterNode.getClusterNodeId());
 
 				LuceneHelperUtil.loadIndex(companyId, inputStream);
 			}
@@ -78,6 +75,7 @@ public class LuceneClusterUtil {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(LuceneClusterUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		LuceneClusterUtil.class);
 
 }

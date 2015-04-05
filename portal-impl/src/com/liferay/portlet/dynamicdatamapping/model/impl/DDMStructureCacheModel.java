@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,13 +14,19 @@
 
 package com.liferay.portlet.dynamicdatamapping.model.impl;
 
+import aQute.bnd.annotation.ProviderType;
+
+import com.liferay.portal.kernel.util.HashUtil;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.model.CacheModel;
 
 import com.liferay.portlet.dynamicdatamapping.model.DDMStructure;
 
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 import java.util.Date;
 
@@ -31,11 +37,36 @@ import java.util.Date;
  * @see DDMStructure
  * @generated
  */
+@ProviderType
 public class DDMStructureCacheModel implements CacheModel<DDMStructure>,
-	Serializable {
+	Externalizable {
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof DDMStructureCacheModel)) {
+			return false;
+		}
+
+		DDMStructureCacheModel ddmStructureCacheModel = (DDMStructureCacheModel)obj;
+
+		if (structureId == ddmStructureCacheModel.structureId) {
+			return true;
+		}
+
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return HashUtil.hash(0, structureId);
+	}
+
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler(31);
+		StringBundler sb = new StringBundler(35);
 
 		sb.append("{uuid=");
 		sb.append(uuid);
@@ -53,16 +84,20 @@ public class DDMStructureCacheModel implements CacheModel<DDMStructure>,
 		sb.append(createDate);
 		sb.append(", modifiedDate=");
 		sb.append(modifiedDate);
+		sb.append(", parentStructureId=");
+		sb.append(parentStructureId);
 		sb.append(", classNameId=");
 		sb.append(classNameId);
 		sb.append(", structureKey=");
 		sb.append(structureKey);
+		sb.append(", version=");
+		sb.append(version);
 		sb.append(", name=");
 		sb.append(name);
 		sb.append(", description=");
 		sb.append(description);
-		sb.append(", xsd=");
-		sb.append(xsd);
+		sb.append(", definition=");
+		sb.append(definition);
 		sb.append(", storageType=");
 		sb.append(storageType);
 		sb.append(", type=");
@@ -72,6 +107,7 @@ public class DDMStructureCacheModel implements CacheModel<DDMStructure>,
 		return sb.toString();
 	}
 
+	@Override
 	public DDMStructure toEntityModel() {
 		DDMStructureImpl ddmStructureImpl = new DDMStructureImpl();
 
@@ -108,6 +144,7 @@ public class DDMStructureCacheModel implements CacheModel<DDMStructure>,
 			ddmStructureImpl.setModifiedDate(new Date(modifiedDate));
 		}
 
+		ddmStructureImpl.setParentStructureId(parentStructureId);
 		ddmStructureImpl.setClassNameId(classNameId);
 
 		if (structureKey == null) {
@@ -115,6 +152,13 @@ public class DDMStructureCacheModel implements CacheModel<DDMStructure>,
 		}
 		else {
 			ddmStructureImpl.setStructureKey(structureKey);
+		}
+
+		if (version == null) {
+			ddmStructureImpl.setVersion(StringPool.BLANK);
+		}
+		else {
+			ddmStructureImpl.setVersion(version);
 		}
 
 		if (name == null) {
@@ -131,11 +175,11 @@ public class DDMStructureCacheModel implements CacheModel<DDMStructure>,
 			ddmStructureImpl.setDescription(description);
 		}
 
-		if (xsd == null) {
-			ddmStructureImpl.setXsd(StringPool.BLANK);
+		if (definition == null) {
+			ddmStructureImpl.setDefinition(StringPool.BLANK);
 		}
 		else {
-			ddmStructureImpl.setXsd(xsd);
+			ddmStructureImpl.setDefinition(definition);
 		}
 
 		if (storageType == null) {
@@ -149,9 +193,111 @@ public class DDMStructureCacheModel implements CacheModel<DDMStructure>,
 
 		ddmStructureImpl.resetOriginalValues();
 
-		ddmStructureImpl.setDocument(_document);
+		ddmStructureImpl.setDDMForm(_ddmForm);
+
+		ddmStructureImpl.setFullHierarchyDDMForm(_fullHierarchyDDMForm);
 
 		return ddmStructureImpl;
+	}
+
+	@Override
+	public void readExternal(ObjectInput objectInput)
+		throws ClassNotFoundException, IOException {
+		uuid = objectInput.readUTF();
+		structureId = objectInput.readLong();
+		groupId = objectInput.readLong();
+		companyId = objectInput.readLong();
+		userId = objectInput.readLong();
+		userName = objectInput.readUTF();
+		createDate = objectInput.readLong();
+		modifiedDate = objectInput.readLong();
+		parentStructureId = objectInput.readLong();
+		classNameId = objectInput.readLong();
+		structureKey = objectInput.readUTF();
+		version = objectInput.readUTF();
+		name = objectInput.readUTF();
+		description = objectInput.readUTF();
+		definition = objectInput.readUTF();
+		storageType = objectInput.readUTF();
+		type = objectInput.readInt();
+
+		_ddmForm = (com.liferay.portlet.dynamicdatamapping.model.DDMForm)objectInput.readObject();
+		_fullHierarchyDDMForm = (com.liferay.portlet.dynamicdatamapping.model.DDMForm)objectInput.readObject();
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput objectOutput)
+		throws IOException {
+		if (uuid == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(uuid);
+		}
+
+		objectOutput.writeLong(structureId);
+		objectOutput.writeLong(groupId);
+		objectOutput.writeLong(companyId);
+		objectOutput.writeLong(userId);
+
+		if (userName == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(userName);
+		}
+
+		objectOutput.writeLong(createDate);
+		objectOutput.writeLong(modifiedDate);
+		objectOutput.writeLong(parentStructureId);
+		objectOutput.writeLong(classNameId);
+
+		if (structureKey == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(structureKey);
+		}
+
+		if (version == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(version);
+		}
+
+		if (name == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(name);
+		}
+
+		if (description == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(description);
+		}
+
+		if (definition == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(definition);
+		}
+
+		if (storageType == null) {
+			objectOutput.writeUTF(StringPool.BLANK);
+		}
+		else {
+			objectOutput.writeUTF(storageType);
+		}
+
+		objectOutput.writeInt(type);
+
+		objectOutput.writeObject(_ddmForm);
+		objectOutput.writeObject(_fullHierarchyDDMForm);
 	}
 
 	public String uuid;
@@ -162,12 +308,15 @@ public class DDMStructureCacheModel implements CacheModel<DDMStructure>,
 	public String userName;
 	public long createDate;
 	public long modifiedDate;
+	public long parentStructureId;
 	public long classNameId;
 	public String structureKey;
+	public String version;
 	public String name;
 	public String description;
-	public String xsd;
+	public String definition;
 	public String storageType;
 	public int type;
-	public com.liferay.portal.kernel.xml.Document _document;
+	public com.liferay.portlet.dynamicdatamapping.model.DDMForm _ddmForm;
+	public com.liferay.portlet.dynamicdatamapping.model.DDMForm _fullHierarchyDDMForm;
 }

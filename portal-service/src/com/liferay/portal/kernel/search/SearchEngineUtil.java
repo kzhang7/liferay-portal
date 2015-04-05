@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,15 +18,23 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.DestinationNames;
 import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
+import com.liferay.portal.kernel.util.ClassUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.security.permission.PermissionThreadLocal;
+import com.liferay.registry.Registry;
+import com.liferay.registry.RegistryUtil;
+import com.liferay.registry.ServiceReference;
+import com.liferay.registry.ServiceTracker;
+import com.liferay.registry.ServiceTrackerCustomizer;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,8 +47,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SearchEngineUtil {
 
 	/**
-	 * @deprecated {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}
+	 * @deprecated As of 6.2.0, replaced by {@link
+	 *             com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS}
 	 */
+	@Deprecated
 	public static final int ALL_POS = -1;
 
 	public static final String GENERIC_ENGINE_ID = "GENERIC_ENGINE";
@@ -48,16 +58,31 @@ public class SearchEngineUtil {
 	public static final String SYSTEM_ENGINE_ID = "SYSTEM_ENGINE";
 
 	/**
-	 * @deprecated {@link #addDocument(String, long, Document)}
+	 * @deprecated As of 6.2.0, replaced by {@link #addDocument(String, long,
+	 *             Document, boolean)}
 	 */
+	@Deprecated
 	public static void addDocument(long companyId, Document document)
 		throws SearchException {
 
-		addDocument(_getSearchEngineId(document), companyId, document);
+		addDocument(getSearchEngineId(document), companyId, document, true);
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #addDocument(String, long,
+	 *             Document, boolean)}
+	 */
+	@Deprecated
+	public static void addDocument(
+			String searchEngineId, long companyId, Document document)
+		throws SearchException {
+
+		addDocument(searchEngineId, companyId, document, false);
 	}
 
 	public static void addDocument(
-			String searchEngineId, long companyId, Document document)
+			String searchEngineId, long companyId, Document document,
+			boolean commitImmediately)
 		throws SearchException {
 
 		if (isIndexReadOnly()) {
@@ -76,6 +101,7 @@ public class SearchEngineUtil {
 
 		SearchContext searchContext = new SearchContext();
 
+		searchContext.setCommitImmediately(commitImmediately);
 		searchContext.setCompanyId(companyId);
 		searchContext.setSearchEngineId(searchEngineId);
 
@@ -83,18 +109,33 @@ public class SearchEngineUtil {
 	}
 
 	/**
-	 * @deprecated {@link #addDocuments(String, long, Collection)}
+	 * @deprecated As of 6.2.0, replaced by {@link #addDocuments(String, long,
+	 *             Collection, boolean)}
 	 */
+	@Deprecated
 	public static void addDocuments(
 			long companyId, Collection<Document> documents)
 		throws SearchException {
 
-		addDocuments(_getSearchEngineId(documents), companyId, documents);
+		addDocuments(getSearchEngineId(documents), companyId, documents, false);
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #addDocuments(String, long,
+	 *             Collection, boolean)}
+	 */
+	@Deprecated
+	public static void addDocuments(
+			String searchEngineId, long companyId,
+			Collection<Document> documents)
+		throws SearchException {
+
+		addDocuments(searchEngineId, companyId, documents, false);
 	}
 
 	public static void addDocuments(
 			String searchEngineId, long companyId,
-			Collection<Document> documents)
+			Collection<Document> documents, boolean commitImmediately)
 		throws SearchException {
 
 		if (isIndexReadOnly() || (documents == null) || documents.isEmpty()) {
@@ -115,6 +156,7 @@ public class SearchEngineUtil {
 
 		SearchContext searchContext = new SearchContext();
 
+		searchContext.setCommitImmediately(commitImmediately);
 		searchContext.setCompanyId(companyId);
 		searchContext.setSearchEngineId(searchEngineId);
 
@@ -122,29 +164,73 @@ public class SearchEngineUtil {
 	}
 
 	/**
-	 * @deprecated {@link #setSearchEngine(String, SearchEngine)}
+	 * @deprecated As of 6.2.0, replaced by {@link #setSearchEngine(String,
+	 *             SearchEngine)}
 	 */
+	@Deprecated
 	public static void addSearchEngine(SearchEngine searchEngine) {
 		String searchEngineId = getDefaultSearchEngineId();
 
 		PortalRuntimePermission.checkSearchEngine(searchEngineId);
 
-		_searchEngines.put(searchEngineId, searchEngine);
+		setSearchEngine(searchEngineId, searchEngine);
+	}
+
+	public synchronized static void backup(long companyId, String backupName)
+		throws SearchException {
+
+		for (SearchEngine searchEngine : _searchEngines.values()) {
+			searchEngine.backup(companyId, backupName);
+		}
+	}
+
+	public synchronized static String backup(
+			long companyId, String searchEngineId, String backupName)
+		throws SearchException {
+
+		SearchEngine searchEngine = getSearchEngine(searchEngineId);
+
+		return searchEngine.backup(companyId, backupName);
+	}
+
+	public synchronized static void backup(String backupName)
+		throws SearchException {
+
+		for (SearchEngine searchEngine : _searchEngines.values()) {
+			for (long companyId : _companyIds) {
+				searchEngine.backup(companyId, backupName);
+			}
+		}
 	}
 
 	/**
-	 * @deprecated {@link #deleteDocument(String, long, String)}
+	 * @deprecated As of 6.2.0, replaced by {@link #deleteDocument(String, long,
+	 *             String)}
 	 */
+	@Deprecated
 	public static void deleteDocument(long companyId, String uid)
 		throws SearchException {
 
 		for (String searchEngineId : _searchEngines.keySet()) {
-			deleteDocument(searchEngineId, companyId, uid);
+			deleteDocument(searchEngineId, companyId, uid, true);
 		}
 	}
 
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #deleteDocument(String, long,
+	 *             String, boolean)}
+	 */
+	@Deprecated
 	public static void deleteDocument(
 			String searchEngineId, long companyId, String uid)
+		throws SearchException {
+
+		deleteDocument(searchEngineId, companyId, uid, false);
+	}
+
+	public static void deleteDocument(
+			String searchEngineId, long companyId, String uid,
+			boolean commitImmediately)
 		throws SearchException {
 
 		if (isIndexReadOnly()) {
@@ -157,6 +243,7 @@ public class SearchEngineUtil {
 
 		SearchContext searchContext = new SearchContext();
 
+		searchContext.setCommitImmediately(commitImmediately);
 		searchContext.setCompanyId(companyId);
 		searchContext.setSearchEngineId(searchEngineId);
 
@@ -164,18 +251,33 @@ public class SearchEngineUtil {
 	}
 
 	/**
-	 * @deprecated {@link #deleteDocuments(String, long, Collection)}
+	 * @deprecated As of 6.2.0, replaced by {@link #deleteDocuments(String,
+	 *             long, Collection, boolean)}
 	 */
+	@Deprecated
 	public static void deleteDocuments(long companyId, Collection<String> uids)
 		throws SearchException {
 
 		for (String searchEngineId : _searchEngines.keySet()) {
-			deleteDocuments(searchEngineId, companyId, uids);
+			deleteDocuments(searchEngineId, companyId, uids, true);
 		}
 	}
 
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #deleteDocuments(String,
+	 *             long, Collection, boolean)}
+	 */
+	@Deprecated
 	public static void deleteDocuments(
 			String searchEngineId, long companyId, Collection<String> uids)
+		throws SearchException {
+
+		deleteDocuments(searchEngineId, companyId, uids, false);
+	}
+
+	public static void deleteDocuments(
+			String searchEngineId, long companyId, Collection<String> uids,
+			boolean commitImmediately)
 		throws SearchException {
 
 		if (isIndexReadOnly() || (uids == null) || uids.isEmpty()) {
@@ -188,25 +290,16 @@ public class SearchEngineUtil {
 
 		SearchContext searchContext = new SearchContext();
 
+		searchContext.setCommitImmediately(commitImmediately);
 		searchContext.setCompanyId(companyId);
 		searchContext.setSearchEngineId(searchEngineId);
 
 		indexWriter.deleteDocuments(searchContext, uids);
 	}
 
-	/**
-	 * @deprecated {@link #deletePortletDocuments(String, long, String)}
-	 */
-	public static void deletePortletDocuments(long companyId, String portletId)
-		throws SearchException {
-
-		for (String searchEngineId : _searchEngines.keySet()) {
-			deletePortletDocuments(searchEngineId, companyId, portletId);
-		}
-	}
-
-	public static void deletePortletDocuments(
-			String searchEngineId, long companyId, String portletId)
+	public static void deleteEntityDocuments(
+			String searchEngineId, long companyId, String className,
+			boolean commitImmediately)
 		throws SearchException {
 
 		if (isIndexReadOnly()) {
@@ -223,10 +316,36 @@ public class SearchEngineUtil {
 
 		SearchContext searchContext = new SearchContext();
 
+		searchContext.setCommitImmediately(commitImmediately);
 		searchContext.setCompanyId(companyId);
 		searchContext.setSearchEngineId(searchEngineId);
 
-		indexWriter.deletePortletDocuments(searchContext, portletId);
+		indexWriter.deleteEntityDocuments(searchContext, className);
+	}
+
+	/**
+	 * @deprecated As of 6.2.0, replaced by {@link
+	 *             #deleteEntityDocuments(String, long, String, boolean)}
+	 */
+	@Deprecated
+	public static void deletePortletDocuments(long companyId, String portletId)
+		throws SearchException {
+
+		for (String searchEngineId : _searchEngines.keySet()) {
+			deleteEntityDocuments(searchEngineId, companyId, portletId, true);
+		}
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link
+	 *             #deleteEntityDocuments(String, long, String, boolean)}
+	 */
+	@Deprecated
+	public static void deletePortletDocuments(
+			String searchEngineId, long companyId, String portletId)
+		throws SearchException {
+
+		deleteEntityDocuments(searchEngineId, companyId, portletId, false);
 	}
 
 	public static String getDefaultSearchEngineId() {
@@ -238,10 +357,10 @@ public class SearchEngineUtil {
 	}
 
 	public static String[] getEntryClassNames() {
-		Set<String> assetEntryClassNames = new HashSet<String>();
+		Set<String> assetEntryClassNames = new HashSet<>();
 
 		for (Indexer indexer : IndexerRegistryUtil.getIndexers()) {
-			for (String className : indexer.getClassNames()) {
+			for (String className : indexer.getSearchClassNames()) {
 				if (!_excludedEntryClassNames.contains(className)) {
 					assetEntryClassNames.add(className);
 				}
@@ -252,9 +371,30 @@ public class SearchEngineUtil {
 			new String[assetEntryClassNames.size()]);
 	}
 
+	public static String getQueryString(
+		SearchContext searchContext, Query query) {
+
+		SearchEngine searchEngine = getSearchEngine(
+			searchContext.getSearchEngineId());
+
+		IndexSearcher indexSearcher = searchEngine.getIndexSearcher();
+
+		try {
+			return indexSearcher.getQueryString(searchContext, query);
+		}
+		catch (ParseException pe) {
+			if (_log.isDebugEnabled()) {
+				_log.debug("Unable to parse query " + query, pe);
+			}
+		}
+
+		return StringPool.BLANK;
+	}
+
 	/**
-	 * @deprecated {@link #getSearchEngine(String)}
+	 * @deprecated As of 6.2.0, replaced by {@link #getSearchEngine(String)}
 	 */
+	@Deprecated
 	public static SearchEngine getSearchEngine() {
 		return getSearchEngine(getDefaultSearchEngineId());
 	}
@@ -265,6 +405,19 @@ public class SearchEngineUtil {
 		SearchEngine searchEngine = _searchEngines.get(searchEngineId);
 
 		if (searchEngine == null) {
+			if (SYSTEM_ENGINE_ID.equals(searchEngineId)) {
+				waitForSystemSearchEngine();
+
+				searchEngine = _searchEngines.get(SYSTEM_ENGINE_ID);
+
+				if (searchEngine == null) {
+					throw new IllegalStateException(
+						"Unable to find search engine " + SYSTEM_ENGINE_ID);
+				}
+
+				return searchEngine;
+			}
+
 			if (getDefaultSearchEngineId().equals(searchEngineId)) {
 				throw new IllegalStateException(
 					"There is no default search engine configured with ID " +
@@ -279,6 +432,34 @@ public class SearchEngineUtil {
 		}
 
 		return searchEngine;
+	}
+
+	public static String getSearchEngineId(Collection<Document> documents) {
+		if (!documents.isEmpty()) {
+			Iterator<Document> iterator = documents.iterator();
+
+			Document document = iterator.next();
+
+			return getSearchEngineId(document);
+		}
+
+		return getDefaultSearchEngineId();
+	}
+
+	public static String getSearchEngineId(Document document) {
+		String entryClassName = document.get("entryClassName");
+
+		Indexer indexer = IndexerRegistryUtil.getIndexer(entryClassName);
+
+		String searchEngineId = indexer.getSearchEngineId();
+
+		if (_log.isDebugEnabled()) {
+			_log.debug(
+				"Search engine ID " + searchEngineId + " is associated with " +
+					ClassUtil.getClassName(indexer));
+		}
+
+		return searchEngineId;
 	}
 
 	public static Set<String> getSearchEngineIds() {
@@ -311,11 +492,189 @@ public class SearchEngineUtil {
 			searchEngineId);
 	}
 
+	public static void indexKeyword(
+			long companyId, String querySuggestion, float weight,
+			String keywordType, Locale locale)
+		throws SearchException {
+
+		String searchEngineId = getDefaultSearchEngineId();
+
+		indexKeyword(
+			searchEngineId, companyId, querySuggestion, weight, keywordType,
+			locale);
+	}
+
+	public static void indexKeyword(
+			String searchEngineId, long companyId, String querySuggestion,
+			float weight, String keywordType, Locale locale)
+		throws SearchException {
+
+		SearchEngine searchEngine = getSearchEngine(searchEngineId);
+
+		IndexWriter indexWriter = searchEngine.getIndexWriter();
+
+		SearchContext searchContext = new SearchContext();
+
+		searchContext.setCompanyId(companyId);
+		searchContext.setSearchEngineId(searchEngineId);
+		searchContext.setKeywords(querySuggestion);
+		searchContext.setLocale(locale);
+
+		indexWriter.indexKeyword(searchContext, weight, keywordType);
+	}
+
+	public static void indexQuerySuggestionDictionaries(long companyId)
+		throws SearchException {
+
+		Set<String> searchEngineIds = getSearchEngineIds();
+
+		for (String searchEngineId : searchEngineIds) {
+			indexQuerySuggestionDictionaries(searchEngineId, companyId);
+		}
+	}
+
+	public static void indexQuerySuggestionDictionaries(
+			String searchEngineId, long companyId)
+		throws SearchException {
+
+		SearchEngine searchEngine = getSearchEngine(searchEngineId);
+
+		IndexWriter indexWriter = searchEngine.getIndexWriter();
+
+		SearchContext searchContext = new SearchContext();
+
+		searchContext.setCompanyId(companyId);
+		searchContext.setSearchEngineId(searchEngineId);
+
+		indexWriter.indexQuerySuggestionDictionaries(searchContext);
+	}
+
+	public static void indexQuerySuggestionDictionary(
+			long companyId, Locale locale)
+		throws SearchException {
+
+		String searchEngineId = getDefaultSearchEngineId();
+
+		indexQuerySuggestionDictionary(searchEngineId, companyId, locale);
+	}
+
+	public static void indexQuerySuggestionDictionary(
+			String searchEngineId, long companyId, Locale locale)
+		throws SearchException {
+
+		SearchEngine searchEngine = getSearchEngine(searchEngineId);
+
+		IndexWriter indexWriter = searchEngine.getIndexWriter();
+
+		SearchContext searchContext = new SearchContext();
+
+		searchContext.setCompanyId(companyId);
+		searchContext.setSearchEngineId(searchEngineId);
+		searchContext.setLocale(locale);
+
+		indexWriter.indexQuerySuggestionDictionary(searchContext);
+	}
+
+	public static void indexSpellCheckerDictionaries(long companyId)
+		throws SearchException {
+
+		String searchEngineId = getDefaultSearchEngineId();
+
+		indexSpellCheckerDictionaries(searchEngineId, companyId);
+	}
+
+	public static void indexSpellCheckerDictionaries(
+			String searchEngineId, long companyId)
+		throws SearchException {
+
+		SearchEngine searchEngine = getSearchEngine(searchEngineId);
+
+		IndexWriter indexWriter = searchEngine.getIndexWriter();
+
+		SearchContext searchContext = new SearchContext();
+
+		searchContext.setCompanyId(companyId);
+		searchContext.setSearchEngineId(searchEngineId);
+
+		indexWriter.indexSpellCheckerDictionaries(searchContext);
+	}
+
+	public static void indexSpellCheckerDictionary(
+			long companyId, Locale locale)
+		throws SearchException {
+
+		String searchEngineId = getDefaultSearchEngineId();
+
+		indexSpellCheckerDictionary(searchEngineId, companyId, locale);
+	}
+
+	public static void indexSpellCheckerDictionary(
+			String searchEngineId, long companyId, Locale locale)
+		throws SearchException {
+
+		SearchEngine searchEngine = getSearchEngine(searchEngineId);
+
+		IndexWriter indexWriter = searchEngine.getIndexWriter();
+
+		SearchContext searchContext = new SearchContext();
+
+		searchContext.setCompanyId(companyId);
+		searchContext.setSearchEngineId(searchEngineId);
+		searchContext.setLocale(locale);
+
+		indexWriter.indexSpellCheckerDictionary(searchContext);
+	}
+
+	public synchronized static void initialize(long companyId) {
+		if (_companyIds.contains(companyId)) {
+			return;
+		}
+
+		waitForSystemSearchEngine();
+
+		_companyIds.add(companyId);
+
+		for (SearchEngine searchEngine : _searchEngines.values()) {
+			searchEngine.initialize(companyId);
+		}
+	}
+
 	public static boolean isIndexReadOnly() {
 		PortalRuntimePermission.checkGetBeanProperty(
 			SearchEngineUtil.class, "indexReadOnly");
 
 		return _indexReadOnly;
+	}
+
+	public synchronized static void removeBackup(
+			long companyId, String backupName)
+		throws SearchException {
+
+		for (SearchEngine searchEngine : _searchEngines.values()) {
+			searchEngine.removeBackup(companyId, backupName);
+		}
+	}
+
+	public synchronized static void removeBackup(String backupName)
+		throws SearchException {
+
+		for (SearchEngine searchEngine : _searchEngines.values()) {
+			for (long companyId : _companyIds) {
+				searchEngine.removeBackup(companyId, backupName);
+			}
+		}
+	}
+
+	public synchronized static void removeCompany(long companyId) {
+		if (!_companyIds.contains(companyId)) {
+			return;
+		}
+
+		for (SearchEngine searchEngine : _searchEngines.values()) {
+			searchEngine.removeCompany(companyId);
+		}
+
+		_companyIds.remove(companyId);
 	}
 
 	public static SearchEngine removeSearchEngine(String searchEngineId) {
@@ -324,9 +683,28 @@ public class SearchEngineUtil {
 		return _searchEngines.remove(searchEngineId);
 	}
 
+	public synchronized static void restore(long companyId, String backupName)
+		throws SearchException {
+
+		for (SearchEngine searchEngine : _searchEngines.values()) {
+			searchEngine.restore(companyId, backupName);
+		}
+	}
+
+	public synchronized static void restore(String backupName)
+		throws SearchException {
+
+		for (SearchEngine searchEngine : _searchEngines.values()) {
+			for (long companyId : _companyIds) {
+				searchEngine.restore(companyId, backupName);
+			}
+		}
+	}
+
 	/**
-	 * @deprecated
+	 * @deprecated As of 6.2.0
 	 */
+	@Deprecated
 	public static Hits search(
 			long companyId, long[] groupIds, long userId, String className,
 			Query query, int start, int end)
@@ -346,8 +724,9 @@ public class SearchEngineUtil {
 	}
 
 	/**
-	 * @deprecated
+	 * @deprecated As of 6.2.0
 	 */
+	@Deprecated
 	public static Hits search(
 			long companyId, long[] groupIds, long userId, String className,
 			Query query, Sort sort, int start, int end)
@@ -366,8 +745,9 @@ public class SearchEngineUtil {
 	}
 
 	/**
-	 * @deprecated
+	 * @deprecated As of 6.2.0
 	 */
+	@Deprecated
 	public static Hits search(
 			long companyId, long[] groupIds, long userId, String className,
 			Query query, Sort[] sorts, int start, int end)
@@ -386,8 +766,10 @@ public class SearchEngineUtil {
 	}
 
 	/**
-	 * @deprecated {@link #search(String, long, Query, int, int)}
+	 * @deprecated As of 6.2.0, replaced by {@link #search(String, long, Query,
+	 *             int, int)}
 	 */
+	@Deprecated
 	public static Hits search(long companyId, Query query, int start, int end)
 		throws SearchException {
 
@@ -395,8 +777,10 @@ public class SearchEngineUtil {
 	}
 
 	/**
-	 * @deprecated {@link #search(String, long, Query, Sort, int, int)}
+	 * @deprecated As of 6.2.0, replaced by {@link #search(String, long, Query,
+	 *             Sort, int, int)}
 	 */
+	@Deprecated
 	public static Hits search(
 			long companyId, Query query, Sort sort, int start, int end)
 		throws SearchException {
@@ -406,8 +790,10 @@ public class SearchEngineUtil {
 	}
 
 	/**
-	 * @deprecated {@link #search(String, long, Query, Sort[], int, int)}
+	 * @deprecated As of 6.2.0, replaced by {@link #search(String, long, Query,
+	 *             Sort[], int, int)}
 	 */
+	@Deprecated
 	public static Hits search(
 			long companyId, Query query, Sort[] sorts, int start, int end)
 		throws SearchException {
@@ -420,7 +806,7 @@ public class SearchEngineUtil {
 		throws SearchException {
 
 		if (_log.isDebugEnabled()) {
-			_log.debug("Search query " + query.toString());
+			_log.debug("Search query " + getQueryString(searchContext, query));
 		}
 
 		SearchEngine searchEngine = getSearchEngine(
@@ -431,56 +817,54 @@ public class SearchEngineUtil {
 		return indexSearcher.search(searchContext, query);
 	}
 
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #search(SearchContext,
+	 *             Query)}
+	 */
+	@Deprecated
 	public static Hits search(
 			String searchEngineId, long companyId, Query query, int start,
 			int end)
 		throws SearchException {
 
-		if (_log.isDebugEnabled()) {
-			_log.debug("Search query " + query.toString());
-		}
-
-		SearchEngine searchEngine = getSearchEngine(searchEngineId);
-
-		IndexSearcher indexSearcher = searchEngine.getIndexSearcher();
-
-		return indexSearcher.search(
+		return search(
 			searchEngineId, companyId, query, SortFactoryUtil.getDefaultSorts(),
 			start, end);
 	}
 
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #search(SearchContext,
+	 *             Query)}
+	 */
+	@Deprecated
 	public static Hits search(
 			String searchEngineId, long companyId, Query query, Sort sort,
 			int start, int end)
 		throws SearchException {
 
-		if (_log.isDebugEnabled()) {
-			_log.debug("Search query " + query.toString());
-		}
-
-		SearchEngine searchEngine = getSearchEngine(searchEngineId);
-
-		IndexSearcher indexSearcher = searchEngine.getIndexSearcher();
-
-		return indexSearcher.search(
+		return search(
 			searchEngineId, companyId, query, new Sort[] {sort}, start, end);
 	}
 
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #search(SearchContext,
+	 *             Query)}
+	 */
+	@Deprecated
 	public static Hits search(
 			String searchEngineId, long companyId, Query query, Sort[] sorts,
 			int start, int end)
 		throws SearchException {
 
-		if (_log.isDebugEnabled()) {
-			_log.debug("Search query " + query.toString());
-		}
+		SearchContext searchContext = new SearchContext();
 
-		SearchEngine searchEngine = getSearchEngine(searchEngineId);
+		searchContext.setCompanyId(companyId);
+		searchContext.setEnd(end);
+		searchContext.setSearchEngineId(searchEngineId);
+		searchContext.setSorts(sorts);
+		searchContext.setStart(start);
 
-		IndexSearcher indexSearcher = searchEngine.getIndexSearcher();
-
-		return indexSearcher.search(
-			searchEngineId, companyId, query, sorts, start, end);
+		return search(searchContext, query);
 	}
 
 	public static void setDefaultSearchEngineId(String defaultSearchEngineId) {
@@ -503,19 +887,86 @@ public class SearchEngineUtil {
 		PortalRuntimePermission.checkSearchEngine(searchEngineId);
 
 		_searchEngines.put(searchEngineId, searchEngine);
+
+		for (Long companyId : _companyIds) {
+			searchEngine.initialize(companyId);
+		}
+	}
+
+	public static String spellCheckKeywords(SearchContext searchContext)
+		throws SearchException {
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Spell checking " + searchContext.getKeywords());
+		}
+
+		SearchEngine searchEngine = getSearchEngine(
+			searchContext.getSearchEngineId());
+
+		IndexSearcher indexSearcher = searchEngine.getIndexSearcher();
+
+		return indexSearcher.spellCheckKeywords(searchContext);
+	}
+
+	public static Map<String, List<String>> spellCheckKeywords(
+			SearchContext searchContext, int max)
+		throws SearchException {
+
+		if (_log.isDebugEnabled()) {
+			_log.debug("Spell checking " + searchContext.getKeywords());
+		}
+
+		SearchEngine searchEngine = getSearchEngine(
+			searchContext.getSearchEngineId());
+
+		IndexSearcher indexSearcher = searchEngine.getIndexSearcher();
+
+		return indexSearcher.spellCheckKeywords(searchContext, max);
+	}
+
+	public static String[] suggestKeywordQueries(
+			SearchContext searchContext, int max)
+		throws SearchException {
+
+		if (_log.isDebugEnabled()) {
+			_log.debug(
+				"Suggesting keyword queries" + searchContext.getKeywords());
+		}
+
+		SearchEngine searchEngine = getSearchEngine(
+			searchContext.getSearchEngineId());
+
+		IndexSearcher indexSearcher = searchEngine.getIndexSearcher();
+
+		return indexSearcher.suggestKeywordQueries(searchContext, max);
 	}
 
 	/**
-	 * @deprecated {@link #updateDocument(String, long, Document)}
+	 * @deprecated As of 6.2.0, replaced by {@link #updateDocument(String, long,
+	 *             Document)}
 	 */
+	@Deprecated
 	public static void updateDocument(long companyId, Document document)
 		throws SearchException {
 
-		updateDocument(_getSearchEngineId(document), companyId, document);
+		updateDocument(getSearchEngineId(document), companyId, document, true);
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #updateDocument(String, long,
+	 *             Document, boolean)}
+	 */
+	@Deprecated
+	public static void updateDocument(
+			String searchEngineId, long companyId, Document document)
+		throws SearchException {
+
+		updateDocument(searchEngineId, companyId, document, false);
 	}
 
 	public static void updateDocument(
-			String searchEngineId, long companyId, Document document)
+			String searchEngineId, long companyId, Document document,
+			boolean commitImmediately)
 		throws SearchException {
 
 		if (isIndexReadOnly()) {
@@ -534,6 +985,7 @@ public class SearchEngineUtil {
 
 		SearchContext searchContext = new SearchContext();
 
+		searchContext.setCommitImmediately(commitImmediately);
 		searchContext.setCompanyId(companyId);
 		searchContext.setSearchEngineId(searchEngineId);
 
@@ -541,18 +993,34 @@ public class SearchEngineUtil {
 	}
 
 	/**
-	 * @deprecated {@link #updateDocuments(String, long, Collection)}
+	 * @deprecated As of 6.2.0, replaced by {@link #updateDocuments(String,
+	 *             long, Collection)}
 	 */
+	@Deprecated
 	public static void updateDocuments(
 			long companyId, Collection<Document> documents)
 		throws SearchException {
 
-		updateDocuments(_getSearchEngineId(documents), companyId, documents);
+		updateDocuments(
+			getSearchEngineId(documents), companyId, documents, true);
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #updateDocuments(String,
+	 *             long, Collection, boolean)}
+	 */
+	@Deprecated
+	public static void updateDocuments(
+			String searchEngineId, long companyId,
+			Collection<Document> documents)
+		throws SearchException {
+
+		updateDocuments(searchEngineId, companyId, documents, false);
 	}
 
 	public static void updateDocuments(
 			String searchEngineId, long companyId,
-			Collection<Document> documents)
+			Collection<Document> documents, boolean commitImmediately)
 		throws SearchException {
 
 		if (isIndexReadOnly() || (documents == null) || documents.isEmpty()) {
@@ -573,6 +1041,7 @@ public class SearchEngineUtil {
 
 		SearchContext searchContext = new SearchContext();
 
+		searchContext.setCommitImmediately(commitImmediately);
 		searchContext.setCompanyId(companyId);
 		searchContext.setSearchEngineId(searchEngineId);
 
@@ -597,14 +1066,16 @@ public class SearchEngineUtil {
 	}
 
 	/**
-	 * @deprecated {@link #setSearchEngine(String, SearchEngine)}
+	 * @deprecated As of 6.2.0, replaced by {@link #setSearchEngine(String,
+	 *             SearchEngine)}
 	 */
+	@Deprecated
 	public void setSearchEngine(SearchEngine searchEngine) {
 		String searchEngineId = getDefaultSearchEngineId();
 
 		PortalRuntimePermission.checkSearchEngine(searchEngineId);
 
-		_searchEngines.put(searchEngineId, searchEngine);
+		setSearchEngine(searchEngineId, searchEngine);
 	}
 
 	public void setSearchPermissionChecker(
@@ -616,40 +1087,86 @@ public class SearchEngineUtil {
 		_searchPermissionChecker = searchPermissionChecker;
 	}
 
-	private static String _getSearchEngineId(Collection<Document> documents) {
-		if (!documents.isEmpty()) {
-			Document document = documents.iterator().next();
+	private static void waitForSystemSearchEngine() {
+		try {
+			int count = 1000;
 
-			return _getSearchEngineId(document);
+			while (!_searchEngines.containsKey(SYSTEM_ENGINE_ID) &&
+				   (--count > 0)) {
+
+				if (_log.isDebugEnabled()) {
+					_log.debug("Waiting for search engine " + SYSTEM_ENGINE_ID);
+				}
+
+				Thread.sleep(500);
+			}
 		}
-
-		return getDefaultSearchEngineId();
+		catch (InterruptedException ie) {
+			_log.error(ie, ie);
+		}
 	}
 
-	private static String _getSearchEngineId(Document document) {
-		String entryClassName = document.get("entryClassName");
+	private SearchEngineUtil() {
+		Registry registry = RegistryUtil.getRegistry();
 
-		Indexer indexer = IndexerRegistryUtil.getIndexer(entryClassName);
+		_serviceTracker = registry.trackServices(
+			SearchEngineConfigurator.class,
+			new SearchEngineConfiguratorServiceTrackerCustomizer());
 
-		String searchEngineId = indexer.getSearchEngineId();
-
-		if (_log.isDebugEnabled()) {
-			_log.debug(
-				"Search engine ID for " + indexer.getClass() + " is " +
-					searchEngineId);
-		}
-
-		return searchEngineId;
+		_serviceTracker.open();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(SearchEngineUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		SearchEngineUtil.class);
 
+	private static final Set<Long> _companyIds = new HashSet<>();
 	private static String _defaultSearchEngineId;
-	private static Set<String> _excludedEntryClassNames = new HashSet<String>();
+	private static final Set<String> _excludedEntryClassNames = new HashSet<>();
 	private static boolean _indexReadOnly = GetterUtil.getBoolean(
 		PropsUtil.get(PropsKeys.INDEX_READ_ONLY));
-	private static Map<String, SearchEngine> _searchEngines =
-		new ConcurrentHashMap<String, SearchEngine>();
+	private static final Map<String, SearchEngine> _searchEngines =
+		new ConcurrentHashMap<>();
 	private static SearchPermissionChecker _searchPermissionChecker;
+
+	private final ServiceTracker
+		<SearchEngineConfigurator, SearchEngineConfigurator> _serviceTracker;
+
+	private class SearchEngineConfiguratorServiceTrackerCustomizer
+		implements ServiceTrackerCustomizer
+			<SearchEngineConfigurator, SearchEngineConfigurator> {
+
+		@Override
+		public SearchEngineConfigurator addingService(
+			ServiceReference<SearchEngineConfigurator> serviceReference) {
+
+			Registry registry = RegistryUtil.getRegistry();
+
+			SearchEngineConfigurator searchEngineConfigurator =
+				registry.getService(serviceReference);
+
+			searchEngineConfigurator.afterPropertiesSet();
+
+			return searchEngineConfigurator;
+		}
+
+		@Override
+		public void modifiedService(
+			ServiceReference<SearchEngineConfigurator> serviceReference,
+			SearchEngineConfigurator searchEngineConfigurator) {
+		}
+
+		@Override
+		public void removedService(
+			ServiceReference<SearchEngineConfigurator> serviceReference,
+			SearchEngineConfigurator searchEngineConfigurator) {
+
+			Registry registry = RegistryUtil.getRegistry();
+
+			registry.ungetService(serviceReference);
+
+			searchEngineConfigurator.destroy();
+		}
+
+	}
 
 }

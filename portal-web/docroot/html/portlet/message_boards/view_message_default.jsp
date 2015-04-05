@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -26,28 +26,9 @@ MBCategory category = messageDisplay.getCategory();
 MBThread thread = messageDisplay.getThread();
 %>
 
-<c:choose>
-	<c:when test="<%= portletName.equals(PortletKeys.MESSAGE_BOARDS_ADMIN) %>">
-
-		<%
-		PortletURL portletURL = renderResponse.createRenderURL();
-
-		portletURL.setParameter("tabs1", "message-boards-home");
-		%>
-
-		<liferay-ui:tabs
-			names="message-boards-home,recent-posts,statistics,banned-users"
-			url="<%= portletURL.toString() %>"
-		/>
-	</c:when>
-	<c:otherwise>
-		<liferay-util:include page="/html/portlet/message_boards/top_links.jsp" />
-	</c:otherwise>
-</c:choose>
-
 <div id="<portlet:namespace />addAnswerFlagDiv" style="display: none;">
 	<liferay-ui:icon
-		image="checked"
+		iconCssClass="icon-check"
 		label="<%= true %>"
 		message="answer"
 	/>
@@ -69,7 +50,7 @@ MBThread thread = messageDisplay.getThread();
 	%>
 
 	<liferay-ui:icon
-		image="checked"
+		iconCssClass="icon-check"
 		label="<%= true %>"
 		message="mark-as-an-answer"
 		url="<%= taglibMarkAsAnAnswerURL %>"
@@ -92,120 +73,91 @@ MBThread thread = messageDisplay.getThread();
 </c:choose>
 
 <c:if test="<%= MBCategoryPermission.contains(permissionChecker, scopeGroupId, message.getCategoryId(), ActionKeys.REPLY_TO_MESSAGE) && !thread.isLocked() %>">
-	<div class="aui-helper-hidden" id="<portlet:namespace />addQuickReplyDiv">
+	<div class="hide" id="<portlet:namespace />addQuickReplyDiv">
 		<%@ include file="/html/portlet/message_boards/edit_message_quick.jspf" %>
 	</div>
 </c:if>
 
 <aui:script>
-	Liferay.provide(
-		window,
-		'<portlet:namespace />addAnswerFlag',
-		function(messageId) {
-			var A = AUI();
+	function <portlet:namespace />addAnswerFlag(messageId) {
+		var $ = AUI.$;
 
-			Liferay.Service(
-				'/mbmessage/update-answer',
-				{
-					messageId: messageId,
-					answer: true,
-					cascade: false
-				}
-			);
-
-			var addAnswerFlagDiv = A.one('#<portlet:namespace />addAnswerFlagDiv').clone();
-
-			var html = addAnswerFlagDiv.html();
-
-			html = '<div class="answer" id="<portlet:namespace />deleteAnswerFlag_' + messageId + '">' + html + '</div>';
-			html = html.replace(/@MESSAGE_ID@/g, messageId);
-
-			var tags = A.one('#<portlet:namespace />message_' + messageId).one('div.tags');
-
-			if (tags) {
-				tags.html(html);
+		Liferay.Service(
+			'/mbmessage/update-answer',
+			{
+				answer: true,
+				cascade: false,
+				messageId: messageId
 			}
+		);
 
-			A.one('#<portlet:namespace />addAnswerFlag_' + messageId).hide();
-			A.one('#<portlet:namespace />deleteAnswerFlag_' + messageId).show();
-		},
-		['aui-base']
-	);
+		var html = $('#<portlet:namespace />addAnswerFlagDiv').html();
 
-	Liferay.provide(
-		window,
-		'<portlet:namespace />addQuickReply',
-		function(cmd, messageId) {
-			var A = AUI();
+		html = '<div class="answer" id="<portlet:namespace />deleteAnswerFlag_' + messageId + '">' + html + '</div>';
+		html = html.replace(/@MESSAGE_ID@/g, messageId);
 
-			var addQuickReplyDiv = A.one('#<portlet:namespace />addQuickReplyDiv');
+		var tags = $('#<portlet:namespace />message_' + messageId).find('div.tags');
 
-			if (cmd == 'reply') {
-				addQuickReplyDiv.show();
+		tags.html(html);
 
-				addQuickReplyDiv.one('#<portlet:namespace />parentMessageId').val(messageId);
+		$('#<portlet:namespace />addAnswerFlag_' + messageId).addClass('hide');
+		$('#<portlet:namespace />deleteAnswerFlag_' + messageId).removeClass('hide');
+	}
 
-				var editorInput = addQuickReplyDiv.one('textarea');
+	function <portlet:namespace />addQuickReply(cmd, messageId) {
+		var addQuickReplyDiv = AUI.$('#<portlet:namespace />addQuickReplyDiv');
 
-				if (editorInput) {
-					var editorId = editorInput.get('id');
+		if (cmd == 'reply') {
+			addQuickReplyDiv.removeClass('hide');
 
-					var editorInstance = window[editorId];
+			addQuickReplyDiv.find('#<portlet:namespace />parentMessageId').val(messageId);
 
-					if (editorInstance) {
-						A.setTimeout(editorInstance.focus, 50, editorInstance);
-					}
-				}
+			var editorInput = addQuickReplyDiv.find('textarea');
+
+			var editorInstance = window[editorInput.attr('id')];
+
+			if (editorInstance) {
+				setTimeout(AUI._.bind(editorInstance.focus, editorInstance), 50);
 			}
-			else {
-				addQuickReplyDiv.hide();
+		}
+		else {
+			addQuickReplyDiv.addClass('hide');
+		}
+	}
+
+	function <portlet:namespace />deleteAnswerFlag(messageId) {
+		var $ = AUI.$;
+
+		Liferay.Service(
+			'/mbmessage/update-answer',
+			{
+				answer: false,
+				cascade: false,
+				messageId: messageId
 			}
-		},
-		['aui-base']
-	);
+		);
 
-	Liferay.provide(
-		window,
-		'<portlet:namespace />deleteAnswerFlag',
-		function(messageId) {
-			var A = AUI();
+		var html = $('#<portlet:namespace />deleteAnswerFlagDiv').html();
 
-			Liferay.Service(
-				'/mbmessage/update-answer',
-				{
-					messageId: messageId,
-					answer: false,
-					cascade: false
-				}
-			);
+		html = '<li id="<portlet:namespace />addAnswerFlag_' + messageId + '">' + html + '</li>';
+		html = html.replace(/@MESSAGE_ID@/g, messageId);
 
-			var deleteAnswerFlagDiv = A.one('#<portlet:namespace />deleteAnswerFlagDiv').clone();
+		var editControls = $('#<portlet:namespace />message_' + messageId).find('ul.edit-controls');
 
-			var html = deleteAnswerFlagDiv.html();
+		editControls.prepend(html);
 
-			html = '<li id="<portlet:namespace />addAnswerFlag_' + messageId + '">' + html + '</li>';
-			html = html.replace(/@MESSAGE_ID@/g, messageId);
+		$('#<portlet:namespace />deleteAnswerFlag_' + messageId).addClass('hide');
 
-			var editControls = A.one('#<portlet:namespace />message_' + messageId).one('ul.edit-controls');
-
-			if (editControls) {
-				editControls.prepend(html);
-			}
-
-			A.one('#<portlet:namespace />deleteAnswerFlag_' + messageId).hide();
-
-			A.one('#<portlet:namespace />addAnswerFlag_' + messageId).show();
-		},
-		['aui-base']
-	);
+		$('#<portlet:namespace />addAnswerFlag_' + messageId).removeClass('hide');
+	}
 
 	<c:if test="<%= thread.getRootMessageId() != message.getMessageId() %>">
-		document.getElementById("<portlet:namespace />message_" + <%= message.getMessageId() %>).scrollIntoView(true);
+		document.getElementById('<portlet:namespace />message_' + <%= message.getMessageId() %>).scrollIntoView(true);
 	</c:if>
 </aui:script>
 
 <%
-MBThreadFlagLocalServiceUtil.addThreadFlag(themeDisplay.getUserId(), thread);
+MBThreadFlagLocalServiceUtil.addThreadFlag(themeDisplay.getUserId(), thread, new ServiceContext());
 
 message = messageDisplay.getMessage();
 

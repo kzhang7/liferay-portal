@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,15 +15,21 @@
 package com.liferay.portlet.journal.service.permission;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.staging.permission.StagingPermissionUtil;
+import com.liferay.portal.kernel.provider.PortletProvider;
+import com.liferay.portal.kernel.provider.PortletProviderUtil;
+import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties;
 import com.liferay.portal.security.auth.PrincipalException;
+import com.liferay.portal.security.permission.BaseResourcePermission;
 import com.liferay.portal.security.permission.PermissionChecker;
-import com.liferay.portal.util.PortletKeys;
+import com.liferay.portlet.journal.model.JournalArticle;
 
 /**
  * @author Jorge Ferrer
  */
-public class JournalPermission {
+@OSGiBeanProperties(property = {"resource.name=com.liferay.portlet.journal"})
+public class JournalPermission extends BaseResourcePermission {
+
+	public static final String RESOURCE_NAME = "com.liferay.portlet.journal";
 
 	public static void check(
 			PermissionChecker permissionChecker, long groupId, String actionId)
@@ -35,20 +41,20 @@ public class JournalPermission {
 	}
 
 	public static boolean contains(
-		PermissionChecker permissionChecker, long groupId, String actionId) {
+		PermissionChecker permissionChecker, long classPK, String actionId) {
 
-		Boolean hasPermission = StagingPermissionUtil.hasPermission(
-			permissionChecker, groupId, _CLASS_NAME, groupId,
-			PortletKeys.JOURNAL, actionId);
+		String portletId = PortletProviderUtil.getPortletId(
+			JournalArticle.class.getName(), PortletProvider.Action.EDIT);
 
-		if (hasPermission != null) {
-			return hasPermission.booleanValue();
-		}
-
-		return permissionChecker.hasPermission(
-			groupId, _CLASS_NAME, groupId, actionId);
+		return contains(
+			permissionChecker, RESOURCE_NAME, portletId, classPK, actionId);
 	}
 
-	private static final String _CLASS_NAME = "com.liferay.portlet.journal";
+	@Override
+	public Boolean checkResource(
+		PermissionChecker permissionChecker, long classPK, String actionId) {
+
+		return contains(permissionChecker, classPK, actionId);
+	}
 
 }

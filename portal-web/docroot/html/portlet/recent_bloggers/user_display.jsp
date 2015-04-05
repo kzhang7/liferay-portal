@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -31,7 +31,7 @@ String rowHREF = (String)objArray[1];
 	</div>
 
 	<div class="blogger-stars">
-		<span><liferay-ui:message key="stars" />:</span> <%= statsUser.getRatingsTotalEntries() %>
+		<span><liferay-ui:message key="<%= RatingsType.STARS.getValue() %>" />:</span> <%= statsUser.getRatingsTotalEntries() %>
 	</div>
 
 	<div class="blogger-date">

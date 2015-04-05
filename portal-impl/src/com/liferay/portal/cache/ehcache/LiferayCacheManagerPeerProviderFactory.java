@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -25,8 +25,7 @@ import com.liferay.portal.util.HtmlImpl;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.PropsValues;
 
-import java.io.IOException;
-
+import java.util.Arrays;
 import java.util.Properties;
 
 import net.sf.ehcache.CacheManager;
@@ -67,39 +66,27 @@ public class LiferayCacheManagerPeerProviderFactory
 			throw new RuntimeException("portalPropertyKey is null");
 		}
 
-		Properties propsUtilProperties = PropsUtil.getProperties();
-
-		String portalPropertiesString = propsUtilProperties.getProperty(
-			portalPropertyKey);
+		String[] values = PropsUtil.getArray(portalPropertyKey);
 
 		if (_log.isInfoEnabled()) {
 			_log.info(
 				"portalPropertyKey " + portalPropertyKey + " has value " +
-					portalPropertiesString);
+					Arrays.toString(values));
 		}
 
-		portalPropertiesString = StringUtil.replace(
-			portalPropertiesString, CharPool.COMMA, CharPool.NEW_LINE);
+		Properties portalProperties = new Properties();
 
-		Properties portalProperties = null;
+		for (String value : values) {
+			String[] valueParts = StringUtil.split(value, CharPool.EQUAL);
 
-		try {
-			portalProperties = PropertiesUtil.load(portalPropertiesString);
-		}
-		catch (IOException ioe) {
-			_log.error(ioe, ioe);
+			if (valueParts.length != 2) {
+				if (_log.isWarnEnabled()) {
+					_log.warn("Ignore malformed value " + value);
+				}
+			}
 
-			throw new RuntimeException(ioe.getMessage());
-		}
-
-		Object[] keys = portalProperties.keySet().toArray();
-
-		for (Object key : keys) {
-			String value = (String)portalProperties.remove(key);
-
-			value = _htmlUtil.unescape(value);
-
-			portalProperties.put(key, value);
+			portalProperties.put(
+				valueParts[0], _htmlUtil.unescape(valueParts[1]));
 		}
 
 		if (_log.isDebugEnabled()) {
@@ -110,11 +97,12 @@ public class LiferayCacheManagerPeerProviderFactory
 			cacheManager, portalProperties);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		LiferayCacheManagerPeerProviderFactory.class);
 
-	private static HtmlImpl _htmlUtil = new HtmlImpl();
+	private static final HtmlImpl _htmlUtil = new HtmlImpl();
 
-	private CacheManagerPeerProviderFactory _cacheManagerPeerProviderFactory;
+	private final CacheManagerPeerProviderFactory
+		_cacheManagerPeerProviderFactory;
 
 }

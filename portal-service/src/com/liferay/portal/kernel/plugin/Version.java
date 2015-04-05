@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -104,6 +104,7 @@ public class Version implements Comparable<Version>, Serializable {
 				version.getBuildNumber()));
 	}
 
+	@Override
 	public int compareTo(Version version) {
 		if (version == null) {
 			return 1;
@@ -119,30 +120,34 @@ public class Version implements Comparable<Version>, Serializable {
 			return -1;
 		}
 
-		int result = getMajor().compareTo(version.getMajor());
+		int result = _compareAsIntegers(getMajor(), version.getMajor());
 
 		if (result != 0) {
 			return result;
 		}
 
-		result = getMinor().compareTo(version.getMinor());
+		result = _compareAsIntegers(getMinor(), version.getMinor());
 
 		if (result != 0) {
 			return result;
 		}
 
-		result = getBugFix().compareTo(version.getBugFix());
+		result = _compareAsIntegers(getBugFix(), version.getBugFix());
 
 		if (result != 0) {
 			return result;
 		}
 
-		return getBuildNumber().compareTo(version.getBuildNumber());
+		return _compareAsIntegers(getBuildNumber(), version.getBuildNumber());
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if ((obj == null) || !(obj instanceof Version)) {
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof Version)) {
 			return false;
 		}
 
@@ -216,6 +221,11 @@ public class Version implements Comparable<Version>, Serializable {
 
 						return true;
 					}
+					else if (_contains(
+								getBuildNumber(), version.getBuildNumber())) {
+
+						return true;
+					}
 				}
 				else if (_contains(getBugFix(), version.getBugFix())) {
 					return true;
@@ -277,17 +287,12 @@ public class Version implements Comparable<Version>, Serializable {
 			_bugFix = st.nextToken();
 		}
 
-		StringBundler sb = new StringBundler();
-
-		while (st.hasMoreTokens()) {
-			sb.append(st.nextToken());
-
-			if (st.hasMoreTokens()) {
-				sb.append(_SEPARATOR);
-			}
+		if (st.hasMoreTokens()) {
+			_buildNumber = st.nextToken();
 		}
-
-		_buildNumber = sb.toString();
+		else {
+			_buildNumber = null;
+		}
 	}
 
 	private static boolean _contains(
@@ -315,7 +320,7 @@ public class Version implements Comparable<Version>, Serializable {
 	private static String _toString(
 		String major, String minor, String bugFix, String buildNumber) {
 
-		StringBundler sb = new StringBundler();
+		StringBundler sb = new StringBundler(7);
 
 		sb.append(major);
 
@@ -337,13 +342,28 @@ public class Version implements Comparable<Version>, Serializable {
 		return sb.toString();
 	}
 
+	private int _compareAsIntegers(String first, String second) {
+		int firstInteger = GetterUtil.getInteger(first);
+		int secondInteger = GetterUtil.getInteger(second);
+
+		if (firstInteger < secondInteger) {
+			return -1;
+		}
+		else if (firstInteger == secondInteger) {
+			return 0;
+		}
+		else {
+			return 1;
+		}
+	}
+
 	private static final String _SEPARATOR = StringPool.PERIOD;
 
-	private static Map<String, Version> _versions =
-		new ConcurrentHashMap<String, Version>();
+	private static final Map<String, Version> _versions =
+		new ConcurrentHashMap<>();
 
 	private String _bugFix;
-	private String _buildNumber;
+	private final String _buildNumber;
 	private String _major;
 	private String _minor;
 

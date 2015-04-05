@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -28,21 +28,43 @@ else {
 	groupTypeSettings = new UnicodeProperties();
 }
 
-int trashEnabledCompany = PrefsPropsUtil.getInteger(company.getCompanyId(), PropsKeys.TRASH_ENABLED);
+boolean groupTrashEnabled = PropertiesParamUtil.getBoolean(groupTypeSettings, request, "trashEnabled", true);
 
-int trashEnabledGroup = PropertiesParamUtil.getInteger(groupTypeSettings, request, "trashEnabled", TrashUtil.TRASH_DEFAULT_VALUE);
-
-int trashEntriesMaxAge = PropertiesParamUtil.getInteger(groupTypeSettings, request, "trashEntriesMaxAge", PrefsPropsUtil.getInteger(company.getCompanyId(), PropsKeys.TRASH_ENTRIES_MAX_AGE));
+double trashEntriesMaxAge = PropertiesParamUtil.getInteger(groupTypeSettings, request, "trashEntriesMaxAge", PrefsPropsUtil.getInteger(company.getCompanyId(), PropsKeys.TRASH_ENTRIES_MAX_AGE)) / 1440.0;
 %>
 
-<aui:fieldset>
-	<aui:select label="enable-recycle-bin" name="trashEnabled">
-		<aui:option label='<%= (trashEnabledCompany == TrashUtil.TRASH_ENABLED_BY_DEFAULT) ? "default-value-enabled" : "default-value-disabled" %>' selected="<%= trashEnabledGroup == TrashUtil.TRASH_DEFAULT_VALUE %>" value="<%= TrashUtil.TRASH_DEFAULT_VALUE %>" />
-		<aui:option label="enabled" selected="<%= trashEnabledGroup == TrashUtil.TRASH_ENABLED %>" value="<%= TrashUtil.TRASH_ENABLED %>" />
-		<aui:option label="disabled" selected="<%= trashEnabledGroup == TrashUtil.TRASH_DISABLED %>" value="<%= TrashUtil.TRASH_DISABLED %>" />
-	</aui:select>
+<h3><liferay-ui:message key="recycle-bin" /></h3>
 
-	<aui:input label="number-of-days-that-files-will-be-kept-in-the-recycle-bin" name="trashEntriesMaxAge" type="text" value="<%= trashEntriesMaxAge %>">
-		<aui:validator name="min">1</aui:validator>
-	</aui:input>
+<aui:fieldset>
+	<aui:input id="trashEnabled" label="enable-recycle-bin" name="trashEnabled" type="checkbox" value="<%= groupTrashEnabled %>" />
+
+	<div class="trash-entries-max-age">
+		<aui:input disabled="<%= !groupTrashEnabled %>" helpMessage="trash-entries-max-age-help" label="trash-entries-max-age" name="trashEntriesMaxAge" type="text" value="<%= (trashEntriesMaxAge % 1 == 0) ? GetterUtil.getInteger(trashEntriesMaxAge) : String.valueOf(trashEntriesMaxAge) %>">
+			<aui:validator name="min"><%= PropsValues.TRASH_ENTRY_CHECK_INTERVAL / 1440.0 %></aui:validator>
+		</aui:input>
+	</div>
+
 </aui:fieldset>
+
+<aui:script sandbox="<%= true %>">
+	var trashEnabledCheckbox = $('#<portlet:namespace />trashEnabled');
+
+	var trashEnabledDefault = trashEnabledCheckbox.prop('checked');
+
+	trashEnabledCheckbox.on(
+		'change',
+		function(event) {
+			var trashEnabled = trashEnabledCheckbox.prop('checked');
+
+			if (!trashEnabled && trashEnabledDefault) {
+				if (!confirm('<%= HtmlUtil.escapeJS(LanguageUtil.get(request, "disabling-the-recycle-bin-prevents-the-restoring-of-content-that-has-been-moved-to-the-recycle-bin")) %>')) {
+					trashEnabledCheckbox.prop('checked', true);
+
+					trashEnabled = true;
+				}
+			}
+
+			$('#<portlet:namespace />trashEntriesMaxAge').prop('disabled', !trashEnabled);
+		}
+	);
+</aui:script>

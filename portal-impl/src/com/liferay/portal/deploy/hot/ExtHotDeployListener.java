@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -20,7 +20,6 @@ import com.liferay.portal.kernel.deploy.hot.HotDeployException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.WebDirDetector;
-import com.liferay.portal.kernel.servlet.taglib.FileAvailabilityUtil;
 import com.liferay.portal.kernel.util.FileUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
 import com.liferay.portal.kernel.util.StreamUtil;
@@ -47,6 +46,7 @@ import javax.servlet.ServletContext;
  */
 public class ExtHotDeployListener extends BaseHotDeployListener {
 
+	@Override
 	public void invokeDeploy(HotDeployEvent hotDeployEvent)
 		throws HotDeployException {
 
@@ -60,6 +60,7 @@ public class ExtHotDeployListener extends BaseHotDeployListener {
 		}
 	}
 
+	@Override
 	public void invokeUndeploy(HotDeployEvent hotDeployEvent)
 		throws HotDeployException {
 
@@ -158,8 +159,6 @@ public class ExtHotDeployListener extends BaseHotDeployListener {
 
 		installExt(servletContext, hotDeployEvent.getContextClassLoader());
 
-		FileAvailabilityUtil.reset();
-
 		if (_log.isInfoEnabled()) {
 			_log.info(
 				"Extension environment for " + servletContextName +
@@ -253,6 +252,7 @@ public class ExtHotDeployListener extends BaseHotDeployListener {
 		FileUtil.deltree(tmpDir);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ExtHotDeployListener.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ExtHotDeployListener.class);
 
 }

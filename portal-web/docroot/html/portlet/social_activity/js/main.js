@@ -7,13 +7,13 @@ AUI.add(
 
 		var Widget = A.Widget;
 
+		var COL_LIMIT_TYPE = [Liferay.Language.get('social-activity-limit-type-times-a-day'), Liferay.Language.get('social-activity-limit-type-times'), Liferay.Language.get('social-activity-limit-type-times-per-period')];
+
 		var CSS_SETTINGS_ICON_CLOSE = 'settings-icon-close';
 
 		var CSS_SETTINGS_ICON_EXPANDED = 'settings-icon-expanded';
 
 		var CSS_TOKEN = 'lfr-token';
-
-		var COL_LIMIT_TYPE = [Liferay.Language.get('social-activity-limit-type-times-a-day'), Liferay.Language.get('social-activity-limit-type-times'), Liferay.Language.get('social-activity-limit-type-times-per-period')];
 
 		var STR_ACTION_FIELD = 'action-field';
 
@@ -83,7 +83,7 @@ AUI.add(
 
 		var SELECTOR_CONJUNCTION = STR_DOT + STR_CONJUNCTION;
 
-		var SELECTOR_FIELD_INPUT_CHOICE = '.aui-field-input-choice';
+		var SELECTOR_INPUT = 'input';
 
 		var SELECTOR_SETTINGS_DISPLAY = STR_DOT + A.getClassName(STR_SETTINGS_DISPLAY);
 
@@ -95,9 +95,9 @@ AUI.add(
 
 		var SELECTOR_SETTINGS_LIMIT = STR_DOT + STR_SETTINGS_LIMIT;
 
-		var SELECTOR_SOCIAL_ACTIVITY_ITEM = '.social-activity-item';
-
 		var SELECTOR_SOCIAL_ACTIVITY_CONTENT = '.social-activity-details';
+
+		var SELECTOR_SOCIAL_ACTIVITY_ITEM = '.social-activity-item';
 
 		var SELECTOR_UPDATE_SOCIAL_ACTIVITY_FORM = 'form.update-socialactivity-form';
 
@@ -105,11 +105,7 @@ AUI.add(
 			src: STR_UI
 		};
 
-		var TPL_BUTTON_HOLDER = '<div class="' + [STR_SETTINGS_BUTTON_HOLDER].join(STR_SPACE) + ' aui-button aui-button-submit">' +
-				'<span class="aui-button-content">' +
-					'<input class="aui-button-input aui-button-input-submit" type="submit" value="' + STR_SAVE + '" />' +
-				'</span>' +
-			'</div>';
+		var TPL_BUTTON_HOLDER = '<button class="' + [STR_SETTINGS_BUTTON_HOLDER].join(STR_SPACE) + ' btn btn-submit">' + STR_SAVE + '</button>';
 
 		var TPL_BOUNDING_BOX_SETTINGS_FIELD = '<li class="' + [CSS_TOKEN, STR_SETTINGS_FIELD, STR_ACTION_FIELD].join(STR_SPACE) + '"></li>';
 
@@ -147,7 +143,7 @@ AUI.add(
 					'</div>',
 				'</tpl>',
 
-				'<div class="aui-helper-hidden settings-limit">',
+				'<div class="hide settings-limit">',
 					'<tpl for="rows">',
 						'<div class="settings-limit-row">',
 							'<span class="field field-text">{limitFirstText}</span>',
@@ -174,17 +170,13 @@ AUI.add(
 			'<div class="settings-header yui3-widget-hd">',
 				'<div class="settings-header-label">{headerText}</div>',
 				'<ul class="settings-actions">',
-					'<li class="actions-conjunction aui-helper-hidden">{conjunctionText}</li>',
+					'<li class="actions-conjunction hide">{conjunctionText}</li>',
 				'</ul>',
 			'</div>',
 			'<div class="settings-container-label">{containerText}</div>',
 			'<ul class="container-drop-box yui3-widget-bd"></ul>',
-			'<div class="aui-button-row yui3-widget-ft">',
-				'<span class="aui-button aui-button-submit">',
-					'<span class="aui-button-content">',
-						'<input class="aui-button-input aui-button-input-submit" value="{saveText}" type="submit">',
-					'</span>',
-				'</span>',
+			'<div class="btn-row yui3-widget-ft">',
+				'<button class="btn btn-primary btn-submit">{saveText}</button>',
 			'</div>'
 		);
 
@@ -238,13 +230,13 @@ AUI.add(
 									if (currentTarget.test(SELECTOR_SOCIAL_ACTIVITY_ITEM) && !event.target.test('input')) {
 										instance._revealSection(currentTarget, getSocialActivitySettingMappingCallback);
 									}
-									else if (currentTarget.test(SELECTOR_FIELD_INPUT_CHOICE)) {
+									else if (currentTarget.test(SELECTOR_INPUT)) {
 										instance._updateCheckboxStatus(event);
 									}
 								},
 								250
 							),
-							[SELECTOR_SOCIAL_ACTIVITY_ITEM, SELECTOR_FIELD_INPUT_CHOICE].join()
+							[SELECTOR_SOCIAL_ACTIVITY_ITEM, SELECTOR_INPUT].join()
 						);
 
 						var lastIndex = socialActivityItems.size() - 1;
@@ -252,7 +244,7 @@ AUI.add(
 						A.some(
 							socialActivityItems,
 							function(item, index, collection) {
-								var checked = item.one(SELECTOR_FIELD_INPUT_CHOICE).attr('checked');
+								var checked = item.one(SELECTOR_INPUT).attr('checked');
 								var node = item;
 
 								if (!checked && index == lastIndex) {
@@ -276,22 +268,6 @@ AUI.add(
 								}
 
 								return checked;
-							}
-						);
-					},
-
-					_revealSection: function(menuItem, getSocialActivitySettingMappingCallback) {
-						var instance = this;
-
-						var modelName = menuItem.attr(STR_DATA_MODEL_NAME);
-
-						menuItem.radioClass(STR_SELECTED);
-
-						instance._getSocialActivitySettingMapping(
-							themeDisplay.getScopeGroupIdOrLiveGroupId(),
-							modelName,
-							function(result) {
-								getSocialActivitySettingMappingCallback(result, modelName);
 							}
 						);
 					},
@@ -329,8 +305,8 @@ AUI.add(
 						Liferay.Service(
 							'/socialactivitysetting/get-json-activity-definitions',
 							{
-								groupId: groupId,
-								className: modelName
+								className: modelName,
+								groupId: groupId
 							},
 							callback
 						);
@@ -348,6 +324,22 @@ AUI.add(
 						submitForm(form);
 					},
 
+					_revealSection: function(menuItem, getSocialActivitySettingMappingCallback) {
+						var instance = this;
+
+						var modelName = menuItem.attr(STR_DATA_MODEL_NAME);
+
+						menuItem.radioClass(STR_SELECTED);
+
+						instance._getSocialActivitySettingMapping(
+							themeDisplay.getScopeGroupIdOrLiveGroupId(),
+							modelName,
+							function(result) {
+								getSocialActivitySettingMappingCallback(result, modelName);
+							}
+						);
+					},
+
 					_updateCheckboxStatus: function(event) {
 						var instance = this;
 
@@ -358,9 +350,9 @@ AUI.add(
 						Liferay.Service(
 							'/socialactivitysetting/update-activity-setting',
 							{
-								groupId: themeDisplay.getScopeGroupIdOrLiveGroupId(),
 								className: modelName,
-								enabled: currentTarget.attr('checked')
+								enabled: currentTarget.attr('checked'),
+								groupId: themeDisplay.getScopeGroupIdOrLiveGroupId()
 							}
 						);
 					},
@@ -427,7 +419,7 @@ AUI.add(
 
 						A.each(
 							originalConfig.dataSet,
-							function(item, index, collection) {
+							function(item, index) {
 								item.localizedName = activityDefinitionLanguageKeys[item.modelName + '.' + item.languageKey];
 
 								item.settingsDisplay = instance;
@@ -461,7 +453,7 @@ AUI.add(
 					bindUI: function() {
 						var instance = this;
 
-						instance.actionsNode.delegate('click', A.rbind(instance._toggleField, instance, false), SELECTOR_SETTINGS_FIELD, instance);
+						instance.actionsNode.delegate('click', A.rbind('_toggleField', instance, false), SELECTOR_SETTINGS_FIELD, instance);
 
 						instance.bodyNode.delegate('click', instance._onBodyNodeClick, [SELECTOR_SETTINGS_ICON_CLOSE, SELECTOR_SETTINGS_ICON_TOGGLE].join(), instance);
 
@@ -858,6 +850,6 @@ AUI.add(
 	},
 	'',
 	{
-		requires: ['aui-base', 'aui-datatype', 'aui-template', 'liferay-portlet-base', 'transition']
+		requires: ['aui-base', 'aui-datatype', 'aui-template-deprecated', 'liferay-portlet-base', 'transition']
 	}
 );

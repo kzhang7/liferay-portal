@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.documentlibrary.model;
 
+import aQute.bnd.annotation.ProviderType;
+
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -23,10 +25,11 @@ import java.util.List;
 /**
  * This class is used by SOAP remote services, specifically {@link com.liferay.portlet.documentlibrary.service.http.DLFileEntryTypeServiceSoap}.
  *
- * @author    Brian Wing Shun Chan
- * @see       com.liferay.portlet.documentlibrary.service.http.DLFileEntryTypeServiceSoap
+ * @author Brian Wing Shun Chan
+ * @see com.liferay.portlet.documentlibrary.service.http.DLFileEntryTypeServiceSoap
  * @generated
  */
+@ProviderType
 public class DLFileEntryTypeSoap implements Serializable {
 	public static DLFileEntryTypeSoap toSoapModel(DLFileEntryType model) {
 		DLFileEntryTypeSoap soapModel = new DLFileEntryTypeSoap();
@@ -39,6 +42,7 @@ public class DLFileEntryTypeSoap implements Serializable {
 		soapModel.setUserName(model.getUserName());
 		soapModel.setCreateDate(model.getCreateDate());
 		soapModel.setModifiedDate(model.getModifiedDate());
+		soapModel.setFileEntryTypeKey(model.getFileEntryTypeKey());
 		soapModel.setName(model.getName());
 		soapModel.setDescription(model.getDescription());
 
@@ -159,6 +163,14 @@ public class DLFileEntryTypeSoap implements Serializable {
 		_modifiedDate = modifiedDate;
 	}
 
+	public String getFileEntryTypeKey() {
+		return _fileEntryTypeKey;
+	}
+
+	public void setFileEntryTypeKey(String fileEntryTypeKey) {
+		_fileEntryTypeKey = fileEntryTypeKey;
+	}
+
 	public String getName() {
 		return _name;
 	}
@@ -183,6 +195,7 @@ public class DLFileEntryTypeSoap implements Serializable {
 	private String _userName;
 	private Date _createDate;
 	private Date _modifiedDate;
+	private String _fileEntryTypeKey;
 	private String _name;
 	private String _description;
 }

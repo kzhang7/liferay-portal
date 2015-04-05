@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,7 @@
 
 package com.liferay.portlet.dynamicdatalists.model.impl;
 
-import com.liferay.portal.kernel.exception.SystemException;
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portlet.dynamicdatalists.model.DDLRecord;
 import com.liferay.portlet.dynamicdatalists.service.DDLRecordLocalServiceUtil;
@@ -28,9 +28,10 @@ import com.liferay.portlet.dynamicdatalists.service.DDLRecordLocalServiceUtil;
  *
  * @author Brian Wing Shun Chan
  * @see DDLRecordImpl
- * @see com.liferay.portlet.dynamicdatalists.model.DDLRecord
+ * @see DDLRecord
  * @generated
  */
+@ProviderType
 public abstract class DDLRecordBaseImpl extends DDLRecordModelImpl
 	implements DDLRecord {
 	/*
@@ -38,7 +39,8 @@ public abstract class DDLRecordBaseImpl extends DDLRecordModelImpl
 	 *
 	 * Never modify or reference this class directly. All methods that expect a d d l record model instance should use the {@link DDLRecord} interface instead.
 	 */
-	public void persist() throws SystemException {
+	@Override
+	public void persist() {
 		if (this.isNew()) {
 			DDLRecordLocalServiceUtil.addDDLRecord(this);
 		}

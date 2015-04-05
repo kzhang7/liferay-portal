@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -31,6 +31,8 @@ import java.security.ProtectionDomain;
 
 import java.util.Arrays;
 
+import org.aspectj.bridge.AbortException;
+
 /**
  * @author Shuyang Zhou
  */
@@ -43,7 +45,7 @@ public class WeavingClassLoader extends URLClassLoader {
 
 		_dumpDir = dumpDir;
 
-		_urlWeavingAdaptor = new URLWeavingAdaptor(urls, aspectClasses);
+		_urlWeavingAdapter = new URLWeavingAdapter(urls, aspectClasses);
 	}
 
 	@Override
@@ -59,14 +61,13 @@ public class WeavingClassLoader extends URLClassLoader {
 
 				// It may be a generated inner class
 
-				data = _urlWeavingAdaptor.removeGeneratedClassDate(name);
+				data = _urlWeavingAdapter.removeGeneratedClassDate(name);
 			}
 			else {
 				UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
 					new UnsyncByteArrayOutputStream();
 
-				StreamUtil.transfer(
-					inputStream, unsyncByteArrayOutputStream, true);
+				StreamUtil.transfer(inputStream, unsyncByteArrayOutputStream);
 
 				data = unsyncByteArrayOutputStream.toByteArray();
 			}
@@ -77,7 +78,14 @@ public class WeavingClassLoader extends URLClassLoader {
 
 			byte[] oldData = data;
 
-			data = _urlWeavingAdaptor.weaveClass(name, data, false);
+			try {
+				data = _urlWeavingAdapter.weaveClass(name, data, false);
+			}
+			catch (AbortException ae) {
+				if (_log.isWarnEnabled()) {
+					_log.warn("Abort weaving class " + name, ae);
+				}
+			}
 
 			if (Arrays.equals(oldData, data)) {
 				return _generateClass(name, data);
@@ -90,12 +98,11 @@ public class WeavingClassLoader extends URLClassLoader {
 
 				dumpDir.mkdirs();
 
-				FileOutputStream fileOutputStream =
-					new FileOutputStream(dumpFile);
+				try (FileOutputStream fileOutputStream = new FileOutputStream(
+						dumpFile)) {
 
-				fileOutputStream.write(data);
-
-				fileOutputStream.close();
+					fileOutputStream.write(data);
+				}
 
 				if (_log.isInfoEnabled()) {
 					_log.info(
@@ -140,9 +147,10 @@ public class WeavingClassLoader extends URLClassLoader {
 		return clazz;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(WeavingClassLoader.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		WeavingClassLoader.class);
 
-	private File _dumpDir;
-	private URLWeavingAdaptor _urlWeavingAdaptor;
+	private final File _dumpDir;
+	private final URLWeavingAdapter _urlWeavingAdapter;
 
 }

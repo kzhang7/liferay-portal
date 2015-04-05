@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -59,15 +59,17 @@ import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 public class CMISStore extends BaseStore {
 
 	public CMISStore() {
-		_systemRootDir = getFolder(
+		Folder systemRootDir = getFolder(
 			SessionHolder.session.getRootFolder(),
 			PropsValues.DL_STORE_CMIS_SYSTEM_ROOT_DIR);
 
-		if (_systemRootDir == null) {
-			_systemRootDir = createFolder(
+		if (systemRootDir == null) {
+			systemRootDir = createFolder(
 				SessionHolder.session.getRootFolder(),
 				PropsValues.DL_STORE_CMIS_SYSTEM_ROOT_DIR);
 		}
+
+		_systemRootDir = systemRootDir;
 	}
 
 	@Override
@@ -113,7 +115,7 @@ public class CMISStore extends BaseStore {
 		ObjectId versioningFolderObjectId = new ObjectIdImpl(
 			versioningFolder.getId());
 
-		Map<String, Object> documentProperties = new HashMap<String, Object>();
+		Map<String, Object> documentProperties = new HashMap<>();
 
 		String title = String.valueOf(toVersionLabel);
 
@@ -186,6 +188,7 @@ public class CMISStore extends BaseStore {
 		return document.getContentStream().getStream();
 	}
 
+	@Override
 	public String[] getFileNames(long companyId, long repositoryId) {
 		Folder folder = getRepositoryFolder(companyId, repositoryId);
 
@@ -341,6 +344,7 @@ public class CMISStore extends BaseStore {
 		oldVersioningFolderEntry.deleteTree(true, UnfileObject.DELETE, false);
 	}
 
+	@Override
 	public void updateFile(
 		long companyId, long repositoryId, String fileName,
 		String newFileName) {
@@ -406,7 +410,7 @@ public class CMISStore extends BaseStore {
 		document = getVersionedDocument(
 			companyId, repositoryId, fileName, fromVersionLabel);
 
-		Map<String, Object> documentProperties = new HashMap<String, Object>();
+		Map<String, Object> documentProperties = new HashMap<>();
 
 		documentProperties.put(PropertyIds.NAME, title);
 
@@ -416,7 +420,7 @@ public class CMISStore extends BaseStore {
 	protected Document createDocument(
 		Folder versioningFolder, String title, InputStream is) {
 
-		Map<String, Object> documentProperties = new HashMap<String, Object>();
+		Map<String, Object> documentProperties = new HashMap<>();
 
 		documentProperties.put(PropertyIds.NAME, title);
 		documentProperties.put(
@@ -430,7 +434,7 @@ public class CMISStore extends BaseStore {
 	}
 
 	protected Folder createFolder(ObjectId parentFolderId, String name) {
-		Map<String, Object> properties = new HashMap<String, Object>();
+		Map<String, Object> properties = new HashMap<>();
 
 		properties.put(PropertyIds.NAME, name);
 		properties.put(
@@ -483,7 +487,7 @@ public class CMISStore extends BaseStore {
 	}
 
 	protected List<Folder> getFolders(Folder folder) {
-		List<Folder> folders = new ArrayList<Folder>();
+		List<Folder> folders = new ArrayList<>();
 
 		ItemIterable<CmisObject> cmisObjects = folder.getChildren();
 
@@ -553,14 +557,14 @@ public class CMISStore extends BaseStore {
 		return versioningFolder;
 	}
 
-	private static Folder _systemRootDir;
+	private final Folder _systemRootDir;
 
 	private static class SessionHolder {
 
-		private final static Session session;
+		private static final Session session;
 
 		static {
-			Map<String, String> parameters = new HashMap<String, String>();
+			Map<String, String> parameters = new HashMap<>();
 
 			parameters.put(
 				SessionParameter.ATOMPUB_URL,

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.messageboards.model;
 
+import aQute.bnd.annotation.ProviderType;
+
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -23,10 +25,11 @@ import java.util.List;
 /**
  * This class is used by SOAP remote services, specifically {@link com.liferay.portlet.messageboards.service.http.MBMessageServiceSoap}.
  *
- * @author    Brian Wing Shun Chan
- * @see       com.liferay.portlet.messageboards.service.http.MBMessageServiceSoap
+ * @author Brian Wing Shun Chan
+ * @see com.liferay.portlet.messageboards.service.http.MBMessageServiceSoap
  * @generated
  */
+@ProviderType
 public class MBMessageSoap implements Serializable {
 	public static MBMessageSoap toSoapModel(MBMessage model) {
 		MBMessageSoap soapModel = new MBMessageSoap();
@@ -48,7 +51,6 @@ public class MBMessageSoap implements Serializable {
 		soapModel.setSubject(model.getSubject());
 		soapModel.setBody(model.getBody());
 		soapModel.setFormat(model.getFormat());
-		soapModel.setAttachments(model.getAttachments());
 		soapModel.setAnonymous(model.getAnonymous());
 		soapModel.setPriority(model.getPriority());
 		soapModel.setAllowPingbacks(model.getAllowPingbacks());
@@ -245,18 +247,6 @@ public class MBMessageSoap implements Serializable {
 		_format = format;
 	}
 
-	public boolean getAttachments() {
-		return _attachments;
-	}
-
-	public boolean isAttachments() {
-		return _attachments;
-	}
-
-	public void setAttachments(boolean attachments) {
-		_attachments = attachments;
-	}
-
 	public boolean getAnonymous() {
 		return _anonymous;
 	}
@@ -350,7 +340,6 @@ public class MBMessageSoap implements Serializable {
 	private String _subject;
 	private String _body;
 	private String _format;
-	private boolean _attachments;
 	private boolean _anonymous;
 	private double _priority;
 	private boolean _allowPingbacks;

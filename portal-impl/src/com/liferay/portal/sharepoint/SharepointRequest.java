@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -38,21 +38,15 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class SharepointRequest {
 
-	public SharepointRequest(String rootPath) {
-		_rootPath = rootPath;
-	}
-
 	public SharepointRequest(
 			HttpServletRequest request, HttpServletResponse response, User user)
 		throws SharepointException {
 
-		_request = request;
-		_response = response;
-		_user = user;
+		this(request, response, user, StringPool.BLANK);
+	}
 
-		_params.putAll(request.getParameterMap());
-
-		addParams();
+	public SharepointRequest(String rootPath) throws SharepointException {
+		this(null, null, null, rootPath);
 	}
 
 	public void addParam(String key, String value) {
@@ -78,7 +72,7 @@ public class SharepointRequest {
 	public String getParameterValue(String name) {
 		String[] values = _params.get(name);
 
-		if ((values != null) && (values.length > 0)) {
+		if (ArrayUtil.isNotEmpty(values)) {
 			return GetterUtil.getString(_params.get(name)[0]);
 		}
 		else {
@@ -161,12 +155,27 @@ public class SharepointRequest {
 		}
 	}
 
+	private SharepointRequest(
+			HttpServletRequest request, HttpServletResponse response, User user,
+			String rootPath)
+		throws SharepointException {
+
+		_request = request;
+		_response = response;
+		_user = user;
+		_rootPath = rootPath;
+
+		_params.putAll(request.getParameterMap());
+
+		addParams();
+	}
+
 	private byte[] _bytes;
-	private Map<String, String[]> _params = new HashMap<String, String[]>();
-	private HttpServletRequest _request;
-	private HttpServletResponse _response;
+	private final Map<String, String[]> _params = new HashMap<>();
+	private final HttpServletRequest _request;
+	private final HttpServletResponse _response;
 	private String _rootPath = StringPool.BLANK;
 	private SharepointStorage _storage;
-	private User _user;
+	private final User _user;
 
 }

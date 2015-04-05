@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayInputStream;
 import com.liferay.portal.kernel.io.unsync.UnsyncByteArrayOutputStream;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.servlet.ServletInputStreamAdapter;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ProgressTracker;
@@ -37,14 +38,22 @@ import javax.servlet.http.HttpSession;
  */
 public class LiferayInputStream extends ServletInputStreamAdapter {
 
-	public static final int THRESHOLD_SIZE = GetterUtil.getInteger(
+	public static final long THRESHOLD_SIZE = GetterUtil.getLong(
 		PropsUtil.get(LiferayInputStream.class.getName() + ".threshold.size"));
 
 	public LiferayInputStream(HttpServletRequest request) throws IOException {
 		super(request.getInputStream());
 
 		_session = request.getSession();
-		_totalSize = request.getContentLength();
+
+		long totalSize = request.getContentLength();
+
+		if (totalSize < 0) {
+			totalSize = GetterUtil.getLong(
+				request.getHeader(HttpHeaders.CONTENT_LENGTH), totalSize);
+		}
+
+		_totalSize = totalSize;
 	}
 
 	public ServletInputStream getCachedInputStream() {
@@ -90,10 +99,9 @@ public class LiferayInputStream extends ServletInputStreamAdapter {
 
 		if ((curPercent == null) || ((percent - curPercent.intValue()) >= 1)) {
 			if (progressTracker == null) {
-				progressTracker = new ProgressTracker(
-					_session, StringPool.BLANK);
+				progressTracker = new ProgressTracker(StringPool.BLANK);
 
-				progressTracker.initialize();
+				progressTracker.initialize(_session);
 			}
 
 			progressTracker.setPercent(percent);
@@ -102,12 +110,13 @@ public class LiferayInputStream extends ServletInputStreamAdapter {
 		return bytesRead;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(LiferayInputStream.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		LiferayInputStream.class);
 
-	private UnsyncByteArrayOutputStream _cachedBytes =
+	private final UnsyncByteArrayOutputStream _cachedBytes =
 		new UnsyncByteArrayOutputStream();
-	private HttpSession _session;
-	private int _totalRead;
-	private int _totalSize;
+	private final HttpSession _session;
+	private long _totalRead;
+	private final long _totalSize;
 
 }

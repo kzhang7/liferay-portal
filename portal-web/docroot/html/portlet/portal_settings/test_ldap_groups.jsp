@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -54,6 +54,15 @@ if (Validator.isNull(ParamUtil.getString(request, "groupMappingGroupName")) ||
 
 String groupFilter = ParamUtil.getString(request, "importGroupSearchFilter");
 
+if (!LDAPUtil.isValidFilter(groupFilter)) {
+%>
+
+	<liferay-ui:message key="please-enter-a-valid-ldap-search-filter" />
+
+<%
+	return;
+}
+
 String groupMappingsParam =
 	"groupName=" + ParamUtil.getString(request, "groupMappingGroupName") +
 	"\ndescription=" + ParamUtil.getString(request, "groupMappingDescription") +
@@ -86,7 +95,7 @@ int counter = 0;
 for (SearchResult searchResult : searchResults) {
 	Attributes attributes = searchResult.getAttributes();
 
-	String name = LDAPUtil.getAttributeString(attributes, groupMappings.getProperty("groupName")).toLowerCase();
+	String name = StringUtil.toLowerCase(LDAPUtil.getAttributeString(attributes, groupMappings.getProperty("groupName")));
 	String description = LDAPUtil.getAttributeString(attributes, groupMappings.getProperty("description"));
 	Attribute attribute = attributes.get(groupMappings.getProperty("user"));
 
@@ -99,7 +108,7 @@ for (SearchResult searchResult : searchResults) {
 
 		sb.append("(&");
 		sb.append(groupFilter);
-		sb.append("(");
+		sb.append(StringPool.OPEN_PARENTHESIS);
 		sb.append(groupMappings.getProperty("groupName"));
 		sb.append("=");
 		sb.append(name);
@@ -139,10 +148,10 @@ for (SearchResult searchResult : searchResults) {
 			<%= counter %>
 		</td>
 		<td>
-			<%= name %>
+			<%= HtmlUtil.escape(name) %>
 		</td>
 		<td>
-			<%= description %>
+			<%= HtmlUtil.escape(description) %>
 		</td>
 		<td>
 			<%= (attribute == null) ? "0" : String.valueOf(attribute.size()) %>
@@ -171,7 +180,7 @@ if (counter == 0) {
 if (showMissingAttributeMessage) {
 %>
 
-	<div class="portlet-msg-info">
+	<div class="alert alert-info">
 		<liferay-ui:message key="the-above-results-include-groups-which-are-missing-the-required-attributes-(group-name-and-user).-these-groups-will-not-be-imported-until-these-attributes-are-filled-in" />
 	</div>
 

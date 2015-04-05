@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,7 +14,6 @@
 
 package com.liferay.portal.service.impl;
 
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.image.SpriteProcessor;
 import com.liferay.portal.kernel.image.SpriteProcessorUtil;
 import com.liferay.portal.kernel.log.Log;
@@ -22,12 +21,14 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.plugin.PluginPackage;
 import com.liferay.portal.kernel.plugin.Version;
 import com.liferay.portal.kernel.servlet.ServletContextUtil;
+import com.liferay.portal.kernel.util.ColorSchemeFactoryUtil;
 import com.liferay.portal.kernel.util.ContextPathUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ReleaseInfo;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.ThemeFactoryUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.xml.Document;
 import com.liferay.portal.kernel.xml.Element;
@@ -36,8 +37,6 @@ import com.liferay.portal.model.ColorScheme;
 import com.liferay.portal.model.PluginSetting;
 import com.liferay.portal.model.PortletConstants;
 import com.liferay.portal.model.Theme;
-import com.liferay.portal.model.impl.ColorSchemeImpl;
-import com.liferay.portal.model.impl.ThemeImpl;
 import com.liferay.portal.plugin.PluginUtil;
 import com.liferay.portal.service.base.ThemeLocalServiceBaseImpl;
 import com.liferay.portal.theme.ThemeCompanyId;
@@ -53,6 +52,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -68,6 +68,7 @@ import javax.servlet.ServletContext;
  */
 public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 
+	@Override
 	public ColorScheme fetchColorScheme(
 		long companyId, String themeId, String colorSchemeId) {
 
@@ -84,6 +85,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 		return colorSchemesMap.get(colorSchemeId);
 	}
 
+	@Override
 	public Theme fetchTheme(long companyId, String themeId) {
 		themeId = GetterUtil.getString(themeId);
 
@@ -92,10 +94,10 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 		return themes.get(themeId);
 	}
 
+	@Override
 	public ColorScheme getColorScheme(
-			long companyId, String themeId, String colorSchemeId,
-			boolean wapTheme)
-		throws SystemException {
+		long companyId, String themeId, String colorSchemeId,
+		boolean wapTheme) {
 
 		colorSchemeId = GetterUtil.getString(colorSchemeId);
 
@@ -105,97 +107,38 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 
 		ColorScheme colorScheme = colorSchemesMap.get(colorSchemeId);
 
-		if (colorScheme == null) {
-			List<ColorScheme> colorSchemes = theme.getColorSchemes();
+		if (colorScheme != null) {
+			return colorScheme;
+		}
 
-			if (colorSchemes.size() > 0) {
-				for (int i = (colorSchemes.size() - 1); i >= 0; i--) {
-					colorScheme = colorSchemes.get(i);
+		List<ColorScheme> colorSchemes = theme.getColorSchemes();
 
-					if (colorScheme.isDefaultCs()) {
-						break;
-					}
+		if (!colorSchemes.isEmpty()) {
+			for (int i = (colorSchemes.size() - 1); i >= 0; i--) {
+				colorScheme = colorSchemes.get(i);
+
+				if (colorScheme.isDefaultCs()) {
+					return colorScheme;
 				}
 			}
 		}
 
 		if (colorScheme == null) {
 			if (wapTheme) {
-				colorSchemeId = ColorSchemeImpl.getDefaultWapColorSchemeId();
+				colorScheme = ColorSchemeFactoryUtil.getDefaultWapColorScheme();
 			}
 			else {
-				colorSchemeId =
-					ColorSchemeImpl.getDefaultRegularColorSchemeId();
+				colorScheme =
+					ColorSchemeFactoryUtil.getDefaultRegularColorScheme();
 			}
-		}
-
-		if (colorScheme == null) {
-			colorScheme = ColorSchemeImpl.getNullColorScheme();
 		}
 
 		return colorScheme;
 	}
 
-	public Theme getTheme(long companyId, String themeId, boolean wapTheme)
-		throws SystemException {
-
-		themeId = GetterUtil.getString(themeId);
-
-		Map<String, Theme> themes = _getThemes(companyId);
-
-		Theme theme = themes.get(themeId);
-
-		if (theme == null) {
-			if (_log.isWarnEnabled()) {
-				_log.warn(
-					"No theme found for specified theme id " + themeId +
-						". Returning the default theme.");
-			}
-
-			if (wapTheme) {
-				themeId = ThemeImpl.getDefaultWapThemeId(companyId);
-			}
-			else {
-				themeId = ThemeImpl.getDefaultRegularThemeId(companyId);
-			}
-
-			theme = _themes.get(themeId);
-		}
-
-		if (theme == null) {
-			if (_themes.isEmpty()) {
-				if (_log.isDebugEnabled()) {
-					_log.debug("No themes are installed");
-				}
-
-				return null;
-			}
-
-			if (!themeId.contains(PortletConstants.WAR_SEPARATOR)) {
-				_log.error(
-					"No theme found for default theme id " + themeId +
-						". Returning a random theme.");
-			}
-
-			for (Map.Entry<String, Theme> entry : _themes.entrySet()) {
-				theme = entry.getValue();
-			}
-		}
-
-		return theme;
-	}
-
-	public List<Theme> getThemes(long companyId) {
-		Map<String, Theme> themes = _getThemes(companyId);
-
-		List<Theme> themesList = ListUtil.fromMapValues(themes);
-
-		return ListUtil.sort(themesList);
-	}
-
-	public List<Theme> getThemes(
-			long companyId, long groupId, long userId, boolean wapTheme)
-		throws SystemException {
+	@Override
+	public List<Theme> getControlPanelThemes(
+		long companyId, long userId, boolean wapTheme) {
 
 		List<Theme> themes = getThemes(companyId);
 
@@ -206,8 +149,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 		while (itr.hasNext()) {
 			Theme theme = itr.next();
 
-			if (theme.getThemeId().equals("controlpanel") ||
-				!theme.isGroupAvailable(groupId) ||
+			if (!theme.isControlPanelTheme() ||
 				(theme.isWapTheme() != wapTheme)) {
 
 				itr.remove();
@@ -217,6 +159,106 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 		return themes;
 	}
 
+	@Override
+	public List<Theme> getPageThemes(
+		long companyId, long groupId, long userId, boolean wapTheme) {
+
+		List<Theme> themes = getThemes(companyId);
+
+		themes = PluginUtil.restrictPlugins(themes, companyId, userId);
+
+		Iterator<Theme> itr = themes.iterator();
+
+		while (itr.hasNext()) {
+			Theme theme = itr.next();
+
+			if (!theme.isPageTheme() || !theme.isGroupAvailable(groupId) ||
+				(theme.isWapTheme() != wapTheme)) {
+
+				itr.remove();
+			}
+		}
+
+		return themes;
+	}
+
+	@Override
+	public Theme getTheme(long companyId, String themeId, boolean wapTheme) {
+		themeId = GetterUtil.getString(themeId);
+
+		Map<String, Theme> themes = _getThemes(companyId);
+
+		Theme theme = themes.get(themeId);
+
+		if (theme != null) {
+			return theme;
+		}
+
+		if (_log.isWarnEnabled()) {
+			_log.warn(
+				"No theme found for specified theme id " + themeId +
+					". Returning the default theme.");
+		}
+
+		if (wapTheme) {
+			themeId = ThemeFactoryUtil.getDefaultWapThemeId(companyId);
+		}
+		else {
+			themeId = ThemeFactoryUtil.getDefaultRegularThemeId(companyId);
+		}
+
+		theme = _themes.get(themeId);
+
+		if (theme != null) {
+			return theme;
+		}
+
+		if (_themes.isEmpty()) {
+			if (_log.isDebugEnabled()) {
+				_log.debug("No themes are installed");
+			}
+
+			return null;
+		}
+
+		if (!themeId.contains(PortletConstants.WAR_SEPARATOR)) {
+			_log.error(
+				"No theme found for default theme id " + themeId +
+					". Returning a random theme.");
+		}
+
+		for (Map.Entry<String, Theme> entry : _themes.entrySet()) {
+			theme = entry.getValue();
+
+			if ((theme != null) && (theme.isWapTheme() == wapTheme)) {
+				return theme;
+			}
+		}
+
+		return null;
+	}
+
+	@Override
+	public List<Theme> getThemes(long companyId) {
+		Map<String, Theme> themes = _getThemes(companyId);
+
+		List<Theme> themesList = ListUtil.fromMapValues(themes);
+
+		return ListUtil.sort(themesList);
+	}
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #getPageThemes}
+	 */
+	@Deprecated
+	@Override
+	public List<Theme> getThemes(
+		long companyId, long groupId, long userId, boolean wapTheme) {
+
+		return getPageThemes(companyId, groupId, userId, wapTheme);
+	}
+
+	@Override
 	public List<Theme> getWARThemes() {
 		List<Theme> themes = ListUtil.fromMapValues(_themes);
 
@@ -233,7 +275,8 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 		return themes;
 	}
 
-	public List<String> init(
+	@Override
+	public List<Theme> init(
 		ServletContext servletContext, String themesPath,
 		boolean loadFromServletContext, String[] xmls,
 		PluginPackage pluginPackage) {
@@ -243,38 +286,35 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 			pluginPackage);
 	}
 
-	public List<String> init(
+	@Override
+	public List<Theme> init(
 		String servletContextName, ServletContext servletContext,
 		String themesPath, boolean loadFromServletContext, String[] xmls,
 		PluginPackage pluginPackage) {
 
-		List<String> themeIdsList = new ArrayList<String>();
+		Set<Theme> themes = new LinkedHashSet<>();
 
 		try {
 			for (String xml : xmls) {
-				Set<String> themeIds = _readThemes(
-					servletContextName, servletContext, themesPath,
-					loadFromServletContext, xml, pluginPackage);
-
-				for (String themeId : themeIds) {
-					if (!themeIdsList.contains(themeId)) {
-						themeIdsList.add(themeId);
-					}
-				}
+				themes.addAll(
+					_readThemes(
+						servletContextName, servletContext, themesPath,
+						loadFromServletContext, xml, pluginPackage));
 			}
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			_log.error(e, e);
 		}
 
 		_themesPool.clear();
 
-		return themeIdsList;
+		return new ArrayList<>(themes);
 	}
 
-	public void uninstallThemes(List<String> themeIds) {
-		for (int i = 0; i < themeIds.size(); i++) {
-			String themeId = themeIds.get(i);
+	@Override
+	public void uninstallThemes(List<Theme> themes) {
+		for (Theme theme : themes) {
+			String themeId = theme.getThemeId();
 
 			_themes.remove(themeId);
 
@@ -285,7 +325,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 	}
 
 	private List<ThemeCompanyId> _getCompanyLimitExcludes(Element element) {
-		List<ThemeCompanyId> includes = new ArrayList<ThemeCompanyId>();
+		List<ThemeCompanyId> includes = new ArrayList<>();
 
 		if (element == null) {
 			return includes;
@@ -321,7 +361,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 	}
 
 	private List<ThemeGroupId> _getGroupLimitExcludes(Element element) {
-		List<ThemeGroupId> includes = new ArrayList<ThemeGroupId>();
+		List<ThemeGroupId> includes = new ArrayList<>();
 
 		if (element == null) {
 			return includes;
@@ -363,7 +403,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 			return themes;
 		}
 
-		themes = new ConcurrentHashMap<String, Theme>();
+		themes = new ConcurrentHashMap<>();
 
 		for (Map.Entry<String, Theme> entry : _themes.entrySet()) {
 			String themeId = entry.getKey();
@@ -405,7 +445,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 			ColorScheme colorSchemeModel = colorSchemes.get(id);
 
 			if (colorSchemeModel == null) {
-				colorSchemeModel = new ColorSchemeImpl(id);
+				colorSchemeModel = ColorSchemeFactoryUtil.getColorScheme(id);
 			}
 
 			String name = GetterUtil.getString(
@@ -445,16 +485,16 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 		}
 	}
 
-	private Set<String> _readThemes(
+	private Set<Theme> _readThemes(
 			String servletContextName, ServletContext servletContext,
 			String themesPath, boolean loadFromServletContext, String xml,
 			PluginPackage pluginPackage)
 		throws Exception {
 
-		Set<String> themeIds = new HashSet<String>();
+		Set<Theme> themes = new HashSet<>();
 
 		if (xml == null) {
-			return themeIds;
+			return themes;
 		}
 
 		Document document = SAXReaderUtil.read(xml, true);
@@ -487,7 +527,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 				"Themes in this WAR are not compatible with " +
 					ReleaseInfo.getServerInfo());
 
-			return themeIds;
+			return themes;
 		}
 
 		ThemeCompanyLimit companyLimit = null;
@@ -559,12 +599,10 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 
 			themeContextReplace.addValue("theme-id", themeId);
 
-			themeIds.add(themeId);
-
 			Theme theme = _themes.get(themeId);
 
 			if (theme == null) {
-				theme = new ThemeImpl(themeId);
+				theme = ThemeFactoryUtil.getTheme(themeId);
 			}
 
 			theme.setTimestamp(timestamp);
@@ -657,8 +695,9 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 					String key = settingElement.attributeValue("key");
 					String[] options = StringUtil.split(
 						settingElement.attributeValue("options"));
-					String type = settingElement.attributeValue("type");
-					String value = settingElement.attributeValue("value");
+					String type = settingElement.attributeValue("type", "text");
+					String value = settingElement.attributeValue(
+						"value", StringPool.BLANK);
 					String script = settingElement.getTextTrim();
 
 					theme.addSetting(
@@ -666,6 +705,12 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 				}
 			}
 
+			theme.setControlPanelTheme(
+				GetterUtil.getBoolean(
+					themeElement.elementText("control-panel-theme")));
+			theme.setPageTheme(
+				GetterUtil.getBoolean(
+					themeElement.elementText("page-theme"), true));
 			theme.setWapTheme(
 				GetterUtil.getBoolean(
 					themeElement.elementText("wap-theme"), theme.isWapTheme()));
@@ -716,9 +761,11 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 			if (!_themes.containsKey(themeId)) {
 				_themes.put(themeId, theme);
 			}
+
+			themes.add(theme);
 		}
 
-		return themeIds;
+		return themes;
 	}
 
 	private void _setSpriteImages(
@@ -736,7 +783,7 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 			return;
 		}
 
-		List<URL> imageURLs = new ArrayList<URL>(resourcePaths.size());
+		List<URL> imageURLs = new ArrayList<>(resourcePaths.size());
 
 		for (String curResourcePath : resourcePaths) {
 			if (curResourcePath.endsWith(StringPool.SLASH)) {
@@ -778,12 +825,11 @@ public class ThemeLocalServiceImpl extends ThemeLocalServiceBaseImpl {
 		theme.setSpriteImages(spriteFileName, spriteProperties);
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		ThemeLocalServiceImpl.class);
 
-	private static Map<String, Theme> _themes =
-		new ConcurrentHashMap<String, Theme>();
-	private static Map<Long, Map<String, Theme>> _themesPool =
-		new ConcurrentHashMap<Long, Map<String, Theme>>();
+	private static final Map<String, Theme> _themes = new ConcurrentHashMap<>();
+	private static final Map<Long, Map<String, Theme>> _themesPool =
+		new ConcurrentHashMap<>();
 
 }

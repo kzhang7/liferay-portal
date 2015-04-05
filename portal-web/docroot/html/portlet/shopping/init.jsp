@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,9 +16,7 @@
 
 <%@ include file="/html/portlet/init.jsp" %>
 
-<%@ page import="com.liferay.portlet.amazonrankings.util.AmazonRankingsUtil" %><%@
-page import="com.liferay.portlet.shopping.AmazonException" %><%@
-page import="com.liferay.portlet.shopping.BillingCityException" %><%@
+<%@ page import="com.liferay.portlet.shopping.BillingCityException" %><%@
 page import="com.liferay.portlet.shopping.BillingCountryException" %><%@
 page import="com.liferay.portlet.shopping.BillingEmailAddressException" %><%@
 page import="com.liferay.portlet.shopping.BillingFirstNameException" %><%@
@@ -45,6 +43,7 @@ page import="com.liferay.portlet.shopping.CouponMinimumOrderException" %><%@
 page import="com.liferay.portlet.shopping.CouponNameException" %><%@
 page import="com.liferay.portlet.shopping.CouponStartDateException" %><%@
 page import="com.liferay.portlet.shopping.DuplicateCouponCodeException" %><%@
+page import="com.liferay.portlet.shopping.DuplicateItemFieldNameException" %><%@
 page import="com.liferay.portlet.shopping.DuplicateItemSKUException" %><%@
 page import="com.liferay.portlet.shopping.ItemLargeImageNameException" %><%@
 page import="com.liferay.portlet.shopping.ItemLargeImageSizeException" %><%@
@@ -67,6 +66,7 @@ page import="com.liferay.portlet.shopping.ShippingPhoneException" %><%@
 page import="com.liferay.portlet.shopping.ShippingStateException" %><%@
 page import="com.liferay.portlet.shopping.ShippingStreetException" %><%@
 page import="com.liferay.portlet.shopping.ShippingZipException" %><%@
+page import="com.liferay.portlet.shopping.ShoppingGroupServiceSettings" %><%@
 page import="com.liferay.portlet.shopping.model.ShoppingCart" %><%@
 page import="com.liferay.portlet.shopping.model.ShoppingCartItem" %><%@
 page import="com.liferay.portlet.shopping.model.ShoppingCategory" %><%@
@@ -82,7 +82,6 @@ page import="com.liferay.portlet.shopping.model.ShoppingOrderConstants" %><%@
 page import="com.liferay.portlet.shopping.model.ShoppingOrderItem" %><%@
 page import="com.liferay.portlet.shopping.search.CouponDisplayTerms" %><%@
 page import="com.liferay.portlet.shopping.search.CouponSearch" %><%@
-page import="com.liferay.portlet.shopping.search.CouponSearchTerms" %><%@
 page import="com.liferay.portlet.shopping.search.OrderDisplayTerms" %><%@
 page import="com.liferay.portlet.shopping.search.OrderSearch" %><%@
 page import="com.liferay.portlet.shopping.search.OrderSearchTerms" %><%@
@@ -100,15 +99,15 @@ page import="com.liferay.portlet.shopping.service.permission.ShoppingCategoryPer
 page import="com.liferay.portlet.shopping.service.permission.ShoppingItemPermission" %><%@
 page import="com.liferay.portlet.shopping.service.permission.ShoppingOrderPermission" %><%@
 page import="com.liferay.portlet.shopping.service.permission.ShoppingPermission" %><%@
-page import="com.liferay.portlet.shopping.util.ShoppingPreferences" %><%@
+page import="com.liferay.portlet.shopping.util.ShoppingConstants" %><%@
 page import="com.liferay.portlet.shopping.util.ShoppingUtil" %>
 
 <%
 PortalPreferences portalPreferences = PortletPreferencesFactoryUtil.getPortalPreferences(request);
 
-ShoppingPreferences shoppingPrefs = ShoppingPreferences.getInstance(company.getCompanyId(), scopeGroupId);
+ShoppingGroupServiceSettings shoppingGroupServiceSettings = ShoppingGroupServiceSettings.getInstance(themeDisplay.getSiteGroupId());
 
-Currency currency = Currency.getInstance(shoppingPrefs.getCurrencyId());
+Currency currency = Currency.getInstance(shoppingGroupServiceSettings.getCurrencyId());
 
 NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(locale);
 

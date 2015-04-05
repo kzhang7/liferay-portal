@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.trash.model;
 
+import aQute.bnd.annotation.ProviderType;
+
 import java.io.Serializable;
 
 import java.util.ArrayList;
@@ -23,10 +25,11 @@ import java.util.List;
 /**
  * This class is used by SOAP remote services, specifically {@link com.liferay.portlet.trash.service.http.TrashEntryServiceSoap}.
  *
- * @author    Brian Wing Shun Chan
- * @see       com.liferay.portlet.trash.service.http.TrashEntryServiceSoap
+ * @author Brian Wing Shun Chan
+ * @see com.liferay.portlet.trash.service.http.TrashEntryServiceSoap
  * @generated
  */
+@ProviderType
 public class TrashEntrySoap implements Serializable {
 	public static TrashEntrySoap toSoapModel(TrashEntry model) {
 		TrashEntrySoap soapModel = new TrashEntrySoap();
@@ -39,6 +42,7 @@ public class TrashEntrySoap implements Serializable {
 		soapModel.setCreateDate(model.getCreateDate());
 		soapModel.setClassNameId(model.getClassNameId());
 		soapModel.setClassPK(model.getClassPK());
+		soapModel.setSystemEventSetKey(model.getSystemEventSetKey());
 		soapModel.setTypeSettings(model.getTypeSettings());
 		soapModel.setStatus(model.getStatus());
 
@@ -157,6 +161,14 @@ public class TrashEntrySoap implements Serializable {
 		_classPK = classPK;
 	}
 
+	public long getSystemEventSetKey() {
+		return _systemEventSetKey;
+	}
+
+	public void setSystemEventSetKey(long systemEventSetKey) {
+		_systemEventSetKey = systemEventSetKey;
+	}
+
 	public String getTypeSettings() {
 		return _typeSettings;
 	}
@@ -181,6 +193,7 @@ public class TrashEntrySoap implements Serializable {
 	private Date _createDate;
 	private long _classNameId;
 	private long _classPK;
+	private long _systemEventSetKey;
 	private String _typeSettings;
 	private int _status;
 }

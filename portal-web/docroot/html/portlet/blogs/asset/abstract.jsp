@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,35 +17,35 @@
 <%@ include file="/html/portlet/blogs/init.jsp" %>
 
 <%
-int abstractLength = (Integer)request.getAttribute(WebKeys.ASSET_PUBLISHER_ABSTRACT_LENGTH);
+int abstractLength = GetterUtil.getInteger(request.getAttribute(WebKeys.ASSET_ENTRY_ABSTRACT_LENGTH), AssetUtil.ASSET_ENTRY_ABSTRACT_LENGTH);
+AssetRenderer assetRenderer = (AssetRenderer)request.getAttribute(WebKeys.ASSET_RENDERER);
 
 BlogsEntry entry = (BlogsEntry)request.getAttribute(WebKeys.BLOGS_ENTRY);
+
+Portlet portlet = PortletLocalServiceUtil.getPortletById(company.getCompanyId(), portletDisplay.getId());
 %>
 
+<liferay-util:html-top outputKey="blogs_common_main_css">
+	<link href="<%= PortalUtil.getStaticResourceURL(request, PortalUtil.getPathContext(request) + "/html/portlet/blogs/css/common_main.css", portlet.getTimestamp()) %>" rel="stylesheet" type="text/css" />
+</liferay-util:html-top>
+
 <c:if test="<%= entry.isSmallImage() %>">
-
-	<%
-	String src = StringPool.BLANK;
-
-	if (Validator.isNotNull(entry.getSmallImageURL())) {
-		src = entry.getSmallImageURL();
-	}
-	else {
-		src = themeDisplay.getPathImage() + "/blogs/article?img_id=" + entry.getSmallImageId() + "&t=" + WebServerServletTokenUtil.getToken(entry.getSmallImageId());
-	}
-	%>
-
 	<div class="asset-small-image">
-		<img alt="" class="asset-small-image" src="<%= HtmlUtil.escape(src) %>" width="150" />
+		<img alt="" class="asset-small-image img-thumbnail" src="<%= HtmlUtil.escape(entry.getSmallImageURL(themeDisplay)) %>" width="150" />
 	</div>
 </c:if>
 
-<%
-String summary = entry.getDescription();
+<div class="portlet-blogs">
+	<div class="entry-body">
 
-if (Validator.isNull(summary)) {
-	summary = HtmlUtil.stripHtml(entry.getContent());
-}
-%>
+		<%
+		String coverImageURL = entry.getCoverImageURL(themeDisplay);
+		%>
 
-<%= StringUtil.shorten(summary, abstractLength) %>
+		<c:if test="<%= Validator.isNotNull(coverImageURL) %>">
+			<div class="cover-image-container" style="background-image: url(<%= coverImageURL %>)"></div>
+		</c:if>
+
+		<%= StringUtil.shorten(HtmlUtil.stripHtml(assetRenderer.getSummary()), abstractLength) %>
+	</div>
+</div>

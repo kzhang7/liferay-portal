@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,100 +19,126 @@
 <%
 String displayStyle = (String)request.getAttribute("liferay-ui:app-view-display-style:displayStyle");
 String[] displayStyles = (String[])request.getAttribute("liferay-ui:app-view-display-style:displayStyles");
+PortletURL displayStyleURL = (PortletURL)request.getAttribute("liferay-ui:app-view-display-style:displayStyleURL");
+String eventName = (String)request.getAttribute("liferay-ui:app-view-display-style:eventName");
 Map<String, String> requestParams = (Map<String, String>)request.getAttribute("liferay-ui:app-view-display-style:requestParams");
 %>
 
 <c:if test="<%= displayStyles.length > 1 %>">
-	<aui:script use="aui-base,aui-toolbar">
-		var buttonRow = A.one('#<portlet:namespace />displayStyleToolbar');
+	<span class="display-style-buttons-container" id="<portlet:namespace />displayStyleButtonsContainer">
+		<div class="display-style-buttons" id="<portlet:namespace />displayStyleButtons">
+			<aui:nav-item anchorCssClass="btn btn-default" dropdown="<%= true %>" iconCssClass='<%= "icon-" + HtmlUtil.escapeAttribute(_getIcon(displayStyle)) %>'>
 
-		function onButtonClick(displayStyle) {
-			var config = {};
+				<%
+				for (String curDisplayStyle : displayStyles) {
+				%>
 
-			<%
-			Set<String> requestParamNames = requestParams.keySet();
+					<c:choose>
+						<c:when test="<%= displayStyleURL != null %>">
 
-			for (String requestParamName : requestParamNames) {
-				String requestParamValue = requestParams.get(requestParamName);
-			%>
+							<%
+							displayStyleURL.setParameter("displayStyle", curDisplayStyle);
+							%>
 
-				config['<portlet:namespace /><%= requestParamName %>'] = '<%= requestParamValue %>';
+							<aui:nav-item
+								href="<%= displayStyleURL.toString() %>"
+								iconCssClass='<%= "icon-" + HtmlUtil.escapeAttribute(_getIcon(curDisplayStyle)) %>'
+								label="<%= HtmlUtil.escape(curDisplayStyle) %>"
+							/>
+						</c:when>
+						<c:otherwise>
 
-			<%
+							<%
+							Map<String, Object> data = new HashMap<String, Object>();
+
+							data.put("displayStyle", curDisplayStyle);
+							%>
+
+							<aui:nav-item
+								anchorData="<%= data %>"
+								href="javascript:;"
+								iconCssClass='<%= "icon-" + HtmlUtil.escapeAttribute(_getIcon(curDisplayStyle)) %>'
+								label="<%= HtmlUtil.escape(curDisplayStyle) %>"
+							/>
+						</c:otherwise>
+					</c:choose>
+
+				<%
+				}
+				%>
+
+			</aui:nav-item>
+		</div>
+	</span>
+
+	<c:if test="<%= displayStyleURL == null %>">
+		<aui:script sandbox="<%= true %>">
+			function changeDisplayStyle(displayStyle) {
+				var config = {};
+
+				<%
+				if (requestParams != null) {
+					Set<String> requestParamNames = requestParams.keySet();
+
+					for (String requestParamName : requestParamNames) {
+						String requestParamValue = requestParams.get(requestParamName);
+				%>
+
+						config['<portlet:namespace /><%= requestParamName %>'] = '<%= HtmlUtil.escapeJS(requestParamValue) %>';
+
+				<%
+					}
+				}
+				%>
+
+				config['<portlet:namespace />displayStyle'] = displayStyle;
+
+				Liferay.fire(
+					'<portlet:namespace />dataRequest',
+					{
+						requestParams: config,
+						src: Liferay.DL_ENTRIES_PAGINATOR
+					}
+				);
 			}
-			%>
 
-			config['<portlet:namespace />displayStyle'] = displayStyle;
-			config['<portlet:namespace />saveDisplayStyle'] = true;
+			$('#<portlet:namespace />displayStyleButtons .dropdown-menu').on(
+				'click',
+				'li > a',
+				function(event) {
+					var displayStyle = $(event.currentTarget).data('displaystyle');
 
-			updateDisplayStyle(config);
-		}
-
-		function updateDisplayStyle(config) {
-			var displayStyle = config['<portlet:namespace />displayStyle'];
-
-			<%
-			for (int i = 0; i < displayStyles.length; i++) {
-			%>
-
-				displayStyleToolbar.item(<%= i %>).StateInteraction.set('active', (displayStyle === '<%= displayStyles[i] %>'));
-
-			<%
-			}
-			%>
-
-			Liferay.fire(
-				'<portlet:namespace />dataRequest',
-				{
-					requestParams: config,
-					src: Liferay.DL_ENTRIES_PAGINATOR
+					if (<%= requestParams != null %>) {
+						changeDisplayStyle(displayStyle);
+					}
+					else if (<%= eventName != null %>) {
+						Liferay.fire(
+							'<%= eventName %>',
+							{
+								displayStyle: displayStyle
+							}
+						);
+					}
 				}
 			);
-		}
-
-		var displayStyleToolbarChildren = [];
-
-		<%
-		for (int i = 0; i < displayStyles.length; i++) {
-		%>
-
-			displayStyleToolbarChildren.push(
-				{
-					handler: A.bind(onButtonClick, null, '<%= displayStyles[i] %>'),
-					icon: 'display-<%= displayStyles[i] %>',
-					title: '<%= UnicodeLanguageUtil.get(pageContext, displayStyles[i] + "-view") %>'
-				}
-			);
-
-		<%
-		}
-		%>
-
-		var displayStyleToolbar = new A.Toolbar(
-			{
-				activeState: true,
-				boundingBox: buttonRow,
-				children: displayStyleToolbarChildren
-			}
-		).render();
-
-		var index = 0;
-
-		<%
-		for (int i = 0; i < displayStyles.length; i++) {
-			if (displayStyle.equals(displayStyles[i])) {
-		%>
-
-				index = <%= i %>;
-
-		<%
-				break;
-			}
-		}
-		%>
-
-		displayStyleToolbar.item(index).StateInteraction.set('active', true);
-
-		buttonRow.setData('displayStyleToolbar', displayStyleToolbar);
-	</aui:script>
+		</aui:script>
+	</c:if>
 </c:if>
+
+<%!
+private String _getIcon(String displayStyle) {
+	String displayStyleIcon = displayStyle;
+
+	if (displayStyle.equals("descriptive")) {
+		displayStyleIcon = "th-list";
+	}
+	else if (displayStyle.equals("icon")) {
+		displayStyleIcon = "th-large";
+	}
+	else if (displayStyle.equals("list")) {
+		displayStyleIcon = "align-justify";
+	}
+
+	return displayStyleIcon;
+}
+%>

@@ -17,24 +17,8 @@
 
 .taglib-webdav table:after {
 	clear: both;
-	content: ".";
+	content: '';
 	display: block;
 	height: 0;
 	visibility: hidden;
-}
-
-.ie .taglib-webdav table {
-	height: 1%;
-}
-
-/* Skin */
-
-.js .taglib-webdav {
-	&.visible {
-		background: #F0F5F7;
-	}
-
-	table {
-		border-color: #828F95;
-	}
 }

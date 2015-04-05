@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,25 +14,19 @@
 
 package com.liferay.portal.service.impl;
 
-import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.jsonwebservice.JSONWebService;
 import com.liferay.portal.model.ClassName;
 import com.liferay.portal.service.base.ClassNameServiceBaseImpl;
 
 /**
  * @author Brian Wing Shun Chan
  */
+@JSONWebService
 public class ClassNameServiceImpl extends ClassNameServiceBaseImpl {
 
-	public ClassName fetchClassName(String value) throws SystemException {
+	@Override
+	public ClassName fetchClassName(String value) {
 		return classNameLocalService.fetchClassName(value);
-	}
-
-	public long fetchClassNameId(Class<?> clazz) {
-		return classNameLocalService.fetchClassNameId(clazz);
-	}
-
-	public long fetchClassNameId(String value) {
-		return classNameLocalService.fetchClassNameId(value);
 	}
 
 }

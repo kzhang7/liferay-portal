@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,11 +17,14 @@ package com.liferay.portal.kernel.util;
 import java.text.DateFormat;
 import java.text.Format;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 
 /**
@@ -72,29 +75,17 @@ public class DateUtil {
 	}
 
 	public static boolean equals(Date date1, Date date2) {
-		if (compareTo(date1, date2) == 0) {
-			return true;
-		}
-		else {
-			return false;
-		}
+		return equals(date1, date2, false);
 	}
 
 	public static boolean equals(
 		Date date1, Date date2, boolean ignoreMilliseconds) {
 
-		if (!ignoreMilliseconds) {
-			return equals(date1, date2);
-		}
-
-		long deltaTime = date1.getTime() - date2.getTime();
-
-		if ((deltaTime > -1000) && (deltaTime < 1000)) {
+		if (compareTo(date1, date2, ignoreMilliseconds) == 0) {
 			return true;
 		}
-		else {
-			return false;
-		}
+
+		return false;
 	}
 
 	public static String getCurrentDate(String pattern, Locale locale) {
@@ -238,6 +229,24 @@ public class DateUtil {
 			pattern, TimeZoneUtil.getTimeZone(StringPool.UTC));
 	}
 
+	public static boolean isFormatAmPm(Locale locale) {
+		Boolean formatAmPm = _formatAmPmMap.get(locale);
+
+		if (formatAmPm == null) {
+			SimpleDateFormat simpleDateFormat =
+				(SimpleDateFormat)DateFormat.getTimeInstance(
+					DateFormat.SHORT, locale);
+
+			String pattern = simpleDateFormat.toPattern();
+
+			formatAmPm = pattern.contains("a");
+
+			_formatAmPmMap.put(locale, formatAmPm);
+		}
+
+		return formatAmPm;
+	}
+
 	public static Date newDate() {
 		return new Date();
 	}
@@ -260,5 +269,7 @@ public class DateUtil {
 
 		return dateFormat.parse(dateString);
 	}
+
+	private static final Map<Locale, Boolean> _formatAmPmMap = new HashMap<>();
 
 }

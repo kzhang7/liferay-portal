@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -22,15 +22,15 @@ import com.liferay.portal.kernel.util.InitialThreadLocal;
 public class PwdToolkitUtilThreadLocal {
 
 	public static boolean isValidate() {
-		return _validate.get().booleanValue();
+		return _validate.get();
 	}
 
 	public static void setValidate(boolean validate) {
 		_validate.set(validate);
 	}
 
-	private static ThreadLocal<Boolean> _validate =
-		new InitialThreadLocal<Boolean>(
+	private static final ThreadLocal<Boolean> _validate =
+		new InitialThreadLocal<>(
 			PwdToolkitUtilThreadLocal.class + "._validate", true);
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.journal.service.persistence;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.service.persistence.BasePersistence;
 
 import com.liferay.portlet.journal.model.JournalContentSearch;
@@ -26,10 +28,11 @@ import com.liferay.portlet.journal.model.JournalContentSearch;
  * </p>
  *
  * @author Brian Wing Shun Chan
- * @see JournalContentSearchPersistenceImpl
+ * @see com.liferay.portlet.journal.service.persistence.impl.JournalContentSearchPersistenceImpl
  * @see JournalContentSearchUtil
  * @generated
  */
+@ProviderType
 public interface JournalContentSearchPersistence extends BasePersistence<JournalContentSearch> {
 	/*
 	 * NOTE FOR DEVELOPERS:
@@ -38,105 +41,34 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	 */
 
 	/**
-	* Caches the journal content search in the entity cache if it is enabled.
-	*
-	* @param journalContentSearch the journal content search
-	*/
-	public void cacheResult(
-		com.liferay.portlet.journal.model.JournalContentSearch journalContentSearch);
-
-	/**
-	* Caches the journal content searchs in the entity cache if it is enabled.
-	*
-	* @param journalContentSearchs the journal content searchs
-	*/
-	public void cacheResult(
-		java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> journalContentSearchs);
-
-	/**
-	* Creates a new journal content search with the primary key. Does not add the journal content search to the database.
-	*
-	* @param contentSearchId the primary key for the new journal content search
-	* @return the new journal content search
-	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch create(
-		long contentSearchId);
-
-	/**
-	* Removes the journal content search with the primary key from the database. Also notifies the appropriate model listeners.
-	*
-	* @param contentSearchId the primary key of the journal content search
-	* @return the journal content search that was removed
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a journal content search with the primary key could not be found
-	* @throws SystemException if a system exception occurred
-	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch remove(
-		long contentSearchId)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
-
-	public com.liferay.portlet.journal.model.JournalContentSearch updateImpl(
-		com.liferay.portlet.journal.model.JournalContentSearch journalContentSearch,
-		boolean merge)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Returns the journal content search with the primary key or throws a {@link com.liferay.portlet.journal.NoSuchContentSearchException} if it could not be found.
-	*
-	* @param contentSearchId the primary key of the journal content search
-	* @return the journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a journal content search with the primary key could not be found
-	* @throws SystemException if a system exception occurred
-	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByPrimaryKey(
-		long contentSearchId)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
-
-	/**
-	* Returns the journal content search with the primary key or returns <code>null</code> if it could not be found.
-	*
-	* @param contentSearchId the primary key of the journal content search
-	* @return the journal content search, or <code>null</code> if a journal content search with the primary key could not be found
-	* @throws SystemException if a system exception occurred
-	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByPrimaryKey(
-		long contentSearchId)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
 	* Returns all the journal content searchs where portletId = &#63;.
 	*
 	* @param portletId the portlet ID
 	* @return the matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByPortletId(
-		java.lang.String portletId)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByPortletId(
+		java.lang.String portletId);
 
 	/**
 	* Returns a range of all the journal content searchs where portletId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param portletId the portlet ID
 	* @param start the lower bound of the range of journal content searchs
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @return the range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByPortletId(
-		java.lang.String portletId, int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByPortletId(
+		java.lang.String portletId, int start, int end);
 
 	/**
 	* Returns an ordered range of all the journal content searchs where portletId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param portletId the portlet ID
@@ -144,12 +76,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByPortletId(
+	public java.util.List<JournalContentSearch> findByPortletId(
 		java.lang.String portletId, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the first journal content search in the ordered set where portletId = &#63;.
@@ -157,14 +87,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByPortletId_First(
+	public JournalContentSearch findByPortletId_First(
 		java.lang.String portletId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the first journal content search in the ordered set where portletId = &#63;.
@@ -172,12 +100,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByPortletId_First(
+	public JournalContentSearch fetchByPortletId_First(
 		java.lang.String portletId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the last journal content search in the ordered set where portletId = &#63;.
@@ -185,14 +111,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByPortletId_Last(
+	public JournalContentSearch findByPortletId_Last(
 		java.lang.String portletId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the last journal content search in the ordered set where portletId = &#63;.
@@ -200,12 +124,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByPortletId_Last(
+	public JournalContentSearch fetchByPortletId_Last(
 		java.lang.String portletId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the journal content searchs before and after the current journal content search in the ordered set where portletId = &#63;.
@@ -214,48 +136,57 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the previous, current, and next journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a journal content search with the primary key could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a journal content search with the primary key could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch[] findByPortletId_PrevAndNext(
+	public JournalContentSearch[] findByPortletId_PrevAndNext(
 		long contentSearchId, java.lang.String portletId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
+
+	/**
+	* Removes all the journal content searchs where portletId = &#63; from the database.
+	*
+	* @param portletId the portlet ID
+	*/
+	public void removeByPortletId(java.lang.String portletId);
+
+	/**
+	* Returns the number of journal content searchs where portletId = &#63;.
+	*
+	* @param portletId the portlet ID
+	* @return the number of matching journal content searchs
+	*/
+	public int countByPortletId(java.lang.String portletId);
 
 	/**
 	* Returns all the journal content searchs where articleId = &#63;.
 	*
 	* @param articleId the article ID
 	* @return the matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByArticleId(
-		java.lang.String articleId)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByArticleId(
+		java.lang.String articleId);
 
 	/**
 	* Returns a range of all the journal content searchs where articleId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param articleId the article ID
 	* @param start the lower bound of the range of journal content searchs
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @return the range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByArticleId(
-		java.lang.String articleId, int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByArticleId(
+		java.lang.String articleId, int start, int end);
 
 	/**
 	* Returns an ordered range of all the journal content searchs where articleId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param articleId the article ID
@@ -263,12 +194,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByArticleId(
+	public java.util.List<JournalContentSearch> findByArticleId(
 		java.lang.String articleId, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the first journal content search in the ordered set where articleId = &#63;.
@@ -276,14 +205,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByArticleId_First(
+	public JournalContentSearch findByArticleId_First(
 		java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the first journal content search in the ordered set where articleId = &#63;.
@@ -291,12 +218,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByArticleId_First(
+	public JournalContentSearch fetchByArticleId_First(
 		java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the last journal content search in the ordered set where articleId = &#63;.
@@ -304,14 +229,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByArticleId_Last(
+	public JournalContentSearch findByArticleId_Last(
 		java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the last journal content search in the ordered set where articleId = &#63;.
@@ -319,12 +242,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByArticleId_Last(
+	public JournalContentSearch fetchByArticleId_Last(
 		java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the journal content searchs before and after the current journal content search in the ordered set where articleId = &#63;.
@@ -333,14 +254,27 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the previous, current, and next journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a journal content search with the primary key could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a journal content search with the primary key could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch[] findByArticleId_PrevAndNext(
+	public JournalContentSearch[] findByArticleId_PrevAndNext(
 		long contentSearchId, java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
+
+	/**
+	* Removes all the journal content searchs where articleId = &#63; from the database.
+	*
+	* @param articleId the article ID
+	*/
+	public void removeByArticleId(java.lang.String articleId);
+
+	/**
+	* Returns the number of journal content searchs where articleId = &#63;.
+	*
+	* @param articleId the article ID
+	* @return the number of matching journal content searchs
+	*/
+	public int countByArticleId(java.lang.String articleId);
 
 	/**
 	* Returns all the journal content searchs where groupId = &#63; and privateLayout = &#63;.
@@ -348,17 +282,15 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param groupId the group ID
 	* @param privateLayout the private layout
 	* @return the matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_P(
-		long groupId, boolean privateLayout)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_P(long groupId,
+		boolean privateLayout);
 
 	/**
 	* Returns a range of all the journal content searchs where groupId = &#63; and privateLayout = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
@@ -366,17 +298,15 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param start the lower bound of the range of journal content searchs
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @return the range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_P(
-		long groupId, boolean privateLayout, int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_P(long groupId,
+		boolean privateLayout, int start, int end);
 
 	/**
 	* Returns an ordered range of all the journal content searchs where groupId = &#63; and privateLayout = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
@@ -385,12 +315,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_P(
-		long groupId, boolean privateLayout, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_P(long groupId,
+		boolean privateLayout, int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the first journal content search in the ordered set where groupId = &#63; and privateLayout = &#63;.
@@ -399,14 +327,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param privateLayout the private layout
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByG_P_First(
-		long groupId, boolean privateLayout,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+	public JournalContentSearch findByG_P_First(long groupId,
+		boolean privateLayout,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the first journal content search in the ordered set where groupId = &#63; and privateLayout = &#63;.
@@ -415,12 +341,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param privateLayout the private layout
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByG_P_First(
-		long groupId, boolean privateLayout,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public JournalContentSearch fetchByG_P_First(long groupId,
+		boolean privateLayout,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the last journal content search in the ordered set where groupId = &#63; and privateLayout = &#63;.
@@ -429,14 +353,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param privateLayout the private layout
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByG_P_Last(
-		long groupId, boolean privateLayout,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+	public JournalContentSearch findByG_P_Last(long groupId,
+		boolean privateLayout,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the last journal content search in the ordered set where groupId = &#63; and privateLayout = &#63;.
@@ -445,12 +367,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param privateLayout the private layout
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByG_P_Last(
-		long groupId, boolean privateLayout,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public JournalContentSearch fetchByG_P_Last(long groupId,
+		boolean privateLayout,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the journal content searchs before and after the current journal content search in the ordered set where groupId = &#63; and privateLayout = &#63;.
@@ -460,14 +380,29 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param privateLayout the private layout
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the previous, current, and next journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a journal content search with the primary key could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a journal content search with the primary key could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch[] findByG_P_PrevAndNext(
-		long contentSearchId, long groupId, boolean privateLayout,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+	public JournalContentSearch[] findByG_P_PrevAndNext(long contentSearchId,
+		long groupId, boolean privateLayout,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
+
+	/**
+	* Removes all the journal content searchs where groupId = &#63; and privateLayout = &#63; from the database.
+	*
+	* @param groupId the group ID
+	* @param privateLayout the private layout
+	*/
+	public void removeByG_P(long groupId, boolean privateLayout);
+
+	/**
+	* Returns the number of journal content searchs where groupId = &#63; and privateLayout = &#63;.
+	*
+	* @param groupId the group ID
+	* @param privateLayout the private layout
+	* @return the number of matching journal content searchs
+	*/
+	public int countByG_P(long groupId, boolean privateLayout);
 
 	/**
 	* Returns all the journal content searchs where groupId = &#63; and articleId = &#63;.
@@ -475,17 +410,15 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param groupId the group ID
 	* @param articleId the article ID
 	* @return the matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_A(
-		long groupId, java.lang.String articleId)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_A(long groupId,
+		java.lang.String articleId);
 
 	/**
 	* Returns a range of all the journal content searchs where groupId = &#63; and articleId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
@@ -493,17 +426,15 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param start the lower bound of the range of journal content searchs
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @return the range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_A(
-		long groupId, java.lang.String articleId, int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_A(long groupId,
+		java.lang.String articleId, int start, int end);
 
 	/**
 	* Returns an ordered range of all the journal content searchs where groupId = &#63; and articleId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
@@ -512,12 +443,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_A(
-		long groupId, java.lang.String articleId, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_A(long groupId,
+		java.lang.String articleId, int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the first journal content search in the ordered set where groupId = &#63; and articleId = &#63;.
@@ -526,14 +455,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByG_A_First(
-		long groupId, java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+	public JournalContentSearch findByG_A_First(long groupId,
+		java.lang.String articleId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the first journal content search in the ordered set where groupId = &#63; and articleId = &#63;.
@@ -542,12 +469,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByG_A_First(
-		long groupId, java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public JournalContentSearch fetchByG_A_First(long groupId,
+		java.lang.String articleId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the last journal content search in the ordered set where groupId = &#63; and articleId = &#63;.
@@ -556,14 +481,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByG_A_Last(
-		long groupId, java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+	public JournalContentSearch findByG_A_Last(long groupId,
+		java.lang.String articleId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the last journal content search in the ordered set where groupId = &#63; and articleId = &#63;.
@@ -572,12 +495,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByG_A_Last(
-		long groupId, java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public JournalContentSearch fetchByG_A_Last(long groupId,
+		java.lang.String articleId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the journal content searchs before and after the current journal content search in the ordered set where groupId = &#63; and articleId = &#63;.
@@ -587,14 +508,29 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the previous, current, and next journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a journal content search with the primary key could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a journal content search with the primary key could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch[] findByG_A_PrevAndNext(
-		long contentSearchId, long groupId, java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+	public JournalContentSearch[] findByG_A_PrevAndNext(long contentSearchId,
+		long groupId, java.lang.String articleId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
+
+	/**
+	* Removes all the journal content searchs where groupId = &#63; and articleId = &#63; from the database.
+	*
+	* @param groupId the group ID
+	* @param articleId the article ID
+	*/
+	public void removeByG_A(long groupId, java.lang.String articleId);
+
+	/**
+	* Returns the number of journal content searchs where groupId = &#63; and articleId = &#63;.
+	*
+	* @param groupId the group ID
+	* @param articleId the article ID
+	* @return the number of matching journal content searchs
+	*/
+	public int countByG_A(long groupId, java.lang.String articleId);
 
 	/**
 	* Returns all the journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63;.
@@ -603,17 +539,15 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param privateLayout the private layout
 	* @param layoutId the layout ID
 	* @return the matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_P_L(
-		long groupId, boolean privateLayout, long layoutId)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_P_L(long groupId,
+		boolean privateLayout, long layoutId);
 
 	/**
 	* Returns a range of all the journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
@@ -622,17 +556,15 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param start the lower bound of the range of journal content searchs
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @return the range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_P_L(
-		long groupId, boolean privateLayout, long layoutId, int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_P_L(long groupId,
+		boolean privateLayout, long layoutId, int start, int end);
 
 	/**
 	* Returns an ordered range of all the journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
@@ -642,12 +574,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_P_L(
-		long groupId, boolean privateLayout, long layoutId, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_P_L(long groupId,
+		boolean privateLayout, long layoutId, int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the first journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and layoutId = &#63;.
@@ -657,14 +587,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param layoutId the layout ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByG_P_L_First(
-		long groupId, boolean privateLayout, long layoutId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+	public JournalContentSearch findByG_P_L_First(long groupId,
+		boolean privateLayout, long layoutId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the first journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and layoutId = &#63;.
@@ -674,12 +602,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param layoutId the layout ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByG_P_L_First(
-		long groupId, boolean privateLayout, long layoutId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public JournalContentSearch fetchByG_P_L_First(long groupId,
+		boolean privateLayout, long layoutId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the last journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and layoutId = &#63;.
@@ -689,14 +615,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param layoutId the layout ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByG_P_L_Last(
-		long groupId, boolean privateLayout, long layoutId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+	public JournalContentSearch findByG_P_L_Last(long groupId,
+		boolean privateLayout, long layoutId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the last journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and layoutId = &#63;.
@@ -706,12 +630,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param layoutId the layout ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByG_P_L_Last(
-		long groupId, boolean privateLayout, long layoutId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public JournalContentSearch fetchByG_P_L_Last(long groupId,
+		boolean privateLayout, long layoutId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the journal content searchs before and after the current journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and layoutId = &#63;.
@@ -722,15 +644,32 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param layoutId the layout ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the previous, current, and next journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a journal content search with the primary key could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a journal content search with the primary key could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch[] findByG_P_L_PrevAndNext(
+	public JournalContentSearch[] findByG_P_L_PrevAndNext(
 		long contentSearchId, long groupId, boolean privateLayout,
 		long layoutId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
+
+	/**
+	* Removes all the journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; from the database.
+	*
+	* @param groupId the group ID
+	* @param privateLayout the private layout
+	* @param layoutId the layout ID
+	*/
+	public void removeByG_P_L(long groupId, boolean privateLayout, long layoutId);
+
+	/**
+	* Returns the number of journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63;.
+	*
+	* @param groupId the group ID
+	* @param privateLayout the private layout
+	* @param layoutId the layout ID
+	* @return the number of matching journal content searchs
+	*/
+	public int countByG_P_L(long groupId, boolean privateLayout, long layoutId);
 
 	/**
 	* Returns all the journal content searchs where groupId = &#63; and privateLayout = &#63; and articleId = &#63;.
@@ -739,17 +678,15 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param privateLayout the private layout
 	* @param articleId the article ID
 	* @return the matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_P_A(
-		long groupId, boolean privateLayout, java.lang.String articleId)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_P_A(long groupId,
+		boolean privateLayout, java.lang.String articleId);
 
 	/**
 	* Returns a range of all the journal content searchs where groupId = &#63; and privateLayout = &#63; and articleId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
@@ -758,18 +695,15 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param start the lower bound of the range of journal content searchs
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @return the range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_P_A(
-		long groupId, boolean privateLayout, java.lang.String articleId,
-		int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_P_A(long groupId,
+		boolean privateLayout, java.lang.String articleId, int start, int end);
 
 	/**
 	* Returns an ordered range of all the journal content searchs where groupId = &#63; and privateLayout = &#63; and articleId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
@@ -779,13 +713,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_P_A(
-		long groupId, boolean privateLayout, java.lang.String articleId,
-		int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_P_A(long groupId,
+		boolean privateLayout, java.lang.String articleId, int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the first journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and articleId = &#63;.
@@ -795,14 +726,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByG_P_A_First(
-		long groupId, boolean privateLayout, java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+	public JournalContentSearch findByG_P_A_First(long groupId,
+		boolean privateLayout, java.lang.String articleId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the first journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and articleId = &#63;.
@@ -812,12 +741,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByG_P_A_First(
-		long groupId, boolean privateLayout, java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public JournalContentSearch fetchByG_P_A_First(long groupId,
+		boolean privateLayout, java.lang.String articleId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the last journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and articleId = &#63;.
@@ -827,14 +754,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByG_P_A_Last(
-		long groupId, boolean privateLayout, java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+	public JournalContentSearch findByG_P_A_Last(long groupId,
+		boolean privateLayout, java.lang.String articleId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the last journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and articleId = &#63;.
@@ -844,12 +769,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByG_P_A_Last(
-		long groupId, boolean privateLayout, java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public JournalContentSearch fetchByG_P_A_Last(long groupId,
+		boolean privateLayout, java.lang.String articleId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the journal content searchs before and after the current journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and articleId = &#63;.
@@ -860,15 +783,34 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the previous, current, and next journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a journal content search with the primary key could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a journal content search with the primary key could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch[] findByG_P_A_PrevAndNext(
+	public JournalContentSearch[] findByG_P_A_PrevAndNext(
 		long contentSearchId, long groupId, boolean privateLayout,
 		java.lang.String articleId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
+
+	/**
+	* Removes all the journal content searchs where groupId = &#63; and privateLayout = &#63; and articleId = &#63; from the database.
+	*
+	* @param groupId the group ID
+	* @param privateLayout the private layout
+	* @param articleId the article ID
+	*/
+	public void removeByG_P_A(long groupId, boolean privateLayout,
+		java.lang.String articleId);
+
+	/**
+	* Returns the number of journal content searchs where groupId = &#63; and privateLayout = &#63; and articleId = &#63;.
+	*
+	* @param groupId the group ID
+	* @param privateLayout the private layout
+	* @param articleId the article ID
+	* @return the number of matching journal content searchs
+	*/
+	public int countByG_P_A(long groupId, boolean privateLayout,
+		java.lang.String articleId);
 
 	/**
 	* Returns all the journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63;.
@@ -878,18 +820,15 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param layoutId the layout ID
 	* @param portletId the portlet ID
 	* @return the matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_P_L_P(
-		long groupId, boolean privateLayout, long layoutId,
-		java.lang.String portletId)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_P_L_P(long groupId,
+		boolean privateLayout, long layoutId, java.lang.String portletId);
 
 	/**
 	* Returns a range of all the journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
@@ -899,18 +838,16 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param start the lower bound of the range of journal content searchs
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @return the range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_P_L_P(
-		long groupId, boolean privateLayout, long layoutId,
-		java.lang.String portletId, int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_P_L_P(long groupId,
+		boolean privateLayout, long layoutId, java.lang.String portletId,
+		int start, int end);
 
 	/**
 	* Returns an ordered range of all the journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param groupId the group ID
@@ -921,13 +858,11 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param end the upper bound of the range of journal content searchs (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findByG_P_L_P(
-		long groupId, boolean privateLayout, long layoutId,
-		java.lang.String portletId, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public java.util.List<JournalContentSearch> findByG_P_L_P(long groupId,
+		boolean privateLayout, long layoutId, java.lang.String portletId,
+		int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the first journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63;.
@@ -938,15 +873,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByG_P_L_P_First(
-		long groupId, boolean privateLayout, long layoutId,
-		java.lang.String portletId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+	public JournalContentSearch findByG_P_L_P_First(long groupId,
+		boolean privateLayout, long layoutId, java.lang.String portletId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the first journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63;.
@@ -957,13 +889,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByG_P_L_P_First(
-		long groupId, boolean privateLayout, long layoutId,
-		java.lang.String portletId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public JournalContentSearch fetchByG_P_L_P_First(long groupId,
+		boolean privateLayout, long layoutId, java.lang.String portletId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the last journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63;.
@@ -974,15 +903,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByG_P_L_P_Last(
-		long groupId, boolean privateLayout, long layoutId,
-		java.lang.String portletId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+	public JournalContentSearch findByG_P_L_P_Last(long groupId,
+		boolean privateLayout, long layoutId, java.lang.String portletId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the last journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63;.
@@ -993,13 +919,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByG_P_L_P_Last(
-		long groupId, boolean privateLayout, long layoutId,
-		java.lang.String portletId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public JournalContentSearch fetchByG_P_L_P_Last(long groupId,
+		boolean privateLayout, long layoutId, java.lang.String portletId,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
 
 	/**
 	* Returns the journal content searchs before and after the current journal content search in the ordered set where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63;.
@@ -1011,18 +934,39 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the previous, current, and next journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a journal content search with the primary key could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a journal content search with the primary key could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch[] findByG_P_L_P_PrevAndNext(
+	public JournalContentSearch[] findByG_P_L_P_PrevAndNext(
 		long contentSearchId, long groupId, boolean privateLayout,
 		long layoutId, java.lang.String portletId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
-	* Returns the journal content search where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63; and articleId = &#63; or throws a {@link com.liferay.portlet.journal.NoSuchContentSearchException} if it could not be found.
+	* Removes all the journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63; from the database.
+	*
+	* @param groupId the group ID
+	* @param privateLayout the private layout
+	* @param layoutId the layout ID
+	* @param portletId the portlet ID
+	*/
+	public void removeByG_P_L_P(long groupId, boolean privateLayout,
+		long layoutId, java.lang.String portletId);
+
+	/**
+	* Returns the number of journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63;.
+	*
+	* @param groupId the group ID
+	* @param privateLayout the private layout
+	* @param layoutId the layout ID
+	* @param portletId the portlet ID
+	* @return the number of matching journal content searchs
+	*/
+	public int countByG_P_L_P(long groupId, boolean privateLayout,
+		long layoutId, java.lang.String portletId);
+
+	/**
+	* Returns the journal content search where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63; and articleId = &#63; or throws a {@link NoSuchContentSearchException} if it could not be found.
 	*
 	* @param groupId the group ID
 	* @param privateLayout the private layout
@@ -1030,14 +974,12 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param articleId the article ID
 	* @return the matching journal content search
-	* @throws com.liferay.portlet.journal.NoSuchContentSearchException if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContentSearchException if a matching journal content search could not be found
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch findByG_P_L_P_A(
-		long groupId, boolean privateLayout, long layoutId,
-		java.lang.String portletId, java.lang.String articleId)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
+	public JournalContentSearch findByG_P_L_P_A(long groupId,
+		boolean privateLayout, long layoutId, java.lang.String portletId,
+		java.lang.String articleId)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the journal content search where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63; and articleId = &#63; or returns <code>null</code> if it could not be found. Uses the finder cache.
@@ -1048,12 +990,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param articleId the article ID
 	* @return the matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByG_P_L_P_A(
-		long groupId, boolean privateLayout, long layoutId,
-		java.lang.String portletId, java.lang.String articleId)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public JournalContentSearch fetchByG_P_L_P_A(long groupId,
+		boolean privateLayout, long layoutId, java.lang.String portletId,
+		java.lang.String articleId);
 
 	/**
 	* Returns the journal content search where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63; and articleId = &#63; or returns <code>null</code> if it could not be found, optionally using the finder cache.
@@ -1065,130 +1005,10 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param articleId the article ID
 	* @param retrieveFromCache whether to use the finder cache
 	* @return the matching journal content search, or <code>null</code> if a matching journal content search could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch fetchByG_P_L_P_A(
-		long groupId, boolean privateLayout, long layoutId,
-		java.lang.String portletId, java.lang.String articleId,
-		boolean retrieveFromCache)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Returns all the journal content searchs.
-	*
-	* @return the journal content searchs
-	* @throws SystemException if a system exception occurred
-	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findAll()
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Returns a range of all the journal content searchs.
-	*
-	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
-	* </p>
-	*
-	* @param start the lower bound of the range of journal content searchs
-	* @param end the upper bound of the range of journal content searchs (not inclusive)
-	* @return the range of journal content searchs
-	* @throws SystemException if a system exception occurred
-	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findAll(
-		int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Returns an ordered range of all the journal content searchs.
-	*
-	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
-	* </p>
-	*
-	* @param start the lower bound of the range of journal content searchs
-	* @param end the upper bound of the range of journal content searchs (not inclusive)
-	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
-	* @return the ordered range of journal content searchs
-	* @throws SystemException if a system exception occurred
-	*/
-	public java.util.List<com.liferay.portlet.journal.model.JournalContentSearch> findAll(
-		int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Removes all the journal content searchs where portletId = &#63; from the database.
-	*
-	* @param portletId the portlet ID
-	* @throws SystemException if a system exception occurred
-	*/
-	public void removeByPortletId(java.lang.String portletId)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Removes all the journal content searchs where articleId = &#63; from the database.
-	*
-	* @param articleId the article ID
-	* @throws SystemException if a system exception occurred
-	*/
-	public void removeByArticleId(java.lang.String articleId)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Removes all the journal content searchs where groupId = &#63; and privateLayout = &#63; from the database.
-	*
-	* @param groupId the group ID
-	* @param privateLayout the private layout
-	* @throws SystemException if a system exception occurred
-	*/
-	public void removeByG_P(long groupId, boolean privateLayout)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Removes all the journal content searchs where groupId = &#63; and articleId = &#63; from the database.
-	*
-	* @param groupId the group ID
-	* @param articleId the article ID
-	* @throws SystemException if a system exception occurred
-	*/
-	public void removeByG_A(long groupId, java.lang.String articleId)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Removes all the journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; from the database.
-	*
-	* @param groupId the group ID
-	* @param privateLayout the private layout
-	* @param layoutId the layout ID
-	* @throws SystemException if a system exception occurred
-	*/
-	public void removeByG_P_L(long groupId, boolean privateLayout, long layoutId)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Removes all the journal content searchs where groupId = &#63; and privateLayout = &#63; and articleId = &#63; from the database.
-	*
-	* @param groupId the group ID
-	* @param privateLayout the private layout
-	* @param articleId the article ID
-	* @throws SystemException if a system exception occurred
-	*/
-	public void removeByG_P_A(long groupId, boolean privateLayout,
-		java.lang.String articleId)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Removes all the journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63; from the database.
-	*
-	* @param groupId the group ID
-	* @param privateLayout the private layout
-	* @param layoutId the layout ID
-	* @param portletId the portlet ID
-	* @throws SystemException if a system exception occurred
-	*/
-	public void removeByG_P_L_P(long groupId, boolean privateLayout,
-		long layoutId, java.lang.String portletId)
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public JournalContentSearch fetchByG_P_L_P_A(long groupId,
+		boolean privateLayout, long layoutId, java.lang.String portletId,
+		java.lang.String articleId, boolean retrieveFromCache);
 
 	/**
 	* Removes the journal content search where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63; and articleId = &#63; from the database.
@@ -1199,102 +1019,11 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param articleId the article ID
 	* @return the journal content search that was removed
-	* @throws SystemException if a system exception occurred
 	*/
-	public com.liferay.portlet.journal.model.JournalContentSearch removeByG_P_L_P_A(
-		long groupId, boolean privateLayout, long layoutId,
-		java.lang.String portletId, java.lang.String articleId)
-		throws com.liferay.portal.kernel.exception.SystemException,
-			com.liferay.portlet.journal.NoSuchContentSearchException;
-
-	/**
-	* Removes all the journal content searchs from the database.
-	*
-	* @throws SystemException if a system exception occurred
-	*/
-	public void removeAll()
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Returns the number of journal content searchs where portletId = &#63;.
-	*
-	* @param portletId the portlet ID
-	* @return the number of matching journal content searchs
-	* @throws SystemException if a system exception occurred
-	*/
-	public int countByPortletId(java.lang.String portletId)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Returns the number of journal content searchs where articleId = &#63;.
-	*
-	* @param articleId the article ID
-	* @return the number of matching journal content searchs
-	* @throws SystemException if a system exception occurred
-	*/
-	public int countByArticleId(java.lang.String articleId)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Returns the number of journal content searchs where groupId = &#63; and privateLayout = &#63;.
-	*
-	* @param groupId the group ID
-	* @param privateLayout the private layout
-	* @return the number of matching journal content searchs
-	* @throws SystemException if a system exception occurred
-	*/
-	public int countByG_P(long groupId, boolean privateLayout)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Returns the number of journal content searchs where groupId = &#63; and articleId = &#63;.
-	*
-	* @param groupId the group ID
-	* @param articleId the article ID
-	* @return the number of matching journal content searchs
-	* @throws SystemException if a system exception occurred
-	*/
-	public int countByG_A(long groupId, java.lang.String articleId)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Returns the number of journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63;.
-	*
-	* @param groupId the group ID
-	* @param privateLayout the private layout
-	* @param layoutId the layout ID
-	* @return the number of matching journal content searchs
-	* @throws SystemException if a system exception occurred
-	*/
-	public int countByG_P_L(long groupId, boolean privateLayout, long layoutId)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Returns the number of journal content searchs where groupId = &#63; and privateLayout = &#63; and articleId = &#63;.
-	*
-	* @param groupId the group ID
-	* @param privateLayout the private layout
-	* @param articleId the article ID
-	* @return the number of matching journal content searchs
-	* @throws SystemException if a system exception occurred
-	*/
-	public int countByG_P_A(long groupId, boolean privateLayout,
+	public JournalContentSearch removeByG_P_L_P_A(long groupId,
+		boolean privateLayout, long layoutId, java.lang.String portletId,
 		java.lang.String articleId)
-		throws com.liferay.portal.kernel.exception.SystemException;
-
-	/**
-	* Returns the number of journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63;.
-	*
-	* @param groupId the group ID
-	* @param privateLayout the private layout
-	* @param layoutId the layout ID
-	* @param portletId the portlet ID
-	* @return the number of matching journal content searchs
-	* @throws SystemException if a system exception occurred
-	*/
-	public int countByG_P_L_P(long groupId, boolean privateLayout,
-		long layoutId, java.lang.String portletId)
-		throws com.liferay.portal.kernel.exception.SystemException;
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
 
 	/**
 	* Returns the number of journal content searchs where groupId = &#63; and privateLayout = &#63; and layoutId = &#63; and portletId = &#63; and articleId = &#63;.
@@ -1305,18 +1034,112 @@ public interface JournalContentSearchPersistence extends BasePersistence<Journal
 	* @param portletId the portlet ID
 	* @param articleId the article ID
 	* @return the number of matching journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
 	public int countByG_P_L_P_A(long groupId, boolean privateLayout,
-		long layoutId, java.lang.String portletId, java.lang.String articleId)
-		throws com.liferay.portal.kernel.exception.SystemException;
+		long layoutId, java.lang.String portletId, java.lang.String articleId);
+
+	/**
+	* Caches the journal content search in the entity cache if it is enabled.
+	*
+	* @param journalContentSearch the journal content search
+	*/
+	public void cacheResult(JournalContentSearch journalContentSearch);
+
+	/**
+	* Caches the journal content searchs in the entity cache if it is enabled.
+	*
+	* @param journalContentSearchs the journal content searchs
+	*/
+	public void cacheResult(
+		java.util.List<JournalContentSearch> journalContentSearchs);
+
+	/**
+	* Creates a new journal content search with the primary key. Does not add the journal content search to the database.
+	*
+	* @param contentSearchId the primary key for the new journal content search
+	* @return the new journal content search
+	*/
+	public JournalContentSearch create(long contentSearchId);
+
+	/**
+	* Removes the journal content search with the primary key from the database. Also notifies the appropriate model listeners.
+	*
+	* @param contentSearchId the primary key of the journal content search
+	* @return the journal content search that was removed
+	* @throws NoSuchContentSearchException if a journal content search with the primary key could not be found
+	*/
+	public JournalContentSearch remove(long contentSearchId)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
+
+	public JournalContentSearch updateImpl(
+		JournalContentSearch journalContentSearch);
+
+	/**
+	* Returns the journal content search with the primary key or throws a {@link NoSuchContentSearchException} if it could not be found.
+	*
+	* @param contentSearchId the primary key of the journal content search
+	* @return the journal content search
+	* @throws NoSuchContentSearchException if a journal content search with the primary key could not be found
+	*/
+	public JournalContentSearch findByPrimaryKey(long contentSearchId)
+		throws com.liferay.portlet.journal.NoSuchContentSearchException;
+
+	/**
+	* Returns the journal content search with the primary key or returns <code>null</code> if it could not be found.
+	*
+	* @param contentSearchId the primary key of the journal content search
+	* @return the journal content search, or <code>null</code> if a journal content search with the primary key could not be found
+	*/
+	public JournalContentSearch fetchByPrimaryKey(long contentSearchId);
+
+	@Override
+	public java.util.Map<java.io.Serializable, JournalContentSearch> fetchByPrimaryKeys(
+		java.util.Set<java.io.Serializable> primaryKeys);
+
+	/**
+	* Returns all the journal content searchs.
+	*
+	* @return the journal content searchs
+	*/
+	public java.util.List<JournalContentSearch> findAll();
+
+	/**
+	* Returns a range of all the journal content searchs.
+	*
+	* <p>
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	* </p>
+	*
+	* @param start the lower bound of the range of journal content searchs
+	* @param end the upper bound of the range of journal content searchs (not inclusive)
+	* @return the range of journal content searchs
+	*/
+	public java.util.List<JournalContentSearch> findAll(int start, int end);
+
+	/**
+	* Returns an ordered range of all the journal content searchs.
+	*
+	* <p>
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link JournalContentSearchModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	* </p>
+	*
+	* @param start the lower bound of the range of journal content searchs
+	* @param end the upper bound of the range of journal content searchs (not inclusive)
+	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	* @return the ordered range of journal content searchs
+	*/
+	public java.util.List<JournalContentSearch> findAll(int start, int end,
+		com.liferay.portal.kernel.util.OrderByComparator<JournalContentSearch> orderByComparator);
+
+	/**
+	* Removes all the journal content searchs from the database.
+	*/
+	public void removeAll();
 
 	/**
 	* Returns the number of journal content searchs.
 	*
 	* @return the number of journal content searchs
-	* @throws SystemException if a system exception occurred
 	*/
-	public int countAll()
-		throws com.liferay.portal.kernel.exception.SystemException;
+	public int countAll();
 }

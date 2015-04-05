@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.journal.model;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.model.PersistedModel;
 
 /**
@@ -25,10 +27,48 @@ import com.liferay.portal.model.PersistedModel;
  * @see com.liferay.portlet.journal.model.impl.JournalFeedModelImpl
  * @generated
  */
+@ProviderType
 public interface JournalFeed extends JournalFeedModel, PersistedModel {
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
 	 * Never modify this interface directly. Add methods to {@link com.liferay.portlet.journal.model.impl.JournalFeedImpl} and rerun ServiceBuilder to automatically copy the method declarations to this interface.
 	 */
+
+	/**
+	* @deprecated As of 7.0.0, replaced by {@link #getDDMRendererTemplateKey()}
+	*/
+	@java.lang.Deprecated()
+	public java.lang.String getRendererTemplateId();
+
+	/**
+	* @deprecated As of 7.0.0, replaced by {@link #getDDMStructureKey()}
+	*/
+	@java.lang.Deprecated()
+	public java.lang.String getStructureId();
+
+	/**
+	* @deprecated As of 7.0.0, replaced by {@link #getDDMTemplateKey()}
+	*/
+	@java.lang.Deprecated()
+	public java.lang.String getTemplateId();
+
+	/**
+	* @deprecated As of 7.0.0, replaced by {@link
+	#setDDMRendererTemplateKey(String)}
+	*/
+	@java.lang.Deprecated()
+	public void setRendererTemplateId(java.lang.String rendererTemplateKey);
+
+	/**
+	* @deprecated As of 7.0.0, replaced by {@link #setDDMStructureKey(String)}
+	*/
+	@java.lang.Deprecated()
+	public void setStructureId(java.lang.String structureKey);
+
+	/**
+	* @deprecated As of 7.0.0, replaced by {@link #setDDMTemplateKey(String)}
+	*/
+	@java.lang.Deprecated()
+	public void setTemplateId(java.lang.String templateKey);
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -23,9 +23,7 @@ import com.liferay.portal.kernel.util.Validator;
  */
 public class CalEventImpl extends CalEventBaseImpl {
 
-	public CalEventImpl() {
-	}
-
+	@Override
 	public TZSRecurrence getRecurrenceObj() {
 		if (_recurrenceObj == null) {
 			String recurrence = getRecurrence();
@@ -46,6 +44,7 @@ public class CalEventImpl extends CalEventBaseImpl {
 		super.setRecurrence(recurrence);
 	}
 
+	@Override
 	public void setRecurrenceObj(TZSRecurrence recurrenceObj) {
 		_recurrenceObj = recurrenceObj;
 

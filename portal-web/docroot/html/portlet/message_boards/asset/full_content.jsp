@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,25 +18,23 @@
 
 <%
 MBMessage message = (MBMessage)request.getAttribute(WebKeys.MESSAGE_BOARDS_MESSAGE);
+AssetRenderer assetRenderer = (AssetRenderer)request.getAttribute(WebKeys.ASSET_RENDERER);
 
-String body = StringPool.BLANK;
-
-if (message.isFormatBBCode()) {
-	body = BBCodeTranslatorUtil.getHTML(message.getBody());
-	body = StringUtil.replace(body, "@theme_images_path@/emoticons", themeDisplay.getPathThemeImages() + "/emoticons");
-}
-else {
-	body = message.getBody();
-}
+request.setAttribute("edit_message.jsp-category", message.getCategory());
+request.setAttribute("edit_message.jsp-className", message.getClassName());
+request.setAttribute("edit_message.jsp-depth", 0);
+request.setAttribute("edit_message.jsp-editable", Boolean.FALSE);
+request.setAttribute("edit_message.jsp-message", message);
+request.setAttribute("edit-message.jsp-showDeletedAttachmentsFileEntries", Boolean.FALSE);
+request.setAttribute("edit-message.jsp-showPermanentLink", Boolean.FALSE);
+request.setAttribute("edit-message.jsp-showRecentPosts", Boolean.FALSE);
+request.setAttribute("edit_message.jsp-thread", message.getThread());
 %>
 
-<%= body %>
+<liferay-util:include page="/html/portlet/message_boards/view_thread_message.jsp" />
 
-<liferay-ui:custom-attributes-available className="<%= MBMessage.class.getName() %>">
-	<liferay-ui:custom-attribute-list
-		className="<%= MBMessage.class.getName() %>"
-		classPK="<%= (message != null) ? message.getMessageId() : 0 %>"
-		editable="<%= false %>"
-		label="<%= true %>"
-	/>
-</liferay-ui:custom-attributes-available>
+<c:if test="<%= assetRenderer != null %>">
+	<div class="asset-more">
+		<aui:a href="<%= assetRenderer.getURLViewInContext(liferayPortletRequest, liferayPortletResponse, null) %>"><liferay-ui:message key="view-in-context" /> &raquo;</aui:a>
+	</div>
+</c:if>

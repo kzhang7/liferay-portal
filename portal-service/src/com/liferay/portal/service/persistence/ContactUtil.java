@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,9 +14,10 @@
 
 package com.liferay.portal.service.persistence;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.ReferenceRegistry;
 import com.liferay.portal.model.Contact;
@@ -25,7 +26,7 @@ import com.liferay.portal.service.ServiceContext;
 import java.util.List;
 
 /**
- * The persistence utility for the contact service. This utility wraps {@link ContactPersistenceImpl} and provides direct access to the database for CRUD operations. This utility should only be used by the service layer, as it must operate within a transaction. Never access this utility in a JSP, controller, model, or other front-end class.
+ * The persistence utility for the contact service. This utility wraps {@link com.liferay.portal.service.persistence.impl.ContactPersistenceImpl} and provides direct access to the database for CRUD operations. This utility should only be used by the service layer, as it must operate within a transaction. Never access this utility in a JSP, controller, model, or other front-end class.
  *
  * <p>
  * Caching information and settings can be found in <code>portal.properties</code>
@@ -33,9 +34,10 @@ import java.util.List;
  *
  * @author Brian Wing Shun Chan
  * @see ContactPersistence
- * @see ContactPersistenceImpl
+ * @see com.liferay.portal.service.persistence.impl.ContactPersistenceImpl
  * @generated
  */
+@ProviderType
 public class ContactUtil {
 	/*
 	 * NOTE FOR DEVELOPERS:
@@ -60,16 +62,14 @@ public class ContactUtil {
 	/**
 	 * @see com.liferay.portal.service.persistence.BasePersistence#countWithDynamicQuery(DynamicQuery)
 	 */
-	public long countWithDynamicQuery(DynamicQuery dynamicQuery)
-		throws SystemException {
+	public static long countWithDynamicQuery(DynamicQuery dynamicQuery) {
 		return getPersistence().countWithDynamicQuery(dynamicQuery);
 	}
 
 	/**
 	 * @see com.liferay.portal.service.persistence.BasePersistence#findWithDynamicQuery(DynamicQuery)
 	 */
-	public static List<Contact> findWithDynamicQuery(DynamicQuery dynamicQuery)
-		throws SystemException {
+	public static List<Contact> findWithDynamicQuery(DynamicQuery dynamicQuery) {
 		return getPersistence().findWithDynamicQuery(dynamicQuery);
 	}
 
@@ -77,8 +77,7 @@ public class ContactUtil {
 	 * @see com.liferay.portal.service.persistence.BasePersistence#findWithDynamicQuery(DynamicQuery, int, int)
 	 */
 	public static List<Contact> findWithDynamicQuery(
-		DynamicQuery dynamicQuery, int start, int end)
-		throws SystemException {
+		DynamicQuery dynamicQuery, int start, int end) {
 		return getPersistence().findWithDynamicQuery(dynamicQuery, start, end);
 	}
 
@@ -87,103 +86,24 @@ public class ContactUtil {
 	 */
 	public static List<Contact> findWithDynamicQuery(
 		DynamicQuery dynamicQuery, int start, int end,
-		OrderByComparator orderByComparator) throws SystemException {
+		OrderByComparator<Contact> orderByComparator) {
 		return getPersistence()
 				   .findWithDynamicQuery(dynamicQuery, start, end,
 			orderByComparator);
 	}
 
 	/**
-	 * @see com.liferay.portal.service.persistence.BasePersistence#update(com.liferay.portal.model.BaseModel, boolean)
+	 * @see com.liferay.portal.service.persistence.BasePersistence#update(com.liferay.portal.model.BaseModel)
 	 */
-	public static Contact update(Contact contact, boolean merge)
-		throws SystemException {
-		return getPersistence().update(contact, merge);
+	public static Contact update(Contact contact) {
+		return getPersistence().update(contact);
 	}
 
 	/**
-	 * @see com.liferay.portal.service.persistence.BasePersistence#update(com.liferay.portal.model.BaseModel, boolean, ServiceContext)
+	 * @see com.liferay.portal.service.persistence.BasePersistence#update(com.liferay.portal.model.BaseModel, ServiceContext)
 	 */
-	public static Contact update(Contact contact, boolean merge,
-		ServiceContext serviceContext) throws SystemException {
-		return getPersistence().update(contact, merge, serviceContext);
-	}
-
-	/**
-	* Caches the contact in the entity cache if it is enabled.
-	*
-	* @param contact the contact
-	*/
-	public static void cacheResult(com.liferay.portal.model.Contact contact) {
-		getPersistence().cacheResult(contact);
-	}
-
-	/**
-	* Caches the contacts in the entity cache if it is enabled.
-	*
-	* @param contacts the contacts
-	*/
-	public static void cacheResult(
-		java.util.List<com.liferay.portal.model.Contact> contacts) {
-		getPersistence().cacheResult(contacts);
-	}
-
-	/**
-	* Creates a new contact with the primary key. Does not add the contact to the database.
-	*
-	* @param contactId the primary key for the new contact
-	* @return the new contact
-	*/
-	public static com.liferay.portal.model.Contact create(long contactId) {
-		return getPersistence().create(contactId);
-	}
-
-	/**
-	* Removes the contact with the primary key from the database. Also notifies the appropriate model listeners.
-	*
-	* @param contactId the primary key of the contact
-	* @return the contact that was removed
-	* @throws com.liferay.portal.NoSuchContactException if a contact with the primary key could not be found
-	* @throws SystemException if a system exception occurred
-	*/
-	public static com.liferay.portal.model.Contact remove(long contactId)
-		throws com.liferay.portal.NoSuchContactException,
-			com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().remove(contactId);
-	}
-
-	public static com.liferay.portal.model.Contact updateImpl(
-		com.liferay.portal.model.Contact contact, boolean merge)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().updateImpl(contact, merge);
-	}
-
-	/**
-	* Returns the contact with the primary key or throws a {@link com.liferay.portal.NoSuchContactException} if it could not be found.
-	*
-	* @param contactId the primary key of the contact
-	* @return the contact
-	* @throws com.liferay.portal.NoSuchContactException if a contact with the primary key could not be found
-	* @throws SystemException if a system exception occurred
-	*/
-	public static com.liferay.portal.model.Contact findByPrimaryKey(
-		long contactId)
-		throws com.liferay.portal.NoSuchContactException,
-			com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().findByPrimaryKey(contactId);
-	}
-
-	/**
-	* Returns the contact with the primary key or returns <code>null</code> if it could not be found.
-	*
-	* @param contactId the primary key of the contact
-	* @return the contact, or <code>null</code> if a contact with the primary key could not be found
-	* @throws SystemException if a system exception occurred
-	*/
-	public static com.liferay.portal.model.Contact fetchByPrimaryKey(
-		long contactId)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().fetchByPrimaryKey(contactId);
+	public static Contact update(Contact contact, ServiceContext serviceContext) {
+		return getPersistence().update(contact, serviceContext);
 	}
 
 	/**
@@ -191,11 +111,8 @@ public class ContactUtil {
 	*
 	* @param companyId the company ID
 	* @return the matching contacts
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Contact> findByCompanyId(
-		long companyId)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Contact> findByCompanyId(long companyId) {
 		return getPersistence().findByCompanyId(companyId);
 	}
 
@@ -203,18 +120,16 @@ public class ContactUtil {
 	* Returns a range of all the contacts where companyId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param companyId the company ID
 	* @param start the lower bound of the range of contacts
 	* @param end the upper bound of the range of contacts (not inclusive)
 	* @return the range of matching contacts
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Contact> findByCompanyId(
-		long companyId, int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Contact> findByCompanyId(long companyId, int start,
+		int end) {
 		return getPersistence().findByCompanyId(companyId, start, end);
 	}
 
@@ -222,7 +137,7 @@ public class ContactUtil {
 	* Returns an ordered range of all the contacts where companyId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param companyId the company ID
@@ -230,12 +145,9 @@ public class ContactUtil {
 	* @param end the upper bound of the range of contacts (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of matching contacts
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Contact> findByCompanyId(
-		long companyId, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Contact> findByCompanyId(long companyId, int start,
+		int end, OrderByComparator<Contact> orderByComparator) {
 		return getPersistence()
 				   .findByCompanyId(companyId, start, end, orderByComparator);
 	}
@@ -246,14 +158,11 @@ public class ContactUtil {
 	* @param companyId the company ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching contact
-	* @throws com.liferay.portal.NoSuchContactException if a matching contact could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContactException if a matching contact could not be found
 	*/
-	public static com.liferay.portal.model.Contact findByCompanyId_First(
-		long companyId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.NoSuchContactException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Contact findByCompanyId_First(long companyId,
+		OrderByComparator<Contact> orderByComparator)
+		throws com.liferay.portal.NoSuchContactException {
 		return getPersistence()
 				   .findByCompanyId_First(companyId, orderByComparator);
 	}
@@ -264,12 +173,9 @@ public class ContactUtil {
 	* @param companyId the company ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching contact, or <code>null</code> if a matching contact could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public static com.liferay.portal.model.Contact fetchByCompanyId_First(
-		long companyId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static Contact fetchByCompanyId_First(long companyId,
+		OrderByComparator<Contact> orderByComparator) {
 		return getPersistence()
 				   .fetchByCompanyId_First(companyId, orderByComparator);
 	}
@@ -280,14 +186,11 @@ public class ContactUtil {
 	* @param companyId the company ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching contact
-	* @throws com.liferay.portal.NoSuchContactException if a matching contact could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContactException if a matching contact could not be found
 	*/
-	public static com.liferay.portal.model.Contact findByCompanyId_Last(
-		long companyId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.NoSuchContactException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Contact findByCompanyId_Last(long companyId,
+		OrderByComparator<Contact> orderByComparator)
+		throws com.liferay.portal.NoSuchContactException {
 		return getPersistence()
 				   .findByCompanyId_Last(companyId, orderByComparator);
 	}
@@ -298,12 +201,9 @@ public class ContactUtil {
 	* @param companyId the company ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching contact, or <code>null</code> if a matching contact could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public static com.liferay.portal.model.Contact fetchByCompanyId_Last(
-		long companyId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static Contact fetchByCompanyId_Last(long companyId,
+		OrderByComparator<Contact> orderByComparator) {
 		return getPersistence()
 				   .fetchByCompanyId_Last(companyId, orderByComparator);
 	}
@@ -315,17 +215,33 @@ public class ContactUtil {
 	* @param companyId the company ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the previous, current, and next contact
-	* @throws com.liferay.portal.NoSuchContactException if a contact with the primary key could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContactException if a contact with the primary key could not be found
 	*/
-	public static com.liferay.portal.model.Contact[] findByCompanyId_PrevAndNext(
-		long contactId, long companyId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.NoSuchContactException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Contact[] findByCompanyId_PrevAndNext(long contactId,
+		long companyId, OrderByComparator<Contact> orderByComparator)
+		throws com.liferay.portal.NoSuchContactException {
 		return getPersistence()
 				   .findByCompanyId_PrevAndNext(contactId, companyId,
 			orderByComparator);
+	}
+
+	/**
+	* Removes all the contacts where companyId = &#63; from the database.
+	*
+	* @param companyId the company ID
+	*/
+	public static void removeByCompanyId(long companyId) {
+		getPersistence().removeByCompanyId(companyId);
+	}
+
+	/**
+	* Returns the number of contacts where companyId = &#63;.
+	*
+	* @param companyId the company ID
+	* @return the number of matching contacts
+	*/
+	public static int countByCompanyId(long companyId) {
+		return getPersistence().countByCompanyId(companyId);
 	}
 
 	/**
@@ -333,11 +249,8 @@ public class ContactUtil {
 	*
 	* @param accountId the account ID
 	* @return the matching contacts
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Contact> findByAccountId(
-		long accountId)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Contact> findByAccountId(long accountId) {
 		return getPersistence().findByAccountId(accountId);
 	}
 
@@ -345,18 +258,16 @@ public class ContactUtil {
 	* Returns a range of all the contacts where accountId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param accountId the account ID
 	* @param start the lower bound of the range of contacts
 	* @param end the upper bound of the range of contacts (not inclusive)
 	* @return the range of matching contacts
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Contact> findByAccountId(
-		long accountId, int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Contact> findByAccountId(long accountId, int start,
+		int end) {
 		return getPersistence().findByAccountId(accountId, start, end);
 	}
 
@@ -364,7 +275,7 @@ public class ContactUtil {
 	* Returns an ordered range of all the contacts where accountId = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param accountId the account ID
@@ -372,12 +283,9 @@ public class ContactUtil {
 	* @param end the upper bound of the range of contacts (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of matching contacts
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Contact> findByAccountId(
-		long accountId, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Contact> findByAccountId(long accountId, int start,
+		int end, OrderByComparator<Contact> orderByComparator) {
 		return getPersistence()
 				   .findByAccountId(accountId, start, end, orderByComparator);
 	}
@@ -388,14 +296,11 @@ public class ContactUtil {
 	* @param accountId the account ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching contact
-	* @throws com.liferay.portal.NoSuchContactException if a matching contact could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContactException if a matching contact could not be found
 	*/
-	public static com.liferay.portal.model.Contact findByAccountId_First(
-		long accountId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.NoSuchContactException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Contact findByAccountId_First(long accountId,
+		OrderByComparator<Contact> orderByComparator)
+		throws com.liferay.portal.NoSuchContactException {
 		return getPersistence()
 				   .findByAccountId_First(accountId, orderByComparator);
 	}
@@ -406,12 +311,9 @@ public class ContactUtil {
 	* @param accountId the account ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching contact, or <code>null</code> if a matching contact could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public static com.liferay.portal.model.Contact fetchByAccountId_First(
-		long accountId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static Contact fetchByAccountId_First(long accountId,
+		OrderByComparator<Contact> orderByComparator) {
 		return getPersistence()
 				   .fetchByAccountId_First(accountId, orderByComparator);
 	}
@@ -422,14 +324,11 @@ public class ContactUtil {
 	* @param accountId the account ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching contact
-	* @throws com.liferay.portal.NoSuchContactException if a matching contact could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContactException if a matching contact could not be found
 	*/
-	public static com.liferay.portal.model.Contact findByAccountId_Last(
-		long accountId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.NoSuchContactException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Contact findByAccountId_Last(long accountId,
+		OrderByComparator<Contact> orderByComparator)
+		throws com.liferay.portal.NoSuchContactException {
 		return getPersistence()
 				   .findByAccountId_Last(accountId, orderByComparator);
 	}
@@ -440,12 +339,9 @@ public class ContactUtil {
 	* @param accountId the account ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching contact, or <code>null</code> if a matching contact could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public static com.liferay.portal.model.Contact fetchByAccountId_Last(
-		long accountId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static Contact fetchByAccountId_Last(long accountId,
+		OrderByComparator<Contact> orderByComparator) {
 		return getPersistence()
 				   .fetchByAccountId_Last(accountId, orderByComparator);
 	}
@@ -457,17 +353,33 @@ public class ContactUtil {
 	* @param accountId the account ID
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the previous, current, and next contact
-	* @throws com.liferay.portal.NoSuchContactException if a contact with the primary key could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContactException if a contact with the primary key could not be found
 	*/
-	public static com.liferay.portal.model.Contact[] findByAccountId_PrevAndNext(
-		long contactId, long accountId,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.NoSuchContactException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Contact[] findByAccountId_PrevAndNext(long contactId,
+		long accountId, OrderByComparator<Contact> orderByComparator)
+		throws com.liferay.portal.NoSuchContactException {
 		return getPersistence()
 				   .findByAccountId_PrevAndNext(contactId, accountId,
 			orderByComparator);
+	}
+
+	/**
+	* Removes all the contacts where accountId = &#63; from the database.
+	*
+	* @param accountId the account ID
+	*/
+	public static void removeByAccountId(long accountId) {
+		getPersistence().removeByAccountId(accountId);
+	}
+
+	/**
+	* Returns the number of contacts where accountId = &#63;.
+	*
+	* @param accountId the account ID
+	* @return the number of matching contacts
+	*/
+	public static int countByAccountId(long accountId) {
+		return getPersistence().countByAccountId(accountId);
 	}
 
 	/**
@@ -476,11 +388,8 @@ public class ContactUtil {
 	* @param classNameId the class name ID
 	* @param classPK the class p k
 	* @return the matching contacts
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Contact> findByC_C(
-		long classNameId, long classPK)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Contact> findByC_C(long classNameId, long classPK) {
 		return getPersistence().findByC_C(classNameId, classPK);
 	}
 
@@ -488,7 +397,7 @@ public class ContactUtil {
 	* Returns a range of all the contacts where classNameId = &#63; and classPK = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param classNameId the class name ID
@@ -496,11 +405,9 @@ public class ContactUtil {
 	* @param start the lower bound of the range of contacts
 	* @param end the upper bound of the range of contacts (not inclusive)
 	* @return the range of matching contacts
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Contact> findByC_C(
-		long classNameId, long classPK, int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Contact> findByC_C(long classNameId, long classPK,
+		int start, int end) {
 		return getPersistence().findByC_C(classNameId, classPK, start, end);
 	}
 
@@ -508,7 +415,7 @@ public class ContactUtil {
 	* Returns an ordered range of all the contacts where classNameId = &#63; and classPK = &#63;.
 	*
 	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
 	* </p>
 	*
 	* @param classNameId the class name ID
@@ -517,12 +424,9 @@ public class ContactUtil {
 	* @param end the upper bound of the range of contacts (not inclusive)
 	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
 	* @return the ordered range of matching contacts
-	* @throws SystemException if a system exception occurred
 	*/
-	public static java.util.List<com.liferay.portal.model.Contact> findByC_C(
-		long classNameId, long classPK, int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static List<Contact> findByC_C(long classNameId, long classPK,
+		int start, int end, OrderByComparator<Contact> orderByComparator) {
 		return getPersistence()
 				   .findByC_C(classNameId, classPK, start, end,
 			orderByComparator);
@@ -535,14 +439,11 @@ public class ContactUtil {
 	* @param classPK the class p k
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching contact
-	* @throws com.liferay.portal.NoSuchContactException if a matching contact could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContactException if a matching contact could not be found
 	*/
-	public static com.liferay.portal.model.Contact findByC_C_First(
-		long classNameId, long classPK,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.NoSuchContactException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Contact findByC_C_First(long classNameId, long classPK,
+		OrderByComparator<Contact> orderByComparator)
+		throws com.liferay.portal.NoSuchContactException {
 		return getPersistence()
 				   .findByC_C_First(classNameId, classPK, orderByComparator);
 	}
@@ -554,12 +455,9 @@ public class ContactUtil {
 	* @param classPK the class p k
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the first matching contact, or <code>null</code> if a matching contact could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public static com.liferay.portal.model.Contact fetchByC_C_First(
-		long classNameId, long classPK,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static Contact fetchByC_C_First(long classNameId, long classPK,
+		OrderByComparator<Contact> orderByComparator) {
 		return getPersistence()
 				   .fetchByC_C_First(classNameId, classPK, orderByComparator);
 	}
@@ -571,14 +469,11 @@ public class ContactUtil {
 	* @param classPK the class p k
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching contact
-	* @throws com.liferay.portal.NoSuchContactException if a matching contact could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContactException if a matching contact could not be found
 	*/
-	public static com.liferay.portal.model.Contact findByC_C_Last(
-		long classNameId, long classPK,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.NoSuchContactException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Contact findByC_C_Last(long classNameId, long classPK,
+		OrderByComparator<Contact> orderByComparator)
+		throws com.liferay.portal.NoSuchContactException {
 		return getPersistence()
 				   .findByC_C_Last(classNameId, classPK, orderByComparator);
 	}
@@ -590,12 +485,9 @@ public class ContactUtil {
 	* @param classPK the class p k
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the last matching contact, or <code>null</code> if a matching contact could not be found
-	* @throws SystemException if a system exception occurred
 	*/
-	public static com.liferay.portal.model.Contact fetchByC_C_Last(
-		long classNameId, long classPK,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static Contact fetchByC_C_Last(long classNameId, long classPK,
+		OrderByComparator<Contact> orderByComparator) {
 		return getPersistence()
 				   .fetchByC_C_Last(classNameId, classPK, orderByComparator);
 	}
@@ -608,88 +500,15 @@ public class ContactUtil {
 	* @param classPK the class p k
 	* @param orderByComparator the comparator to order the set by (optionally <code>null</code>)
 	* @return the previous, current, and next contact
-	* @throws com.liferay.portal.NoSuchContactException if a contact with the primary key could not be found
-	* @throws SystemException if a system exception occurred
+	* @throws NoSuchContactException if a contact with the primary key could not be found
 	*/
-	public static com.liferay.portal.model.Contact[] findByC_C_PrevAndNext(
-		long contactId, long classNameId, long classPK,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.NoSuchContactException,
-			com.liferay.portal.kernel.exception.SystemException {
+	public static Contact[] findByC_C_PrevAndNext(long contactId,
+		long classNameId, long classPK,
+		OrderByComparator<Contact> orderByComparator)
+		throws com.liferay.portal.NoSuchContactException {
 		return getPersistence()
 				   .findByC_C_PrevAndNext(contactId, classNameId, classPK,
 			orderByComparator);
-	}
-
-	/**
-	* Returns all the contacts.
-	*
-	* @return the contacts
-	* @throws SystemException if a system exception occurred
-	*/
-	public static java.util.List<com.liferay.portal.model.Contact> findAll()
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().findAll();
-	}
-
-	/**
-	* Returns a range of all the contacts.
-	*
-	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
-	* </p>
-	*
-	* @param start the lower bound of the range of contacts
-	* @param end the upper bound of the range of contacts (not inclusive)
-	* @return the range of contacts
-	* @throws SystemException if a system exception occurred
-	*/
-	public static java.util.List<com.liferay.portal.model.Contact> findAll(
-		int start, int end)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().findAll(start, end);
-	}
-
-	/**
-	* Returns an ordered range of all the contacts.
-	*
-	* <p>
-	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link com.liferay.portal.kernel.dao.orm.QueryUtil#ALL_POS} will return the full result set.
-	* </p>
-	*
-	* @param start the lower bound of the range of contacts
-	* @param end the upper bound of the range of contacts (not inclusive)
-	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
-	* @return the ordered range of contacts
-	* @throws SystemException if a system exception occurred
-	*/
-	public static java.util.List<com.liferay.portal.model.Contact> findAll(
-		int start, int end,
-		com.liferay.portal.kernel.util.OrderByComparator orderByComparator)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().findAll(start, end, orderByComparator);
-	}
-
-	/**
-	* Removes all the contacts where companyId = &#63; from the database.
-	*
-	* @param companyId the company ID
-	* @throws SystemException if a system exception occurred
-	*/
-	public static void removeByCompanyId(long companyId)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		getPersistence().removeByCompanyId(companyId);
-	}
-
-	/**
-	* Removes all the contacts where accountId = &#63; from the database.
-	*
-	* @param accountId the account ID
-	* @throws SystemException if a system exception occurred
-	*/
-	public static void removeByAccountId(long accountId)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		getPersistence().removeByAccountId(accountId);
 	}
 
 	/**
@@ -697,45 +516,9 @@ public class ContactUtil {
 	*
 	* @param classNameId the class name ID
 	* @param classPK the class p k
-	* @throws SystemException if a system exception occurred
 	*/
-	public static void removeByC_C(long classNameId, long classPK)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static void removeByC_C(long classNameId, long classPK) {
 		getPersistence().removeByC_C(classNameId, classPK);
-	}
-
-	/**
-	* Removes all the contacts from the database.
-	*
-	* @throws SystemException if a system exception occurred
-	*/
-	public static void removeAll()
-		throws com.liferay.portal.kernel.exception.SystemException {
-		getPersistence().removeAll();
-	}
-
-	/**
-	* Returns the number of contacts where companyId = &#63;.
-	*
-	* @param companyId the company ID
-	* @return the number of matching contacts
-	* @throws SystemException if a system exception occurred
-	*/
-	public static int countByCompanyId(long companyId)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().countByCompanyId(companyId);
-	}
-
-	/**
-	* Returns the number of contacts where accountId = &#63;.
-	*
-	* @param accountId the account ID
-	* @return the number of matching contacts
-	* @throws SystemException if a system exception occurred
-	*/
-	public static int countByAccountId(long accountId)
-		throws com.liferay.portal.kernel.exception.SystemException {
-		return getPersistence().countByAccountId(accountId);
 	}
 
 	/**
@@ -744,21 +527,136 @@ public class ContactUtil {
 	* @param classNameId the class name ID
 	* @param classPK the class p k
 	* @return the number of matching contacts
-	* @throws SystemException if a system exception occurred
 	*/
-	public static int countByC_C(long classNameId, long classPK)
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static int countByC_C(long classNameId, long classPK) {
 		return getPersistence().countByC_C(classNameId, classPK);
+	}
+
+	/**
+	* Caches the contact in the entity cache if it is enabled.
+	*
+	* @param contact the contact
+	*/
+	public static void cacheResult(Contact contact) {
+		getPersistence().cacheResult(contact);
+	}
+
+	/**
+	* Caches the contacts in the entity cache if it is enabled.
+	*
+	* @param contacts the contacts
+	*/
+	public static void cacheResult(List<Contact> contacts) {
+		getPersistence().cacheResult(contacts);
+	}
+
+	/**
+	* Creates a new contact with the primary key. Does not add the contact to the database.
+	*
+	* @param contactId the primary key for the new contact
+	* @return the new contact
+	*/
+	public static Contact create(long contactId) {
+		return getPersistence().create(contactId);
+	}
+
+	/**
+	* Removes the contact with the primary key from the database. Also notifies the appropriate model listeners.
+	*
+	* @param contactId the primary key of the contact
+	* @return the contact that was removed
+	* @throws NoSuchContactException if a contact with the primary key could not be found
+	*/
+	public static Contact remove(long contactId)
+		throws com.liferay.portal.NoSuchContactException {
+		return getPersistence().remove(contactId);
+	}
+
+	public static Contact updateImpl(Contact contact) {
+		return getPersistence().updateImpl(contact);
+	}
+
+	/**
+	* Returns the contact with the primary key or throws a {@link NoSuchContactException} if it could not be found.
+	*
+	* @param contactId the primary key of the contact
+	* @return the contact
+	* @throws NoSuchContactException if a contact with the primary key could not be found
+	*/
+	public static Contact findByPrimaryKey(long contactId)
+		throws com.liferay.portal.NoSuchContactException {
+		return getPersistence().findByPrimaryKey(contactId);
+	}
+
+	/**
+	* Returns the contact with the primary key or returns <code>null</code> if it could not be found.
+	*
+	* @param contactId the primary key of the contact
+	* @return the contact, or <code>null</code> if a contact with the primary key could not be found
+	*/
+	public static Contact fetchByPrimaryKey(long contactId) {
+		return getPersistence().fetchByPrimaryKey(contactId);
+	}
+
+	public static java.util.Map<java.io.Serializable, Contact> fetchByPrimaryKeys(
+		java.util.Set<java.io.Serializable> primaryKeys) {
+		return getPersistence().fetchByPrimaryKeys(primaryKeys);
+	}
+
+	/**
+	* Returns all the contacts.
+	*
+	* @return the contacts
+	*/
+	public static List<Contact> findAll() {
+		return getPersistence().findAll();
+	}
+
+	/**
+	* Returns a range of all the contacts.
+	*
+	* <p>
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	* </p>
+	*
+	* @param start the lower bound of the range of contacts
+	* @param end the upper bound of the range of contacts (not inclusive)
+	* @return the range of contacts
+	*/
+	public static List<Contact> findAll(int start, int end) {
+		return getPersistence().findAll(start, end);
+	}
+
+	/**
+	* Returns an ordered range of all the contacts.
+	*
+	* <p>
+	* Useful when paginating results. Returns a maximum of <code>end - start</code> instances. <code>start</code> and <code>end</code> are not primary keys, they are indexes in the result set. Thus, <code>0</code> refers to the first result in the set. Setting both <code>start</code> and <code>end</code> to {@link QueryUtil#ALL_POS} will return the full result set. If <code>orderByComparator</code> is specified, then the query will include the given ORDER BY logic. If <code>orderByComparator</code> is absent and pagination is required (<code>start</code> and <code>end</code> are not {@link QueryUtil#ALL_POS}), then the query will include the default ORDER BY logic from {@link ContactModelImpl}. If both <code>orderByComparator</code> and pagination are absent, for performance reasons, the query will not have an ORDER BY clause and the returned result set will be sorted on by the primary key in an ascending order.
+	* </p>
+	*
+	* @param start the lower bound of the range of contacts
+	* @param end the upper bound of the range of contacts (not inclusive)
+	* @param orderByComparator the comparator to order the results by (optionally <code>null</code>)
+	* @return the ordered range of contacts
+	*/
+	public static List<Contact> findAll(int start, int end,
+		OrderByComparator<Contact> orderByComparator) {
+		return getPersistence().findAll(start, end, orderByComparator);
+	}
+
+	/**
+	* Removes all the contacts from the database.
+	*/
+	public static void removeAll() {
+		getPersistence().removeAll();
 	}
 
 	/**
 	* Returns the number of contacts.
 	*
 	* @return the number of contacts
-	* @throws SystemException if a system exception occurred
 	*/
-	public static int countAll()
-		throws com.liferay.portal.kernel.exception.SystemException {
+	public static int countAll() {
 		return getPersistence().countAll();
 	}
 
@@ -774,8 +672,9 @@ public class ContactUtil {
 	}
 
 	/**
-	 * @deprecated
+	 * @deprecated As of 6.2.0
 	 */
+	@Deprecated
 	public void setPersistence(ContactPersistence persistence) {
 	}
 

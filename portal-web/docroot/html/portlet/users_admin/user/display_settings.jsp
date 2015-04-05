@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -28,29 +28,6 @@ String timeZoneId = BeanParamUtil.getString(selUser, request, "timeZoneId", user
 <h3><liferay-ui:message key="display-settings" /></h3>
 
 <aui:fieldset>
-	<aui:select label="language" name="languageId">
-
-		<%
-		Locale selLocale = LocaleUtil.fromLanguageId(languageId);
-
-		Locale[] locales = LanguageUtil.getAvailableLocales();
-
-		Locale languageLocale = locale;
-
-		for (Locale curLocale : locales) {
-			if (portletName.equals(PortletKeys.MY_ACCOUNT)) {
-				languageLocale = curLocale;
-			}
-		%>
-
-			<aui:option label="<%= curLocale.getDisplayName(languageLocale) %>" lang="<%= LocaleUtil.toW3cLanguageId(languageLocale) %>" selected="<%= (selLocale.getLanguage().equals(curLocale.getLanguage()) && selLocale.getCountry().equals(curLocale.getCountry())) %>" value="<%= LocaleUtil.toLanguageId(curLocale) %>" />
-
-		<%
-		}
-		%>
-
-	</aui:select>
-
 	<aui:input label="time-zone" name="timeZoneId" type="timeZone" value="<%= timeZoneId %>" />
 
 	<aui:input name="greeting" />

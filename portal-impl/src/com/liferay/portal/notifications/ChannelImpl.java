@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -34,9 +34,9 @@ import com.liferay.portal.util.PropsValues;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,16 +58,19 @@ public class ChannelImpl extends BaseChannelImpl {
 		super(companyId, usedId);
 	}
 
+	@Override
 	public Channel clone(long companyId, long userId) {
 		return new ChannelImpl(companyId, userId);
 	}
 
+	@Override
 	public void confirmDelivery(Collection<String> notificationEventUuids)
 		throws ChannelException {
 
 		confirmDelivery(notificationEventUuids, false);
 	}
 
+	@Override
 	public void confirmDelivery(
 			Collection<String> notificationEventUuids, boolean archive)
 		throws ChannelException {
@@ -97,19 +100,21 @@ public class ChannelImpl extends BaseChannelImpl {
 		}
 		catch (Exception e) {
 			throw new ChannelException(
-				"Unable to confirm delivery for user " + getUserId() , e);
+				"Unable to confirm delivery for user " + getUserId(), e);
 		}
 		finally {
 			_reentrantLock.unlock();
 		}
 	}
 
+	@Override
 	public void confirmDelivery(String notificationEventUuid)
 		throws ChannelException {
 
 		confirmDelivery(notificationEventUuid, false);
 	}
 
+	@Override
 	public void confirmDelivery(String notificationEventUuid, boolean archive)
 		throws ChannelException {
 
@@ -136,22 +141,22 @@ public class ChannelImpl extends BaseChannelImpl {
 		}
 		catch (Exception e) {
 			throw new ChannelException(
-				"Unable to confirm delivery for " + notificationEventUuid , e);
+				"Unable to confirm delivery for " + notificationEventUuid, e);
 		}
 		finally {
 			_reentrantLock.unlock();
 		}
 	}
 
+	@Override
 	public void deleteUserNotificiationEvent(String notificationEventUuid)
 		throws ChannelException {
 
 		_reentrantLock.lock();
 
 		try {
-			UserNotificationEventLocalServiceUtil.
-				deleteUserNotificationEvent(
-					notificationEventUuid, getCompanyId());
+			UserNotificationEventLocalServiceUtil.deleteUserNotificationEvent(
+				notificationEventUuid, getCompanyId());
 
 			Map<String, NotificationEvent> unconfirmedNotificationEvents =
 				_getUnconfirmedNotificationEvents();
@@ -160,13 +165,14 @@ public class ChannelImpl extends BaseChannelImpl {
 		}
 		catch (Exception e) {
 			throw new ChannelException(
-				"Unable to delete event " + notificationEventUuid , e);
+				"Unable to delete event " + notificationEventUuid, e);
 		}
 		finally {
 			_reentrantLock.unlock();
 		}
 	}
 
+	@Override
 	public void deleteUserNotificiationEvents(
 			Collection<String> notificationEventUuids)
 		throws ChannelException {
@@ -174,9 +180,8 @@ public class ChannelImpl extends BaseChannelImpl {
 		_reentrantLock.lock();
 
 		try {
-			UserNotificationEventLocalServiceUtil.
-				deleteUserNotificationEvents(
-					notificationEventUuids, getCompanyId());
+			UserNotificationEventLocalServiceUtil.deleteUserNotificationEvents(
+				notificationEventUuids, getCompanyId());
 
 			for (String notificationEventUuid : notificationEventUuids) {
 				Map<String, NotificationEvent> unconfirmedNotificationEvents =
@@ -187,13 +192,14 @@ public class ChannelImpl extends BaseChannelImpl {
 		}
 		catch (Exception e) {
 			throw new ChannelException(
-				"Unable to delete events for user " + getUserId() , e);
+				"Unable to delete events for user " + getUserId(), e);
 		}
 		finally {
 			_reentrantLock.unlock();
 		}
 	}
 
+	@Override
 	public void flush() {
 		_reentrantLock.lock();
 
@@ -207,6 +213,7 @@ public class ChannelImpl extends BaseChannelImpl {
 		}
 	}
 
+	@Override
 	public void flush(long timestamp) {
 		_reentrantLock.lock();
 
@@ -230,6 +237,7 @@ public class ChannelImpl extends BaseChannelImpl {
 		}
 	}
 
+	@Override
 	public List<NotificationEvent> getNotificationEvents(boolean flush)
 		throws ChannelException {
 
@@ -249,6 +257,7 @@ public class ChannelImpl extends BaseChannelImpl {
 		}
 	}
 
+	@Override
 	public void init() throws ChannelException {
 		_reentrantLock.lock();
 
@@ -264,6 +273,7 @@ public class ChannelImpl extends BaseChannelImpl {
 		}
 	}
 
+	@Override
 	public void removeTransientNotificationEvents(
 		Collection<NotificationEvent> notificationEvents) {
 
@@ -279,10 +289,11 @@ public class ChannelImpl extends BaseChannelImpl {
 		}
 	}
 
+	@Override
 	public void removeTransientNotificationEventsByUuid(
 		Collection<String> notificationEventUuids) {
 
-		Set<String> notificationEventUuidsSet = new HashSet<String>(
+		Set<String> notificationEventUuidsSet = new HashSet<>(
 			notificationEventUuids);
 
 		_reentrantLock.lock();
@@ -309,6 +320,7 @@ public class ChannelImpl extends BaseChannelImpl {
 		}
 	}
 
+	@Override
 	public void sendNotificationEvent(NotificationEvent notificationEvent)
 		throws ChannelException {
 
@@ -317,7 +329,7 @@ public class ChannelImpl extends BaseChannelImpl {
 		try {
 			long currentTime = System.currentTimeMillis();
 
-			storeNotificationEvent(notificationEvent, currentTime);
+			doStoreNotificationEvent(notificationEvent, currentTime);
 
 			if (PropsValues.USER_NOTIFICATION_EVENT_CONFIRMATION_ENABLED &&
 				notificationEvent.isDeliveryRequired()) {
@@ -336,6 +348,7 @@ public class ChannelImpl extends BaseChannelImpl {
 		notifyChannelListeners();
 	}
 
+	@Override
 	public void sendNotificationEvents(
 			Collection<NotificationEvent> notificationEvents)
 		throws ChannelException {
@@ -346,10 +359,10 @@ public class ChannelImpl extends BaseChannelImpl {
 			long currentTime = System.currentTimeMillis();
 
 			List<NotificationEvent> persistedNotificationEvents =
-				new ArrayList<NotificationEvent>(notificationEvents.size());
+				new ArrayList<>(notificationEvents.size());
 
 			for (NotificationEvent notificationEvent : notificationEvents) {
-				storeNotificationEvent(notificationEvent, currentTime);
+				doStoreNotificationEvent(notificationEvent, currentTime);
 
 				if (PropsValues.USER_NOTIFICATION_EVENT_CONFIRMATION_ENABLED &&
 					notificationEvent.isDeliveryRequired()) {
@@ -376,6 +389,20 @@ public class ChannelImpl extends BaseChannelImpl {
 	}
 
 	@Override
+	public void storeNotificationEvent(
+		NotificationEvent notificationEvent, long currentTime) {
+
+		_reentrantLock.lock();
+
+		try {
+			doStoreNotificationEvent(notificationEvent, currentTime);
+		}
+		finally {
+			_reentrantLock.unlock();
+		}
+	}
+
+	@Override
 	protected void doCleanUp() throws Exception {
 		_reentrantLock.lock();
 
@@ -398,7 +425,7 @@ public class ChannelImpl extends BaseChannelImpl {
 			Map<String, NotificationEvent> unconfirmedNotificationEvents =
 				_getUnconfirmedNotificationEvents();
 
-			List<String> invalidNotificationEventUuids = new ArrayList<String>(
+			List<String> invalidNotificationEventUuids = new ArrayList<>(
 				unconfirmedNotificationEvents.size());
 
 			Set<Map.Entry<String, NotificationEvent>>
@@ -469,7 +496,7 @@ public class ChannelImpl extends BaseChannelImpl {
 			notificationEventsSet.retainAll(notificationEvents);
 		}
 
-		List<String> invalidNotificationEventUuids = new ArrayList<String>(
+		List<String> invalidNotificationEventUuids = new ArrayList<>(
 			unconfirmedNotificationEvents.size());
 
 		Set<Map.Entry<String, NotificationEvent>>
@@ -506,19 +533,19 @@ public class ChannelImpl extends BaseChannelImpl {
 		return notificationEvents;
 	}
 
-	protected void doInit() throws SystemException {
+	protected void doInit() {
 		if (!PropsValues.USER_NOTIFICATION_EVENT_CONFIRMATION_ENABLED) {
 			return;
 		}
 
 		List<UserNotificationEvent> userNotificationEvents =
-			UserNotificationEventLocalServiceUtil.getUserNotificationEvents(
-				getUserId(), false);
+			UserNotificationEventLocalServiceUtil.
+				getDeliveredUserNotificationEvents(getUserId(), false);
 
 		Map<String, NotificationEvent> unconfirmedNotificationEvents =
 			_getUnconfirmedNotificationEvents();
 
-		List<String> invalidNotificationEventUuids = new ArrayList<String>(
+		List<String> invalidNotificationEventUuids = new ArrayList<>(
 			unconfirmedNotificationEvents.size());
 
 		long currentTime = System.currentTimeMillis();
@@ -564,20 +591,7 @@ public class ChannelImpl extends BaseChannelImpl {
 		}
 	}
 
-	protected boolean isRemoveNotificationEvent(
-		NotificationEvent notificationEvent, long currentTime) {
-
-		if ((notificationEvent.getDeliverBy() != 0) &&
-			(notificationEvent.getDeliverBy() <= currentTime)) {
-
-			return true;
-		}
-		else {
-			return false;
-		}
-	}
-
-	protected void storeNotificationEvent(
+	protected void doStoreNotificationEvent(
 		NotificationEvent notificationEvent, long currentTime) {
 
 		if (isRemoveNotificationEvent(notificationEvent, currentTime)) {
@@ -610,9 +624,22 @@ public class ChannelImpl extends BaseChannelImpl {
 		}
 	}
 
+	protected boolean isRemoveNotificationEvent(
+		NotificationEvent notificationEvent, long currentTime) {
+
+		if ((notificationEvent.getDeliverBy() != 0) &&
+			(notificationEvent.getDeliverBy() <= currentTime)) {
+
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
 	private TreeSet<NotificationEvent> _getNotificationEvents() {
 		if (_notificationEvents == null) {
-			_notificationEvents = new TreeSet<NotificationEvent>(_comparator);
+			_notificationEvents = new TreeSet<>(_comparator);
 		}
 
 		return _notificationEvents;
@@ -620,20 +647,19 @@ public class ChannelImpl extends BaseChannelImpl {
 
 	private Map<String, NotificationEvent> _getUnconfirmedNotificationEvents() {
 		if (_unconfirmedNotificationEvents == null) {
-			_unconfirmedNotificationEvents =
-				new HashMap<String, NotificationEvent>();
+			_unconfirmedNotificationEvents = new LinkedHashMap<>();
 		}
 
 		return _unconfirmedNotificationEvents;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ChannelImpl.class);
+	private static final Log _log = LogFactoryUtil.getLog(ChannelImpl.class);
 
-	private static Comparator<NotificationEvent> _comparator =
+	private static final Comparator<NotificationEvent> _comparator =
 		new NotificationEventComparator();
 
 	private TreeSet<NotificationEvent> _notificationEvents;
-	private ReentrantLock _reentrantLock = new ReentrantLock();
+	private final ReentrantLock _reentrantLock = new ReentrantLock();
 	private Map<String, NotificationEvent> _unconfirmedNotificationEvents;
 
 }

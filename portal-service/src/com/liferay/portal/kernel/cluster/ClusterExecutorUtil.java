@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,14 +14,15 @@
 
 package com.liferay.portal.kernel.cluster;
 
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
+import com.liferay.registry.Registry;
+import com.liferay.registry.RegistryUtil;
+import com.liferay.registry.ServiceTracker;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Tina Tian
@@ -41,18 +42,8 @@ public class ClusterExecutorUtil {
 		clusterExecutor.addClusterEventListener(clusterEventListener);
 	}
 
-	public static void destroy() {
-		ClusterExecutor clusterExecutor = getClusterExecutor();
-
-		if (clusterExecutor == null) {
-			return;
-		}
-
-		clusterExecutor.destroy();
-	}
-
-	public static FutureClusterResponses execute(ClusterRequest clusterRequest)
-		throws SystemException {
+	public static FutureClusterResponses execute(
+		ClusterRequest clusterRequest) {
 
 		ClusterExecutor clusterExecutor = getClusterExecutor();
 
@@ -63,58 +54,21 @@ public class ClusterExecutorUtil {
 		return clusterExecutor.execute(clusterRequest);
 	}
 
-	public static void execute(
-			ClusterRequest clusterRequest,
-			ClusterResponseCallback clusterResponseCallback)
-		throws SystemException {
-
-		ClusterExecutor clusterExecutor = getClusterExecutor();
-
-		if (clusterExecutor == null) {
-			return;
-		}
-
-		clusterExecutor.execute(clusterRequest, clusterResponseCallback);
-	}
-
-	public static void execute(
-			ClusterRequest clusterRequest,
-			ClusterResponseCallback clusterResponseCallback, long timeout,
-			TimeUnit timeUnit)
-		throws SystemException {
-
-		ClusterExecutor clusterExecutor = getClusterExecutor();
-
-		if (clusterExecutor == null) {
-			return;
-		}
-
-		clusterExecutor.execute(
-			clusterRequest, clusterResponseCallback, timeout, timeUnit);
-	}
-
 	public static ClusterExecutor getClusterExecutor() {
 		PortalRuntimePermission.checkGetBeanProperty(ClusterExecutorUtil.class);
 
-		if ((_clusterExecutor == null) || !_clusterExecutor.isEnabled()) {
+		ClusterExecutor clusterExecutor =
+			_instance._serviceTracker.getService();
+
+		if ((clusterExecutor == null) || !clusterExecutor.isEnabled()) {
 			if (_log.isWarnEnabled()) {
-				_log.warn("ClusterExecutorUtil has not been initialized");
+				_log.warn("ClusterExecutorUtil was not initialized");
 			}
 
 			return null;
 		}
 
-		return _clusterExecutor;
-	}
-
-	public static List<Address> getClusterNodeAddresses() {
-		ClusterExecutor clusterExecutor = getClusterExecutor();
-
-		if (clusterExecutor == null) {
-			return Collections.emptyList();
-		}
-
-		return clusterExecutor.getClusterNodeAddresses();
+		return clusterExecutor;
 	}
 
 	public static List<ClusterNode> getClusterNodes() {
@@ -127,7 +81,7 @@ public class ClusterExecutorUtil {
 		return clusterExecutor.getClusterNodes();
 	}
 
-	public static ClusterNode getLocalClusterNode() throws SystemException {
+	public static ClusterNode getLocalClusterNode() {
 		ClusterExecutor clusterExecutor = getClusterExecutor();
 
 		if (clusterExecutor == null) {
@@ -135,36 +89,6 @@ public class ClusterExecutorUtil {
 		}
 
 		return clusterExecutor.getLocalClusterNode();
-	}
-
-	public static Address getLocalClusterNodeAddress() {
-		ClusterExecutor clusterExecutor = getClusterExecutor();
-
-		if (clusterExecutor == null) {
-			return null;
-		}
-
-		return clusterExecutor.getLocalClusterNodeAddress();
-	}
-
-	public static void initialize() {
-		ClusterExecutor clusterExecutor = getClusterExecutor();
-
-		if (clusterExecutor == null) {
-			return;
-		}
-
-		clusterExecutor.initialize();
-	}
-
-	public static boolean isClusterNodeAlive(Address address) {
-		ClusterExecutor clusterExecutor = getClusterExecutor();
-
-		if (clusterExecutor == null) {
-			return false;
-		}
-
-		return clusterExecutor.isClusterNodeAlive(address);
 	}
 
 	public static boolean isClusterNodeAlive(String clusterNodeId) {
@@ -199,14 +123,21 @@ public class ClusterExecutorUtil {
 		clusterExecutor.removeClusterEventListener(clusterEventListener);
 	}
 
-	public void setClusterExecutor(ClusterExecutor clusterExecutor) {
-		PortalRuntimePermission.checkSetBeanProperty(getClass());
+	private ClusterExecutorUtil() {
+		Registry registry = RegistryUtil.getRegistry();
 
-		_clusterExecutor = clusterExecutor;
+		_serviceTracker = registry.trackServices(ClusterExecutor.class);
+
+		_serviceTracker.open();
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ClusterExecutorUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ClusterExecutorUtil.class);
 
-	private static ClusterExecutor _clusterExecutor;
+	private static final ClusterExecutorUtil _instance =
+		new ClusterExecutorUtil();
+
+	private final ServiceTracker<ClusterExecutor, ClusterExecutor>
+		_serviceTracker;
 
 }

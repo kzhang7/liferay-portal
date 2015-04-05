@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -27,27 +27,31 @@ public class JunctionImpl implements Junction {
 		_logicalOperator = logicalOperator;
 	}
 
+	@Override
 	public Junction add(Condition condition) {
 		_conditions.add(condition);
 
 		return this;
 	}
 
+	@Override
 	public LogicalOperator getLogicalOperator() {
 		return _logicalOperator;
 	}
 
+	@Override
 	public boolean isJunction() {
 		return _JUNCTION;
 	}
 
+	@Override
 	public Iterator<Condition> iterator() {
 		return _conditions.iterator();
 	}
 
 	private static final boolean _JUNCTION = true;
 
-	private List<Condition> _conditions = new ArrayList<Condition>();
-	private LogicalOperator _logicalOperator;
+	private final List<Condition> _conditions = new ArrayList<>();
+	private final LogicalOperator _logicalOperator;
 
 }

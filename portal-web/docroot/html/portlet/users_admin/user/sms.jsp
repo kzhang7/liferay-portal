@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -28,14 +28,14 @@ Contact selContact = (Contact)request.getAttribute("user.selContact");
 
 <c:choose>
 	<c:when test="<%= selContact != null %>">
-		<liferay-ui:error exception="<%= UserSmsException.class %>" message="please-enter-a-sms-id-that-is-a-valid-email-address" />
+		<liferay-ui:error exception="<%= UserSmsException.MustBeEmailAddress.class %>" message="please-enter-a-sms-id-that-is-a-valid-email-address" />
 
 		<aui:fieldset>
 			<aui:input label="" name="smsSn" />
 		</aui:fieldset>
 	</c:when>
 	<c:otherwise>
-		<div class="portlet-msg-info">
+		<div class="alert alert-info">
 			<liferay-ui:message key="this-section-will-be-editable-after-creating-the-user" />
 		</div>
 	</c:otherwise>

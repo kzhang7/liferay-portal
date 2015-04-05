@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,9 +16,6 @@ package com.liferay.portal.security.ac;
 
 import com.liferay.portal.spring.aop.AnnotationChainableMethodAdvice;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-
 import org.aopalliance.intercept.MethodInvocation;
 
 /**
@@ -28,31 +25,25 @@ import org.aopalliance.intercept.MethodInvocation;
  * @author Raymond Augé
  * @author Shuyang Zhou
  */
-public class AccessControlAdvice extends
-	AnnotationChainableMethodAdvice<AccessControlled> {
+public class AccessControlAdvice
+	extends AnnotationChainableMethodAdvice<AccessControlled> {
 
 	@Override
 	public Object before(MethodInvocation methodInvocation) throws Throwable {
 		AccessControlled accessControlled = findAnnotation(methodInvocation);
 
-		if (accessControlled == _nullAccessControlled) {
+		if (accessControlled == AccessControl.NULL_ACCESS_CONTROLLED) {
 			return null;
 		}
 
-		boolean remoteAccess = AccessControlThreadLocal.isRemoteAccess();
-
-		if (remoteAccess) {
-			Method targetMethod = methodInvocation.getMethod();
-
-			_accessControlAdvisor.accept(targetMethod, accessControlled);
-		}
+		_accessControlAdvisor.accept(methodInvocation, accessControlled);
 
 		return null;
 	}
 
 	@Override
 	public AccessControlled getNullAnnotation() {
-		return _nullAccessControlled;
+		return AccessControl.NULL_ACCESS_CONTROLLED;
 	}
 
 	public void setAccessControlAdvisor(
@@ -60,15 +51,6 @@ public class AccessControlAdvice extends
 
 		_accessControlAdvisor = accessControlAdvisor;
 	}
-
-	private static AccessControlled _nullAccessControlled =
-		new AccessControlled() {
-
-		public Class<? extends Annotation> annotationType() {
-			return AccessControlled.class;
-		}
-
-	};
 
 	private AccessControlAdvisor _accessControlAdvisor;
 

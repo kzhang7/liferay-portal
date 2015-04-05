@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,20 +14,16 @@
 
 package com.liferay.portal.security.ac;
 
-import com.liferay.portal.kernel.util.GetterUtil;
-import com.liferay.portal.kernel.util.SetUtil;
-import com.liferay.portal.kernel.util.StringUtil;
-import com.liferay.portal.security.auth.AccessControlContext;
-import com.liferay.portal.security.auth.AuthSettingsUtil;
-import com.liferay.portal.security.permission.PermissionChecker;
-import com.liferay.portal.security.permission.PermissionThreadLocal;
+import com.liferay.registry.Registry;
+import com.liferay.registry.RegistryUtil;
+import com.liferay.registry.ServiceReference;
+import com.liferay.registry.ServiceTracker;
+import com.liferay.registry.ServiceTrackerCustomizer;
 
-import java.lang.reflect.Method;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
+import org.aopalliance.intercept.MethodInvocation;
 
 /**
  * @author Tomas Polesovsky
@@ -37,40 +33,82 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class AccessControlAdvisorImpl implements AccessControlAdvisor {
 
-	public void accept(Method method, AccessControlled accessControlled)
+	public AccessControlAdvisorImpl() {
+		Registry registry = RegistryUtil.getRegistry();
+
+		_serviceTracker = registry.trackServices(
+			AccessControlPolicy.class,
+			new AccessControlPolicyTrackerCustomizer());
+
+		_serviceTracker.open();
+	}
+
+	@Override
+	public void accept(
+			MethodInvocation methodInvocation,
+			AccessControlled accessControlled)
 		throws SecurityException {
 
-		checkAllowedHosts();
+		if (AccessControlThreadLocal.isRemoteAccess()) {
+			for (AccessControlPolicy accessControlPolicy :
+					_accessControlPolicies) {
 
-		PermissionChecker permissionChecker =
-			PermissionThreadLocal.getPermissionChecker();
+				accessControlPolicy.onServiceRemoteAccess(
+					methodInvocation.getMethod(),
+					methodInvocation.getArguments(), accessControlled);
+			}
+		}
+		else {
+			for (AccessControlPolicy accessControlPolicy :
+					_accessControlPolicies) {
 
-		if ((permissionChecker == null) || !permissionChecker.isSignedIn()) {
-			throw new SecurityException("Authenticated access required");
+				accessControlPolicy.onServiceAccess(
+					methodInvocation.getMethod(),
+					methodInvocation.getArguments(), accessControlled);
+			}
 		}
 	}
 
-	protected void checkAllowedHosts() {
-		AccessControlContext accessControlContext =
-			AccessControlUtil.getAccessControlContext();
+	private final List<AccessControlPolicy> _accessControlPolicies =
+		new CopyOnWriteArrayList<>();
+	private final ServiceTracker<?, AccessControlPolicy> _serviceTracker;
 
-		if (accessControlContext == null) {
-			return;
+	private class AccessControlPolicyTrackerCustomizer
+		implements
+		ServiceTrackerCustomizer<AccessControlPolicy, AccessControlPolicy> {
+
+		@Override
+		public AccessControlPolicy addingService(
+			ServiceReference<AccessControlPolicy> serviceReference) {
+
+			Registry registry = RegistryUtil.getRegistry();
+
+			AccessControlPolicy accessControlPolicy = registry.getService(
+				serviceReference);
+
+			_accessControlPolicies.add(accessControlPolicy);
+
+			return accessControlPolicy;
 		}
 
-		HttpServletRequest request = accessControlContext.getRequest();
-
-		Map<String, Object> settings = accessControlContext.getSettings();
-
-		String[] hostsAllowed = StringUtil.split(
-			GetterUtil.getString(settings.get("hosts.allowed")));
-
-		Set<String> hostsAllowedSet = SetUtil.fromArray(hostsAllowed);
-
-		if (!AuthSettingsUtil.isAccessAllowed(request, hostsAllowedSet)) {
-			throw new SecurityException(
-				"Access denied for " + request.getRemoteAddr());
+		@Override
+		public void modifiedService(
+			ServiceReference<AccessControlPolicy> serviceReference,
+			AccessControlPolicy accessControlPolicy) {
 		}
+
+		@Override
+		public void removedService(
+			ServiceReference<AccessControlPolicy> serviceReference,
+			AccessControlPolicy accessControlPolicy) {
+
+			Registry registry = RegistryUtil.getRegistry();
+
+			registry.ungetService(serviceReference);
+
+			_accessControlPolicies.remove(accessControlPolicy);
+		}
+
 	}
 
 }

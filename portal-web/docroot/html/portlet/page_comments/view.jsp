@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -21,13 +21,17 @@
 		<portlet:param name="struts_action" value="/page_comments/edit_page_discussion" />
 	</portlet:actionURL>
 
+	<portlet:resourceURL var="discussionPaginationURL">
+		<portlet:param name="struts_action" value="/page_comments/edit_page_discussion" />
+	</portlet:resourceURL>
+
 	<liferay-ui:discussion
 		className="<%= Layout.class.getName() %>"
 		classPK="<%= layout.getPlid() %>"
 		formAction="<%= discussionURL %>"
 		formName="fm"
+		paginationURL="<%= discussionPaginationURL %>"
 		redirect="<%= currentURL %>"
-		subject="<%= layout.getName(locale) %>"
 		userId="<%= user.getUserId() %>"
 	/>
 </c:if>

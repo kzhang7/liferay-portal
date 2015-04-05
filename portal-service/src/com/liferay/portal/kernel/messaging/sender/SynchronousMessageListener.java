@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,10 +14,16 @@
 
 package com.liferay.portal.kernel.messaging.sender;
 
+import com.liferay.portal.kernel.cache.ThreadLocalCacheManager;
+import com.liferay.portal.kernel.dao.orm.EntityCacheUtil;
+import com.liferay.portal.kernel.dao.orm.FinderCacheUtil;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.messaging.MessageBus;
 import com.liferay.portal.kernel.messaging.MessageBusException;
 import com.liferay.portal.kernel.messaging.MessageListener;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Michael C. Han
@@ -37,16 +43,15 @@ public class SynchronousMessageListener implements MessageListener {
 		return _results;
 	}
 
+	@Override
 	public void receive(Message message) {
 		if (!message.getResponseId().equals(_responseId)) {
 			return;
 		}
 
-		synchronized (this) {
-			_results = message.getPayload();
+		_results = message.getPayload();
 
-			notify();
-		}
+		_countDownLatch.countDown();
 	}
 
 	public Object send() throws MessageBusException {
@@ -56,15 +61,13 @@ public class SynchronousMessageListener implements MessageListener {
 		_messageBus.registerMessageListener(responseDestinationName, this);
 
 		try {
-			synchronized (this) {
-				_messageBus.sendMessage(destinationName, _message);
+			_messageBus.sendMessage(destinationName, _message);
 
-				wait(_timeout);
+			_countDownLatch.await(_timeout, TimeUnit.MILLISECONDS);
 
-				if (_results == null) {
-					throw new MessageBusException(
-						"No reply received for message: " + _message);
-				}
+			if (_results == null) {
+				throw new MessageBusException(
+					"No reply received for message: " + _message);
 			}
 
 			return _results;
@@ -76,13 +79,18 @@ public class SynchronousMessageListener implements MessageListener {
 		finally {
 			_messageBus.unregisterMessageListener(
 				responseDestinationName, this);
+
+			EntityCacheUtil.clearLocalCache();
+			FinderCacheUtil.clearLocalCache();
+			ThreadLocalCacheManager.destroy();
 		}
 	}
 
-	private Message _message;
-	private MessageBus _messageBus;
-	private String _responseId;
+	private final CountDownLatch _countDownLatch = new CountDownLatch(1);
+	private final Message _message;
+	private final MessageBus _messageBus;
+	private final String _responseId;
 	private Object _results;
-	private long _timeout;
+	private final long _timeout;
 
 }

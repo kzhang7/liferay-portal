@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -23,35 +23,41 @@ import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchException;
 import com.liferay.portal.kernel.search.Summary;
+import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties;
 import com.liferay.portal.kernel.trash.TrashHandler;
 import com.liferay.portal.kernel.trash.TrashHandlerRegistryUtil;
-import com.liferay.portal.kernel.trash.TrashRenderer;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.security.permission.PermissionChecker;
-import com.liferay.portal.util.PortletKeys;
+import com.liferay.portlet.documentlibrary.model.DLFileEntryConstants;
+import com.liferay.portlet.journal.model.JournalArticle;
 import com.liferay.portlet.trash.model.TrashEntry;
 
 import java.util.Locale;
 
-import javax.portlet.PortletURL;
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
 
 /**
  * @author Julio Camarero
+ * @author Zsolt Berentey
  */
+@OSGiBeanProperties
 public class TrashIndexer extends BaseIndexer {
 
-	public static final String[] CLASS_NAMES = {TrashEntry.class.getName()};
-
-	public static final String PORTLET_ID = PortletKeys.TRASH;
+	public static final String CLASS_NAME = TrashEntry.class.getName();
 
 	public TrashIndexer() {
+		setDefaultSelectedFieldNames(
+			Field.ENTRY_CLASS_NAME, Field.ENTRY_CLASS_PK,
+			Field.REMOVED_BY_USER_NAME, Field.REMOVED_DATE,
+			Field.ROOT_ENTRY_CLASS_NAME, Field.ROOT_ENTRY_CLASS_PK, Field.UID);
 		setFilterSearch(true);
 		setPermissionAware(true);
 	}
 
-	public String[] getClassNames() {
-		return CLASS_NAMES;
+	@Override
+	public String getClassName() {
+		return CLASS_NAME;
 	}
 
 	@Override
@@ -62,9 +68,30 @@ public class TrashIndexer extends BaseIndexer {
 			BooleanQuery contextQuery = BooleanQueryFactoryUtil.create(
 				searchContext);
 
-			contextQuery.addTerm(
-				Field.COMPANY_ID, String.valueOf(searchContext.getCompanyId()),
-				false, BooleanClauseOccur.MUST);
+			contextQuery.addRequiredTerm(
+				Field.COMPANY_ID, searchContext.getCompanyId());
+
+			BooleanQuery excludeAttachmentsQuery =
+				BooleanQueryFactoryUtil.create(searchContext);
+
+			excludeAttachmentsQuery.addRequiredTerm(
+				Field.ENTRY_CLASS_NAME, DLFileEntryConstants.getClassName());
+			excludeAttachmentsQuery.addRequiredTerm(Field.HIDDEN, true);
+
+			contextQuery.add(
+				excludeAttachmentsQuery, BooleanClauseOccur.MUST_NOT);
+
+			BooleanQuery excludeJournalArticleVersionsQuery =
+				BooleanQueryFactoryUtil.create(searchContext);
+
+			excludeJournalArticleVersionsQuery.addRequiredTerm(
+				Field.ENTRY_CLASS_NAME, JournalArticle.class.getName());
+
+			excludeJournalArticleVersionsQuery.addRequiredTerm("head", false);
+
+			contextQuery.add(
+				excludeJournalArticleVersionsQuery,
+				BooleanClauseOccur.MUST_NOT);
 
 			BooleanQuery groupQuery = BooleanQueryFactoryUtil.create(
 				searchContext);
@@ -77,9 +104,8 @@ public class TrashIndexer extends BaseIndexer {
 
 			contextQuery.add(groupQuery, BooleanClauseOccur.MUST);
 
-			contextQuery.addTerm(
-				Field.STATUS, String.valueOf(WorkflowConstants.STATUS_IN_TRASH),
-				false, BooleanClauseOccur.MUST);
+			contextQuery.addRequiredTerm(
+				Field.STATUS, WorkflowConstants.STATUS_IN_TRASH);
 
 			BooleanQuery fullQuery = createFullQuery(
 				contextQuery, searchContext);
@@ -94,27 +120,17 @@ public class TrashIndexer extends BaseIndexer {
 		}
 	}
 
-	public String getPortletId() {
-		return PORTLET_ID;
-	}
-
 	@Override
 	public boolean hasPermission(
 			PermissionChecker permissionChecker, String entryClassName,
 			long entryClassPK, String actionId)
 		throws Exception {
 
-		if (actionId.equals(ActionKeys.VIEW)) {
-			TrashHandler trashHandler =
-				TrashHandlerRegistryUtil.getTrashHandler(entryClassName);
+		TrashHandler trashHandler = TrashHandlerRegistryUtil.getTrashHandler(
+			entryClassName);
 
-			TrashRenderer trashRenderer = trashHandler.getTrashRenderer(
-				entryClassPK);
-
-			return trashRenderer.hasViewPermission(permissionChecker);
-		}
-
-		return false;
+		return trashHandler.hasTrashPermission(
+			permissionChecker, 0, entryClassPK, actionId);
 	}
 
 	@Override
@@ -159,7 +175,7 @@ public class TrashIndexer extends BaseIndexer {
 	@Override
 	protected Summary doGetSummary(
 		Document document, Locale locale, String snippet,
-		PortletURL portletURL) {
+		PortletRequest portletRequest, PortletResponse portletResponse) {
 
 		return null;
 	}
@@ -174,11 +190,6 @@ public class TrashIndexer extends BaseIndexer {
 
 	@Override
 	protected void doReindex(String[] ids) {
-	}
-
-	@Override
-	protected String getPortletId(SearchContext searchContext) {
-		return PORTLET_ID;
 	}
 
 }

@@ -1,6 +1,8 @@
-/* This is the main CSS that includes other CSS files. */
-
 @import url(base.css);
+
+@import url(portal.css);
+
+@import url(taglib.css);
 
 @import url(application.css);
 
@@ -12,6 +14,6 @@
 
 @import url(portlet.css);
 
-@import url(forms.css);
+@import url(extras.css);
 
 @import url(custom.css);

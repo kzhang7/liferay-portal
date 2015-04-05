@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,18 +14,21 @@
 
 package com.liferay.portal.dao.orm.hibernate;
 
+import com.liferay.portal.kernel.concurrent.ConcurrentReferenceKeyHashMap;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQueryFactory;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.security.pacl.PACLConstants;
-import com.liferay.portal.kernel.security.pacl.permission.PortalServicePermission;
-import com.liferay.portal.security.pacl.PACLClassLoaderUtil;
+import com.liferay.portal.kernel.memory.FinalizeManager;
+import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
+import com.liferay.portal.security.lang.DoPrivilegedUtil;
+import com.liferay.portal.util.ClassLoaderUtil;
 
-import java.security.Permission;
+import java.security.PrivilegedAction;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 import org.hibernate.criterion.DetachedCriteria;
 
@@ -34,30 +37,38 @@ import org.hibernate.criterion.DetachedCriteria;
  */
 public class DynamicQueryFactoryImpl implements DynamicQueryFactory {
 
+	@Override
 	public DynamicQuery forClass(Class<?> clazz) {
 		clazz = getImplClass(clazz, null);
 
-		return new DynamicQueryImpl(DetachedCriteria.forClass(clazz));
+		return DoPrivilegedUtil.wrap(
+			new DynamicQueryPrivilegedAction(clazz, null));
 	}
 
+	@Override
 	public DynamicQuery forClass(Class<?> clazz, ClassLoader classLoader) {
 		clazz = getImplClass(clazz, classLoader);
 
-		return new DynamicQueryImpl(DetachedCriteria.forClass(clazz));
+		return DoPrivilegedUtil.wrap(
+			new DynamicQueryPrivilegedAction(clazz, null));
 	}
 
+	@Override
 	public DynamicQuery forClass(Class<?> clazz, String alias) {
 		clazz = getImplClass(clazz, null);
 
-		return new DynamicQueryImpl(DetachedCriteria.forClass(clazz, alias));
+		return DoPrivilegedUtil.wrap(
+			new DynamicQueryPrivilegedAction(clazz, alias));
 	}
 
+	@Override
 	public DynamicQuery forClass(
 		Class<?> clazz, String alias, ClassLoader classLoader) {
 
 		clazz = getImplClass(clazz, classLoader);
 
-		return new DynamicQueryImpl(DetachedCriteria.forClass(clazz, alias));
+		return DoPrivilegedUtil.wrap(
+			new DynamicQueryPrivilegedAction(clazz, alias));
 	}
 
 	protected Class<?> getImplClass(Class<?> clazz, ClassLoader classLoader) {
@@ -67,7 +78,7 @@ public class DynamicQueryFactoryImpl implements DynamicQueryFactory {
 
 		if (!className.endsWith("Impl")) {
 			if (classLoader == null) {
-				classLoader = PACLClassLoaderUtil.getContextClassLoader();
+				classLoader = ClassLoaderUtil.getContextClassLoader();
 			}
 
 			Package pkg = clazz.getPackage();
@@ -94,15 +105,7 @@ public class DynamicQueryFactoryImpl implements DynamicQueryFactory {
 			}
 		}
 
-		SecurityManager securityManager = System.getSecurityManager();
-
-		if (securityManager != null) {
-			Permission permission = new PortalServicePermission(
-				PACLConstants.PORTAL_SERVICE_PERMISSION_DYNAMIC_QUERY,
-				implClass, null);
-
-			securityManager.checkPermission(permission);
-		}
+		PortalRuntimePermission.checkDynamicQuery(implClass);
 
 		return implClass;
 	}
@@ -114,7 +117,7 @@ public class DynamicQueryFactoryImpl implements DynamicQueryFactory {
 		Map<String, Class<?>> classes = _classes.get(classLoader);
 
 		if (classes == null) {
-			classes = new HashMap<String, Class<?>>();
+			classes = new HashMap<>();
 
 			_classes.put(classLoader, classes);
 		}
@@ -130,12 +133,38 @@ public class DynamicQueryFactoryImpl implements DynamicQueryFactory {
 		return clazz;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		DynamicQueryFactoryImpl.class);
 
-	private Map<ClassLoader, Map<String, Class<?>>> _classes =
-		new HashMap<ClassLoader, Map<String, Class<?>>>();
-	private ClassLoader _portalClassLoader =
+	private static final
+		ConcurrentMap<ClassLoader, Map<String, Class<?>>> _classes =
+			new ConcurrentReferenceKeyHashMap<>(
+				FinalizeManager.WEAK_REFERENCE_FACTORY);
+
+	private final ClassLoader _portalClassLoader =
 		DynamicQueryFactoryImpl.class.getClassLoader();
+
+	private class DynamicQueryPrivilegedAction
+		implements PrivilegedAction<DynamicQuery> {
+
+		public DynamicQueryPrivilegedAction(Class<?> clazz, String alias) {
+			_clazz = clazz;
+			_alias = alias;
+		}
+
+		@Override
+		public DynamicQuery run() {
+			if (_alias != null) {
+				return new DynamicQueryImpl(
+					DetachedCriteria.forClass(_clazz, _alias));
+			}
+
+			return new DynamicQueryImpl(DetachedCriteria.forClass(_clazz));
+		}
+
+		private final String _alias;
+		private final Class<?> _clazz;
+
+	}
 
 }

@@ -82,7 +82,7 @@
 	}
 }
 
-.lfr-categories-selector-list .aui-tree-node-paginator {
+.lfr-categories-selector-list .tree-node-paginator {
 	margin-left: 29px;
 }
 
@@ -104,35 +104,8 @@
 
 .lfr-categories-selector-search-results label:after {
 	clear: both;
-	content: ".";
+	content: '';
 	display: block;
 	height: 0;
 	visibility: hidden;
-}
-
-/* Skin */
-
-.lfr-asset-category-container {
-	legend {
-		font-weight: bold;
-	}
-
-	.no-matches {
-		color: #999;
-	}
-}
-
-.lfr-asset-category-search-container {
-	background-color: #D3DADD;
-	border-bottom-color: #AEB8BC;
-}
-
-.lfr-asset-category-list a.selected {
-	background-color: #EEE;
-}
-
-.lfr-categories-selector-search-results-path {
-	color: #575757;
-	font-size: 0.9em;
-	text-align: right;
 }

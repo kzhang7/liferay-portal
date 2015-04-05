@@ -1,5 +1,12 @@
 package ${packagePath}.service.persistence;
 
+import aQute.bnd.annotation.ProviderType;
+
+/**
+ * @author ${author}
+ * @generated
+ */
+@ProviderType
 public interface ${entity.name}Finder {
 
 	<#list methods as method>

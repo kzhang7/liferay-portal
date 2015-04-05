@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,49 +14,48 @@
 
 package com.liferay.portal.cache.memory;
 
+import com.liferay.portal.cache.AbstractPortalCacheManager;
+import com.liferay.portal.cache.cluster.ClusterLinkCallbackFactory;
+import com.liferay.portal.kernel.cache.CacheListenerScope;
 import com.liferay.portal.kernel.cache.PortalCache;
-import com.liferay.portal.kernel.cache.PortalCacheManager;
+import com.liferay.portal.kernel.cache.configuration.CallbackConfiguration;
+import com.liferay.portal.kernel.cache.configuration.PortalCacheConfiguration;
+import com.liferay.portal.kernel.cache.configuration.PortalCacheManagerConfiguration;
+import com.liferay.portal.util.PropsValues;
+
+import java.io.Serializable;
 
 import java.net.URL;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author Brian Wing Shun Chan
+ * @author Tina Tian
  */
-public class MemoryPortalCacheManager implements PortalCacheManager {
+public class MemoryPortalCacheManager<K extends Serializable, V>
+	extends AbstractPortalCacheManager<K, V> {
 
-	public void afterPropertiesSet() {
-		_portalCaches = new ConcurrentHashMap<String, PortalCache>(
-			_cacheManagerInitialCapacity);
+	public static <K extends Serializable, V> MemoryPortalCacheManager<K, V>
+		createMemoryPortalCacheManager(String name) {
+
+		MemoryPortalCacheManager<K, V> memoryPortalCacheManager =
+			new MemoryPortalCacheManager<>();
+
+		memoryPortalCacheManager.setName(name);
+
+		memoryPortalCacheManager.afterPropertiesSet();
+
+		return memoryPortalCacheManager;
 	}
 
-	public void clearAll() {
-		_portalCaches.clear();
-	}
-
-	public PortalCache getCache(String name) {
-		return getCache(name, false);
-	}
-
-	public PortalCache getCache(String name, boolean blocking) {
-		PortalCache portalCache = _portalCaches.get(name);
-
-		if (portalCache == null) {
-			portalCache = new MemoryPortalCache(name, _cacheInitialCapacity);
-
-			_portalCaches.put(name, portalCache);
-		}
-
-		return portalCache;
-	}
-
+	@Override
 	public void reconfigureCaches(URL configurationURL) {
-	}
-
-	public void removeCache(String name) {
-		_portalCaches.remove(name);
+		throw new UnsupportedOperationException();
 	}
 
 	public void setCacheInitialCapacity(int cacheInitialCapacity) {
@@ -69,8 +68,101 @@ public class MemoryPortalCacheManager implements PortalCacheManager {
 		_cacheManagerInitialCapacity = cacheManagerInitialCapacity;
 	}
 
+	@Override
+	protected PortalCache<K, V> createPortalCache(String cacheName) {
+		MemoryPortalCache<K, V> portalCache = _memoryPortalCaches.get(
+			cacheName);
+
+		if (portalCache != null) {
+			return portalCache;
+		}
+
+		portalCache = new MemoryPortalCache<>(
+			this, cacheName, _cacheInitialCapacity);
+
+		MemoryPortalCache<K, V> previousPortalCache =
+			_memoryPortalCaches.putIfAbsent(cacheName, portalCache);
+
+		if (previousPortalCache == null) {
+			aggregatedCacheManagerListener.notifyCacheAdded(cacheName);
+		}
+		else {
+			portalCache = previousPortalCache;
+		}
+
+		return portalCache;
+	}
+
+	@Override
+	protected void doClearAll() {
+		for (MemoryPortalCache<K, V> memoryPortalCache :
+				_memoryPortalCaches.values()) {
+
+			memoryPortalCache.removeAll();
+		}
+	}
+
+	@Override
+	protected void doDestroy() {
+		for (MemoryPortalCache<K, V> memoryPortalCache :
+				_memoryPortalCaches.values()) {
+
+			memoryPortalCache.destroy();
+		}
+
+		aggregatedCacheManagerListener.dispose();
+	}
+
+	@Override
+	protected void doRemoveCache(String cacheName) {
+		MemoryPortalCache<K, V> memoryPortalCache = _memoryPortalCaches.remove(
+			cacheName);
+
+		memoryPortalCache.destroy();
+
+		aggregatedCacheManagerListener.notifyCacheRemoved(cacheName);
+	}
+
+	@Override
+	protected PortalCacheManagerConfiguration
+		getPortalCacheManagerConfiguration() {
+
+		PortalCacheConfiguration defaultPortalCacheConfiguration = null;
+
+		if (clusterAware && PropsValues.CLUSTER_LINK_ENABLED) {
+			CallbackConfiguration cacheListenerConfiguration =
+				new CallbackConfiguration(
+					ClusterLinkCallbackFactory.INSTANCE, new Properties());
+
+			Map<CallbackConfiguration, CacheListenerScope>
+				cacheListenerConfigurations = new HashMap<>();
+
+			cacheListenerConfigurations.put(
+				cacheListenerConfiguration, CacheListenerScope.ALL);
+
+			CallbackConfiguration bootstrapLoaderConfiguration =
+				new CallbackConfiguration(
+					ClusterLinkCallbackFactory.INSTANCE, new Properties());
+
+			defaultPortalCacheConfiguration = new PortalCacheConfiguration(
+				PortalCacheConfiguration.DEFAULT_PORTAL_CACHE_NAME,
+				cacheListenerConfigurations, bootstrapLoaderConfiguration);
+		}
+
+		return new PortalCacheManagerConfiguration(
+			null, defaultPortalCacheConfiguration, null);
+	}
+
+	@Override
+	protected void initPortalCacheManager() {
+		_memoryPortalCaches = new ConcurrentHashMap<>(
+			_cacheManagerInitialCapacity);
+
+		aggregatedCacheManagerListener.init();
+	}
+
 	private int _cacheInitialCapacity = 10000;
 	private int _cacheManagerInitialCapacity = 10000;
-	private Map<String, PortalCache> _portalCaches;
+	private ConcurrentMap<String, MemoryPortalCache<K, V>> _memoryPortalCaches;
 
 }

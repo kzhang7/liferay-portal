@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,9 +16,11 @@ package com.liferay.portal.kernel.search;
 
 import com.liferay.portal.security.permission.PermissionChecker;
 
+import java.util.List;
 import java.util.Locale;
 
-import javax.portlet.PortletURL;
+import javax.portlet.PortletRequest;
+import javax.portlet.PortletResponse;
 
 /**
  * @author Brian Wing Shun Chan
@@ -29,11 +31,22 @@ public interface Indexer {
 
 	public static final int DEFAULT_INTERVAL = 10000;
 
+	public void addRelatedEntryFields(Document document, Object obj)
+		throws Exception;
+
 	public void delete(long companyId, String uid) throws SearchException;
 
 	public void delete(Object obj) throws SearchException;
 
+	public String getClassName();
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #getSearchClassNames}
+	 */
+	@Deprecated
 	public String[] getClassNames();
+
+	public int getDatabaseCount() throws Exception;
 
 	public Document getDocument(Object obj) throws SearchException;
 
@@ -46,15 +59,34 @@ public interface Indexer {
 
 	public IndexerPostProcessor[] getIndexerPostProcessors();
 
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #getClassName}
+	 */
+	@Deprecated
 	public String getPortletId();
+
+	public String getQueryString(SearchContext searchContext, Query query)
+		throws SearchException;
+
+	public String[] getSearchClassNames();
 
 	public String getSearchEngineId();
 
 	public String getSortField(String orderByCol);
 
+	public String getSortField(String orderByCol, int sortType);
+
+	/**
+	 * @deprecated As of 7.0.0, replaced by {@link #getSummary(Document, String,
+	 *             PortletRequest, PortletResponse)}
+	 */
+	@Deprecated
+	public Summary getSummary(Document document, Locale locale, String snippet)
+		throws SearchException;
+
 	public Summary getSummary(
-			Document document, Locale locale, String snippet,
-			PortletURL portletURL)
+			Document document, String snippet, PortletRequest portletRequest,
+			PortletResponse portletResponse)
 		throws SearchException;
 
 	public boolean hasPermission(
@@ -62,11 +94,18 @@ public interface Indexer {
 			long entryClassPK, String actionId)
 		throws Exception;
 
+	public boolean isCommitImmediately();
+
 	public boolean isFilterSearch();
 
 	public boolean isPermissionAware();
 
 	public boolean isStagingAware();
+
+	public boolean isVisible(long classPK, int status) throws Exception;
+
+	public boolean isVisibleRelatedEntry(long classPK, int status)
+		throws Exception;
 
 	public void postProcessContextQuery(
 			BooleanQuery contextQuery, SearchContext searchContext)
@@ -85,9 +124,18 @@ public interface Indexer {
 
 	public void reindex(String[] ids) throws SearchException;
 
+	public void reindexDDMStructures(List<Long> ddmStructureIds)
+		throws SearchException;
+
 	public Hits search(SearchContext searchContext) throws SearchException;
+
+	public Hits search(
+			SearchContext searchContext, String... selectedFieldNames)
+		throws SearchException;
 
 	public void unregisterIndexerPostProcessor(
 		IndexerPostProcessor indexerPostProcessor);
+
+	public void updateFullQuery(SearchContext searchContext);
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,8 @@
 
 package com.liferay.portlet.journal.service.http;
 
+import aQute.bnd.annotation.ProviderType;
+
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 
@@ -22,13 +24,11 @@ import com.liferay.portlet.journal.service.JournalFeedServiceUtil;
 import java.rmi.RemoteException;
 
 /**
- * <p>
- * This class provides a SOAP utility for the
- * {@link com.liferay.portlet.journal.service.JournalFeedServiceUtil} service utility. The
+ * Provides the SOAP utility for the
+ * {@link JournalFeedServiceUtil} service utility. The
  * static methods of this class calls the same methods of the service utility.
  * However, the signatures are different because it is difficult for SOAP to
  * support certain types.
- * </p>
  *
  * <p>
  * ServiceBuilder follows certain rules in translating the methods. For example,
@@ -57,19 +57,20 @@ import java.rmi.RemoteException;
  * The SOAP utility is only generated for remote services.
  * </p>
  *
- * @author    Brian Wing Shun Chan
- * @see       JournalFeedServiceHttp
- * @see       com.liferay.portlet.journal.model.JournalFeedSoap
- * @see       com.liferay.portlet.journal.service.JournalFeedServiceUtil
+ * @author Brian Wing Shun Chan
+ * @see JournalFeedServiceHttp
+ * @see com.liferay.portlet.journal.model.JournalFeedSoap
+ * @see JournalFeedServiceUtil
  * @generated
  */
+@ProviderType
 public class JournalFeedServiceSoap {
 	public static com.liferay.portlet.journal.model.JournalFeedSoap addFeed(
 		long groupId, java.lang.String feedId, boolean autoFeedId,
 		java.lang.String name, java.lang.String description,
-		java.lang.String type, java.lang.String structureId,
-		java.lang.String templateId, java.lang.String rendererTemplateId,
-		int delta, java.lang.String orderByCol, java.lang.String orderByType,
+		java.lang.String ddmStructureKey, java.lang.String ddmTemplateKey,
+		java.lang.String ddmRendererTemplateKey, int delta,
+		java.lang.String orderByCol, java.lang.String orderByType,
 		java.lang.String targetLayoutFriendlyUrl,
 		java.lang.String targetPortletId, java.lang.String contentField,
 		java.lang.String feedType, double feedVersion,
@@ -77,8 +78,8 @@ public class JournalFeedServiceSoap {
 		throws RemoteException {
 		try {
 			com.liferay.portlet.journal.model.JournalFeed returnValue = JournalFeedServiceUtil.addFeed(groupId,
-					feedId, autoFeedId, name, description, type, structureId,
-					templateId, rendererTemplateId, delta, orderByCol,
+					feedId, autoFeedId, name, description, ddmStructureKey,
+					ddmTemplateKey, ddmRendererTemplateKey, delta, orderByCol,
 					orderByType, targetLayoutFriendlyUrl, targetPortletId,
 					contentField, feedType, feedVersion, serviceContext);
 
@@ -91,6 +92,21 @@ public class JournalFeedServiceSoap {
 		}
 	}
 
+	public static void deleteFeed(long feedId) throws RemoteException {
+		try {
+			JournalFeedServiceUtil.deleteFeed(feedId);
+		}
+		catch (Exception e) {
+			_log.error(e, e);
+
+			throw new RemoteException(e.getMessage());
+		}
+	}
+
+	/**
+	* @deprecated As of 6.2.0, replaced by {@link #deleteFeed(long, String)}
+	*/
+	@Deprecated
 	public static void deleteFeed(long groupId, long feedId)
 		throws RemoteException {
 		try {
@@ -115,6 +131,24 @@ public class JournalFeedServiceSoap {
 		}
 	}
 
+	public static com.liferay.portlet.journal.model.JournalFeedSoap getFeed(
+		long feedId) throws RemoteException {
+		try {
+			com.liferay.portlet.journal.model.JournalFeed returnValue = JournalFeedServiceUtil.getFeed(feedId);
+
+			return com.liferay.portlet.journal.model.JournalFeedSoap.toSoapModel(returnValue);
+		}
+		catch (Exception e) {
+			_log.error(e, e);
+
+			throw new RemoteException(e.getMessage());
+		}
+	}
+
+	/**
+	* @deprecated As of 6.2.0, replaced by {@link #getFeed(long, String)}
+	*/
+	@Deprecated
 	public static com.liferay.portlet.journal.model.JournalFeedSoap getFeed(
 		long groupId, long feedId) throws RemoteException {
 		try {
@@ -147,9 +181,9 @@ public class JournalFeedServiceSoap {
 
 	public static com.liferay.portlet.journal.model.JournalFeedSoap updateFeed(
 		long groupId, java.lang.String feedId, java.lang.String name,
-		java.lang.String description, java.lang.String type,
-		java.lang.String structureId, java.lang.String templateId,
-		java.lang.String rendererTemplateId, int delta,
+		java.lang.String description, java.lang.String ddmStructureKey,
+		java.lang.String ddmTemplateKey,
+		java.lang.String ddmRendererTemplateKey, int delta,
 		java.lang.String orderByCol, java.lang.String orderByType,
 		java.lang.String targetLayoutFriendlyUrl,
 		java.lang.String targetPortletId, java.lang.String contentField,
@@ -158,8 +192,8 @@ public class JournalFeedServiceSoap {
 		throws RemoteException {
 		try {
 			com.liferay.portlet.journal.model.JournalFeed returnValue = JournalFeedServiceUtil.updateFeed(groupId,
-					feedId, name, description, type, structureId, templateId,
-					rendererTemplateId, delta, orderByCol, orderByType,
+					feedId, name, description, ddmStructureKey, ddmTemplateKey,
+					ddmRendererTemplateKey, delta, orderByCol, orderByType,
 					targetLayoutFriendlyUrl, targetPortletId, contentField,
 					feedType, feedVersion, serviceContext);
 

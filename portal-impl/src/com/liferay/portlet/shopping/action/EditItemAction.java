@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -26,6 +26,7 @@ import com.liferay.portal.struts.PortletAction;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.portlet.shopping.DuplicateItemFieldNameException;
 import com.liferay.portlet.shopping.DuplicateItemSKUException;
 import com.liferay.portlet.shopping.ItemLargeImageNameException;
 import com.liferay.portlet.shopping.ItemLargeImageSizeException;
@@ -41,6 +42,7 @@ import com.liferay.portlet.shopping.model.ShoppingItem;
 import com.liferay.portlet.shopping.model.ShoppingItemField;
 import com.liferay.portlet.shopping.model.ShoppingItemPrice;
 import com.liferay.portlet.shopping.model.ShoppingItemPriceConstants;
+import com.liferay.portlet.shopping.model.impl.ShoppingItemImpl;
 import com.liferay.portlet.shopping.service.ShoppingItemServiceUtil;
 import com.liferay.portlet.shopping.service.persistence.ShoppingItemFieldUtil;
 import com.liferay.portlet.shopping.service.persistence.ShoppingItemPriceUtil;
@@ -67,8 +69,9 @@ public class EditItemAction extends PortletAction {
 
 	@Override
 	public void processAction(
-			ActionMapping mapping, ActionForm form, PortletConfig portletConfig,
-			ActionRequest actionRequest, ActionResponse actionResponse)
+			ActionMapping actionMapping, ActionForm actionForm,
+			PortletConfig portletConfig, ActionRequest actionRequest,
+			ActionResponse actionResponse)
 		throws Exception {
 
 		String cmd = ParamUtil.getString(actionRequest, Constants.CMD);
@@ -94,7 +97,8 @@ public class EditItemAction extends PortletAction {
 
 				setForward(actionRequest, "portlet.shopping.error");
 			}
-			else if (e instanceof DuplicateItemSKUException ||
+			else if (e instanceof DuplicateItemFieldNameException ||
+					 e instanceof DuplicateItemSKUException ||
 					 e instanceof ItemLargeImageNameException ||
 					 e instanceof ItemLargeImageSizeException ||
 					 e instanceof ItemMediumImageNameException ||
@@ -104,7 +108,7 @@ public class EditItemAction extends PortletAction {
 					 e instanceof ItemSmallImageNameException ||
 					 e instanceof ItemSmallImageSizeException) {
 
-				SessionErrors.add(actionRequest, e.getClass());
+				SessionErrors.add(actionRequest, e.getClass(), e);
 			}
 			else {
 				throw e;
@@ -114,8 +118,9 @@ public class EditItemAction extends PortletAction {
 
 	@Override
 	public ActionForward render(
-			ActionMapping mapping, ActionForm form, PortletConfig portletConfig,
-			RenderRequest renderRequest, RenderResponse renderResponse)
+			ActionMapping actionMapping, ActionForm actionForm,
+			PortletConfig portletConfig, RenderRequest renderRequest,
+			RenderResponse renderResponse)
 		throws Exception {
 
 		try {
@@ -127,14 +132,14 @@ public class EditItemAction extends PortletAction {
 
 				SessionErrors.add(renderRequest, e.getClass());
 
-				return mapping.findForward("portlet.shopping.error");
+				return actionMapping.findForward("portlet.shopping.error");
 			}
 			else {
 				throw e;
 			}
 		}
 
-		return mapping.findForward(
+		return actionMapping.findForward(
 			getForward(renderRequest, "portlet.shopping.edit_item"));
 	}
 
@@ -165,7 +170,7 @@ public class EditItemAction extends PortletAction {
 		int fieldsCount = ParamUtil.getInteger(
 			uploadPortletRequest, "fieldsCount", 1);
 
-		List<ShoppingItemField> itemFields = new ArrayList<ShoppingItemField>();
+		List<ShoppingItemField> itemFields = new ArrayList<>();
 
 		for (int i = 0; i < fieldsCount; i ++) {
 			String fieldName = ParamUtil.getString(
@@ -190,7 +195,7 @@ public class EditItemAction extends PortletAction {
 		int pricesCount = ParamUtil.getInteger(
 			uploadPortletRequest, "pricesCount", 1);
 
-		List<ShoppingItemPrice> itemPrices = new ArrayList<ShoppingItemPrice>();
+		List<ShoppingItemPrice> itemPrices = new ArrayList<>();
 
 		for (int i = 0; i < pricesCount; i ++) {
 			int minQuantity = ParamUtil.getInteger(
@@ -198,13 +203,17 @@ public class EditItemAction extends PortletAction {
 			int maxQuantity = ParamUtil.getInteger(
 				uploadPortletRequest, "maxQuantity" + i);
 			double price = ParamUtil.getDouble(
-				uploadPortletRequest, "price" + i);
+				uploadPortletRequest, "price" + i, themeDisplay.getLocale());
+
 			double discount = ParamUtil.getDouble(
-				uploadPortletRequest, "discount" + i) / 100;
+				uploadPortletRequest, "discount" + i, themeDisplay.getLocale());
+
+			discount = discount / 100;
+
 			boolean taxable = ParamUtil.getBoolean(
 				uploadPortletRequest, "taxable" + i);
 			double shipping = ParamUtil.getDouble(
-				uploadPortletRequest, "shipping" + i);
+				uploadPortletRequest, "shipping" + i, themeDisplay.getLocale());
 			boolean useShippingFormula = ParamUtil.getBoolean(
 				uploadPortletRequest, "useShippingFormula" + i);
 			boolean active = ParamUtil.getBoolean(
@@ -237,8 +246,13 @@ public class EditItemAction extends PortletAction {
 
 		boolean requiresShipping = ParamUtil.getBoolean(
 			uploadPortletRequest, "requiresShipping");
+
 		int stockQuantity = ParamUtil.getInteger(
 			uploadPortletRequest, "stockQuantity");
+
+		if (ParamUtil.getBoolean(uploadPortletRequest, "infiniteStock")) {
+			stockQuantity = ShoppingItemImpl.STOCK_QUANTITY_INFINITE_STOCK;
+		}
 
 		boolean featured = ParamUtil.getBoolean(
 			uploadPortletRequest, "featured");

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -22,8 +22,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -148,7 +148,7 @@ public class ConcurrentLFUCache<K, V> {
 
 	@Override
 	public String toString() {
-		StringBundler sb = new StringBundler();
+		StringBundler sb = new StringBundler(15);
 
 		sb.append("{evictCount=");
 		sb.append(_evictCount.get());
@@ -173,8 +173,8 @@ public class ConcurrentLFUCache<K, V> {
 	}
 
 	private void _cleanUp() {
-		List<Entry<K, ValueWrapper>> valueWrappers =
-			new ArrayList<Entry<K, ValueWrapper>>(_cache.entrySet());
+		List<Entry<K, ValueWrapper>> valueWrappers = new ArrayList<>(
+			_cache.entrySet());
 
 		Collections.sort(valueWrappers, _entryComparator);
 
@@ -199,7 +199,7 @@ public class ConcurrentLFUCache<K, V> {
 		}
 	}
 
-	private Map<K, ValueWrapper> _cache = new HashMap<K, ValueWrapper>();
+	private final Map<K, ValueWrapper> _cache = new HashMap<>();
 	private final EntryComparator _entryComparator = new EntryComparator();
 	private final AtomicLong _evictCount = new AtomicLong();
 	private final int _expectedSize;
@@ -215,6 +215,7 @@ public class ConcurrentLFUCache<K, V> {
 	private class EntryComparator
 		implements Comparator<Entry<K, ValueWrapper>> {
 
+		@Override
 		public int compare(
 			Entry<K, ValueWrapper> entry1, Entry<K, ValueWrapper> entry2) {
 

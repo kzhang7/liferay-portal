@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -53,7 +53,7 @@ long folderId = ParamUtil.getLong(request, "folderId");
 	<aui:model-context bean="<%= repository %>" model="<%= Repository.class %>" />
 
 	<aui:fieldset>
-		<aui:input name="name" />
+		<aui:input autoFocus="<%= windowState.equals(WindowState.MAXIMIZED) %>" name="name" />
 
 		<aui:input name="description" />
 
@@ -62,10 +62,10 @@ long folderId = ParamUtil.getLong(request, "folderId");
 				<aui:select id="repositoryTypes" label="repository-type" name="className">
 
 					<%
-					for (String dlRepositoryImpl : RepositoryFactoryUtil.getRepositoryClassNames()) {
+					for (RepositoryClassDefinition repositoryClassDefinition : RepositoryClassDefinitionCatalogUtil.getExternalRepositoryClassDefinitions()) {
 					%>
 
-						<aui:option label="<%= ResourceActionsUtil.getModelResource(locale, dlRepositoryImpl) %>" value="<%= dlRepositoryImpl %>" />
+						<aui:option label="<%= HtmlUtil.escape(repositoryClassDefinition.getRepositoryTypeLabel(locale)) %>" value="<%= HtmlUtil.escapeAttribute(repositoryClassDefinition.getClassName()) %>" />
 
 					<%
 					}
@@ -78,12 +78,17 @@ long folderId = ParamUtil.getLong(request, "folderId");
 				<div id="<portlet:namespace />settingsParameters"></div>
 			</c:when>
 			<c:otherwise>
+
+				<%
+				RepositoryClassDefinition repositoryClassDefinition = RepositoryClassDefinitionCatalogUtil.getRepositoryClassDefinition(repository.getClassName());
+				%>
+
 				<div class="repository-settings-display">
 					<dt>
 						<liferay-ui:message key="repository-type" />
 					</dt>
 					<dd>
-						<%= ResourceActionsUtil.getModelResource(locale, repository.getClassName()) %>
+						<%= repositoryClassDefinition.getRepositoryTypeLabel(locale) %>
 					</dd>
 
 					<%
@@ -91,7 +96,7 @@ long folderId = ParamUtil.getLong(request, "folderId");
 
 					String configuration = typeSettingsProperties.get("configuration-type");
 
-					String[] supportedParameters = RepositoryServiceUtil.getSupportedParameters(repository.getClassNameId(), configuration);
+					String[] supportedParameters = RepositoryServiceUtil.getSupportedParameters(repositoryClassDefinition.getClassName(), configuration);
 
 					for (String supportedParameter : supportedParameters) {
 						String supportedParameterValue = typeSettingsProperties.getProperty(supportedParameter);
@@ -100,10 +105,10 @@ long folderId = ParamUtil.getLong(request, "folderId");
 					%>
 
 							<dt>
-								<%= LanguageUtil.get(pageContext, StringUtil.replace(supportedParameter.toLowerCase(), CharPool.UNDERLINE, CharPool.DASH)) %>
+								<%= LanguageUtil.get(request, HtmlUtil.escape(StringUtil.replace(StringUtil.toLowerCase(supportedParameter), CharPool.UNDERLINE, CharPool.DASH))) %>
 							</dt>
 							<dd>
-								<%= supportedParameterValue %>
+								<%= HtmlUtil.escape(supportedParameterValue) %>
 							</dd>
 
 					<%
@@ -130,33 +135,34 @@ long folderId = ParamUtil.getLong(request, "folderId");
 	</aui:fieldset>
 </aui:form>
 
-<div class="aui-helper-hidden" id="<portlet:namespace />settingsSupported">
+<div class="hide" id="<portlet:namespace />settingsSupported">
 
 	<%
-	for (String dlRepositoryImpl : RepositoryFactoryUtil.getRepositoryClassNames()) {
-		String className = dlRepositoryImpl.substring(dlRepositoryImpl.lastIndexOf(StringPool.PERIOD) + 1);
+	for (RepositoryClassDefinition repositoryClassDefinition : RepositoryClassDefinitionCatalogUtil.getExternalRepositoryClassDefinitions()) {
+		try {
+			String className = repositoryClassDefinition.getClassName();
 
-		long classNameId = PortalUtil.getClassNameId(dlRepositoryImpl);
+			String unqualifiedClassName = HtmlUtil.escapeAttribute(className.substring(className.lastIndexOf(StringPool.PERIOD) + 1));
 
-		String[] supportedConfigurations = RepositoryServiceUtil.getSupportedConfigurations(classNameId);
+			String[] supportedConfigurations = repositoryClassDefinition.getSupportedConfigurations();
 
-		for (String supportedConfiguration : supportedConfigurations) {
+			for (String supportedConfiguration : supportedConfigurations) {
 		%>
 
-			<div class="settings-configuration <%= ((supportedConfigurations.length == 1) ? "aui-helper-hidden" : "") %>" id="<portlet:namespace />repository-<%= className %>-wrapper">
-				<aui:select id='<%= "repository-" + className %>' inputCssClass="repository-configuration" label="repository-configuration" name="settings--configuration-type--">
-					<aui:option label="<%= LanguageUtil.get(pageContext, StringUtil.replace(supportedConfiguration.toLowerCase(), CharPool.UNDERLINE, CharPool.DASH)) %>" selected="<%= supportedConfiguration.equals(supportedConfigurations[0]) %>" value="<%= supportedConfiguration %>" />
+			<div class="settings-configuration <%= ((supportedConfigurations.length == 1) ? "hide" : "") %>" id="<portlet:namespace />repository-<%= unqualifiedClassName %>-wrapper">
+				<aui:select cssClass="repository-configuration" id='<%= "repository-" + unqualifiedClassName %>' label="repository-configuration" name="settings--configuration-type--">
+					<aui:option label="<%= LanguageUtil.get(request, HtmlUtil.escape(StringUtil.replace(StringUtil.toLowerCase(supportedConfiguration), CharPool.UNDERLINE, CharPool.DASH))) %>" selected="<%= supportedConfiguration.equals(supportedConfigurations[0]) %>" value="<%= HtmlUtil.escapeAttribute(supportedConfiguration) %>" />
 				</aui:select>
 			</div>
-			<div class="settings-parameters" id="<portlet:namespace />repository-<%= className %>-configuration-<%= supportedConfiguration %>">
+			<div class="settings-parameters" id="<portlet:namespace />repository-<%= unqualifiedClassName %>-configuration-<%= HtmlUtil.escapeAttribute(supportedConfiguration) %>">
 
 				<%
-				String[] supportedParameters = RepositoryServiceUtil.getSupportedParameters(classNameId, supportedConfiguration);
+				String[] supportedParameters = RepositoryServiceUtil.getSupportedParameters(className, supportedConfiguration);
 
 				for (String supportedParameter : supportedParameters) {
 				%>
 
-					<aui:input label="<%= LanguageUtil.get(pageContext, StringUtil.replace(supportedParameter.toLowerCase(), CharPool.UNDERLINE, CharPool.DASH)) %>" name='<%= "settings--" + supportedParameter + "--" %>' type="text" value="" />
+					<aui:input label="<%= LanguageUtil.get(request, HtmlUtil.escape(StringUtil.replace(StringUtil.toLowerCase(supportedParameter), CharPool.UNDERLINE, CharPool.DASH))) %>" name='<%= "settings--" + HtmlUtil.escapeAttribute(supportedParameter) + "--" %>' type="text" value="" />
 
 				<%
 				}
@@ -165,66 +171,65 @@ long folderId = ParamUtil.getLong(request, "folderId");
 			</div>
 
 	<%
+			}
+		}
+		catch (Exception e) {
+			_log.error(e);
 		}
 	}
 	%>
 
 </div>
 
-<aui:script use="aui-base">
-	var settingsSupported = A.one('#<portlet:namespace />settingsSupported');
-	var settingsConfiguration = A.one('#<portlet:namespace />settingsConfiguration');
-	var settingsParameters = A.one('#<portlet:namespace />settingsParameters');
+<aui:script sandbox="<%= true %>">
+	var settingsSupported = $('#<portlet:namespace />settingsSupported');
+	var settingsConfiguration = $('#<portlet:namespace />settingsConfiguration');
+	var settingsParameters = $('#<portlet:namespace />settingsParameters');
 
 	var showConfiguration = function(select) {
-		settingsSupported.append(settingsConfiguration.all('.settings-configuration'));
-		settingsSupported.append(settingsParameters.all('.settings-parameters'));
+		settingsSupported.append(settingsConfiguration.find('.settings-configuration'));
+		settingsSupported.append(settingsParameters.find('.settings-parameters'));
 
-		var value = select.val();
-		var className = value.split('.').pop();
+		var className = select.val().split('.').pop();
 
-		var repositoryConfiguration = A.one('#<portlet:namespace />repository-' + className + '-wrapper');
-		var selectRepositoryConfiguration = A.one('#<portlet:namespace />repository-' + className);
+		var selectRepositoryConfiguration = $('#<portlet:namespace />repository-' + className);
 
-		if (selectRepositoryConfiguration) {
-			var repositoryParameters = A.one('#<portlet:namespace />repository-' + className + '-configuration-' + selectRepositoryConfiguration.val());
+		var repositoryParameters = $('#<portlet:namespace />repository-' + className + '-configuration-' + selectRepositoryConfiguration.val());
 
-			settingsConfiguration.append(repositoryConfiguration);
-			settingsParameters.append(repositoryParameters);
-		}
+		settingsConfiguration.append($('#<portlet:namespace />repository-' + className + '-wrapper'));
+
+		settingsParameters.append(repositoryParameters);
 	};
 
 	var showParameters = function(event) {
-		var select = event.currentTarget;
+		var select = $(event.currentTarget);
 
-		var repositoryParameters = A.one('#' + select.attr('id') + '-configuration-' + select.val());
+		settingsSupported.append(settingsParameters.find('.settings-parameters'));
+		settingsParameters.append($('#' + select.attr('id') + '-configuration-' + select.val()));
+	};
 
-		var settingsParametersChildren = settingsParameters.all('.settings-parameters');
-
-		settingsSupported.append(settingsParametersChildren);
-		settingsParameters.append(repositoryParameters);
-	}
-
-	var selectRepositoryTypes = A.one('#<portlet:namespace />repositoryTypes');
+	var selectRepositoryTypes = $('#<portlet:namespace />repositoryTypes');
 
 	selectRepositoryTypes.on(
 		'change',
 		function(event) {
-			showConfiguration(event.currentTarget);
+			showConfiguration(selectRepositoryTypes);
 		}
 	);
 
 	showConfiguration(selectRepositoryTypes);
 
-	var selectConfiguration = A.all('.repository-configuration')
-
-	selectConfiguration.on('change', showParameters);
+	$('.repository-configuration').on('change', showParameters);
 </aui:script>
 
 <%
 if (repository != null) {
 	DLUtil.addPortletBreadcrumbEntries(folderId, request, renderResponse);
 
-	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(pageContext, "edit"), currentURL);
+	PortalUtil.addPortletBreadcrumbEntry(request, LanguageUtil.get(request, "edit"), currentURL);
 }
+%>
+
+<%!
+private static Log _log = LogFactoryUtil.getLog("portal-web.docroot.html.portlet.document_library.edit_repository_jsp");
 %>

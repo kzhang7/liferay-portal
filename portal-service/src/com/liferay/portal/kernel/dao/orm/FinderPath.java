@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -13,6 +13,8 @@
  */
 
 package com.liferay.portal.kernel.dao.orm;
+
+import aQute.bnd.annotation.ProviderType;
 
 import com.liferay.portal.kernel.cache.key.CacheKeyGenerator;
 import com.liferay.portal.kernel.cache.key.CacheKeyGeneratorUtil;
@@ -28,6 +30,7 @@ import java.io.Serializable;
  * @author Brian Wing Shun Chan
  * @author Shuyang Zhou
  */
+@ProviderType
 public class FinderPath {
 
 	public FinderPath(
@@ -66,16 +69,27 @@ public class FinderPath {
 		if (cacheKeyGenerator.isCallingGetCacheKeyThreadSafe()) {
 			_cacheKeyGenerator = cacheKeyGenerator;
 		}
+		else {
+			_cacheKeyGenerator = null;
+		}
 
 		_initCacheKeyPrefix(methodName, params);
 		_initLocalCacheKeyPrefix();
 	}
 
 	public Serializable encodeCacheKey(Object[] arguments) {
-		StringBundler sb = new StringBundler(arguments.length * 2 + 3);
+		StringBundler sb = null;
 
-		sb.append(ShardUtil.getCurrentShardName());
-		sb.append(StringPool.PERIOD);
+		if (ShardUtil.isEnabled()) {
+			sb = new StringBundler(arguments.length * 2 + 3);
+
+			sb.append(ShardUtil.getCurrentShardName());
+			sb.append(StringPool.PERIOD);
+		}
+		else {
+			sb = new StringBundler(arguments.length * 2 + 1);
+		}
+
 		sb.append(_cacheKeyPrefix);
 
 		for (Object arg : arguments) {
@@ -87,10 +101,18 @@ public class FinderPath {
 	}
 
 	public Serializable encodeLocalCacheKey(Object[] arguments) {
-		StringBundler sb = new StringBundler(arguments.length * 2 + 3);
+		StringBundler sb = null;
 
-		sb.append(ShardUtil.getCurrentShardName());
-		sb.append(StringPool.PERIOD);
+		if (ShardUtil.isEnabled()) {
+			sb = new StringBundler(arguments.length * 2 + 3);
+
+			sb.append(ShardUtil.getCurrentShardName());
+			sb.append(StringPool.PERIOD);
+		}
+		else {
+			sb = new StringBundler(arguments.length * 2 + 1);
+		}
+
 		sb.append(_localCacheKeyPrefix);
 
 		for (Object arg : arguments) {
@@ -119,27 +141,6 @@ public class FinderPath {
 
 	public boolean isFinderCacheEnabled() {
 		return _finderCacheEnabled;
-	}
-
-	public void setCacheKeyGeneratorCacheName(
-		String cacheKeyGeneratorCacheName) {
-
-		if (cacheKeyGeneratorCacheName == null) {
-			cacheKeyGeneratorCacheName = FinderCache.class.getName();
-		}
-
-		_cacheKeyGeneratorCacheName = cacheKeyGeneratorCacheName;
-
-		CacheKeyGenerator cacheKeyGenerator =
-			CacheKeyGeneratorUtil.getCacheKeyGenerator(
-				cacheKeyGeneratorCacheName);
-
-		if (cacheKeyGenerator.isCallingGetCacheKeyThreadSafe()) {
-			_cacheKeyGenerator = cacheKeyGenerator;
-		}
-		else {
-			_cacheKeyGenerator = null;
-		}
 	}
 
 	private Serializable _getCacheKey(StringBundler sb) {
@@ -178,14 +179,14 @@ public class FinderPath {
 
 	private static final String _PARAMS_SEPARATOR = "_P_";
 
-	private CacheKeyGenerator _cacheKeyGenerator;
-	private String _cacheKeyGeneratorCacheName;
+	private final CacheKeyGenerator _cacheKeyGenerator;
+	private final String _cacheKeyGeneratorCacheName;
 	private String _cacheKeyPrefix;
-	private String _cacheName;
-	private long _columnBitmask;
-	private boolean _entityCacheEnabled;
-	private boolean _finderCacheEnabled;
+	private final String _cacheName;
+	private final long _columnBitmask;
+	private final boolean _entityCacheEnabled;
+	private final boolean _finderCacheEnabled;
 	private String _localCacheKeyPrefix;
-	private Class<?> _resultClass;
+	private final Class<?> _resultClass;
 
 }

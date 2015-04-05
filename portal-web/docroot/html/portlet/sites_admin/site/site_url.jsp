@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -31,6 +31,8 @@ String privateVirtualHost = ParamUtil.getString(request, "privateVirtualHost", B
 
 <liferay-ui:error-marker key="errorSection" value="siteUrl" />
 
+<h3><liferay-ui:message key="site-url" /></h3>
+
 <aui:model-context bean="<%= liveGroup %>" model="<%= Group.class %>" />
 
 <liferay-ui:error exception="<%= GroupFriendlyURLException.class %>">
@@ -48,7 +50,26 @@ String privateVirtualHost = ParamUtil.getString(request, "privateVirtualHost", B
 	</c:if>
 
 	<c:if test="<%= gfurle.getType() == GroupFriendlyURLException.DUPLICATE %>">
-		<liferay-ui:message key="please-enter-a-unique-friendly-url" />
+
+		<%
+		long duplicateClassPK = gfurle.getDuplicateClassPK();
+		String duplicateClassName = gfurle.getDuplicateClassName();
+
+		String name = StringPool.BLANK;
+
+		if (duplicateClassName.equals(Group.class.getName())) {
+			Group duplicateGroup = GroupLocalServiceUtil.getGroup(duplicateClassPK);
+
+			name = duplicateGroup.getDescriptiveName(locale);
+		}
+		else if (duplicateClassName.equals(Layout.class.getName())) {
+			Layout duplicateLayout = LayoutLocalServiceUtil.getLayout(duplicateClassPK);
+
+			name = duplicateLayout.getName(locale);
+		}
+		%>
+
+		<liferay-ui:message arguments="<%= new Object[] {ResourceActionsUtil.getModelResource(locale, duplicateClassName), name} %>" key="please-enter-a-unique-friendly-url" translateArguments="<%= false %>" />
 	</c:if>
 
 	<c:if test="<%= gfurle.getType() == GroupFriendlyURLException.ENDS_WITH_SLASH %>">
@@ -60,7 +81,7 @@ String privateVirtualHost = ParamUtil.getString(request, "privateVirtualHost", B
 	</c:if>
 
 	<c:if test="<%= gfurle.getType() == GroupFriendlyURLException.KEYWORD_CONFLICT %>">
-		<%= LanguageUtil.format(pageContext, "please-enter-a-friendly-url-that-does-not-conflict-with-the-keyword-x", gfurle.getKeywordConflict()) %>
+		<%= LanguageUtil.format(request, "please-enter-a-friendly-url-that-does-not-conflict-with-the-keyword-x", gfurle.getKeywordConflict(), false) %>
 	</c:if>
 
 	<c:if test="<%= gfurle.getType() == GroupFriendlyURLException.POSSIBLE_DUPLICATE %>">
@@ -83,15 +104,15 @@ String privateVirtualHost = ParamUtil.getString(request, "privateVirtualHost", B
 </liferay-ui:error>
 
 <aui:fieldset label="friendly-url">
-	<liferay-ui:message key="enter-the-friendly-url-that-will-be-used-by-both-public-and-private-pages" />
+	<liferay-ui:message key="enter-the-friendly-url-that-is-used-by-both-public-and-private-pages" />
 
-	<liferay-ui:message arguments="<%= new Object[] {themeDisplay.getPortalURL() + themeDisplay.getPathFriendlyURLPublic(), themeDisplay.getPortalURL() + themeDisplay.getPathFriendlyURLPrivateGroup()} %>" key="the-friendly-url-is-appended-to-x-for-public-pages-and-x-for-private-pages" />
+	<liferay-ui:message arguments="<%= new Object[] {themeDisplay.getPortalURL() + themeDisplay.getPathFriendlyURLPublic(), themeDisplay.getPortalURL() + themeDisplay.getPathFriendlyURLPrivateGroup()} %>" key="the-friendly-url-is-appended-to-x-for-public-pages-and-x-for-private-pages" translateArguments="<%= false %>" />
 
 	<%
 	String taglibLabel = "site-friendly-url";
 
 	if (!liveGroup.hasStagingGroup()) {
-		taglibLabel = "<span class=\"aui-helper-hidden-accessible\">" + LanguageUtil.get(pageContext, taglibLabel) + "</span>";
+		taglibLabel = "<span class=\"hide-accessible\">" + LanguageUtil.get(request, taglibLabel) + "</span>";
 	}
 	%>
 
@@ -103,9 +124,9 @@ String privateVirtualHost = ParamUtil.getString(request, "privateVirtualHost", B
 </aui:fieldset>
 
 <aui:fieldset label="virtual-hosts">
-	<liferay-ui:message key="enter-the-public-and-private-virtual-host-that-will-map-to-the-public-and-private-friendly-url" />
+	<liferay-ui:message key="enter-the-public-and-private-virtual-host-that-map-to-the-public-and-private-friendly-url" />
 
-	<liferay-ui:message arguments="<%= new Object[] {HttpUtil.getProtocol(request), themeDisplay.getPortalURL() + themeDisplay.getPathFriendlyURLPublic()} %>" key="for-example,-if-the-public-virtual-host-is-www.helloworld.com-and-the-friendly-url-is-/helloworld" />
+	<liferay-ui:message arguments="<%= new Object[] {HttpUtil.getProtocol(request), themeDisplay.getPortalURL() + themeDisplay.getPathFriendlyURLPublic()} %>" key="for-example,-if-the-public-virtual-host-is-www.helloworld.com-and-the-friendly-url-is-/helloworld" translateArguments="<%= false %>" />
 
 	<aui:input label="public-pages" name="publicVirtualHost" type="text" value="<%= publicVirtualHost %>" />
 
@@ -143,13 +164,13 @@ String privateVirtualHost = ParamUtil.getString(request, "privateVirtualHost", B
 	</c:if>
 </aui:fieldset>
 
-<aui:script use="aui-base">
-	var friendlyURL = A.one('#<portlet:namespace />friendlyURL');
+<aui:script sandbox="<%= true %>">
+	var friendlyURL = $('#<portlet:namespace />friendlyURL');
 
 	friendlyURL.on(
-		['blur', 'change', 'focus'],
+		'change',
 		function(event) {
-			var value = A.Lang.trim(friendlyURL.val());
+			var value = friendlyURL.val().trim();
 
 			if (value == '/') {
 				value = '';
@@ -161,7 +182,7 @@ String privateVirtualHost = ParamUtil.getString(request, "privateVirtualHost", B
 						var str = '';
 
 						if (index == 0) {
-							str = '/' + match
+							str = '/' + match;
 						}
 
 						return str;

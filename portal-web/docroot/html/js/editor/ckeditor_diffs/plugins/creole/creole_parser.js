@@ -218,23 +218,24 @@ Parse.Simple.Creole = function(options) {
         olist: { tag: 'ol', capture: 0,
             regex: /(^|\n)([ \t]*#[^*#].*(\n|$)([ \t]*[^\s*#].*(\n|$))*([ \t]*[*#]{2}.*(\n|$))*)+/ },
         li: { tag: 'li', capture: 0,
-            regex: /[ \t]*([*#]).+(\n[ \t]*[^*#\s].*)*(\n[ \t]*\1[*#].+)*/,
+            regex: /[ \t]*([*#]).+(\n[ \t]*[^*#\s].*)*(\n[ \t]*[*#]{2}.+)*/,
             replaceRegex: /(^|\n)[ \t]*[*#]/g, replaceString: '$1' },
 
         table: { tag: 'table', capture: 0,
+			attrs: { 'class': 'cke_show_border' },
             regex: /(^|\n)(\|.*?[ \t]*(\n|$))+/ },
         tr: { tag: 'tr', capture: 2, regex: /(^|\n)(\|.*?)\|?[ \t]*(\n|$)/ },
         th: { tag: 'th', regex: /\|+=([^|]*)/, capture: 1 },
         td: { tag: 'td', capture: 1,
-            regex: '\\|+([^|~\\[{]*((~(.|(?=\\n)|$)|' +
-                   '\\[\\[' + rx.link + '(\\|' + rx.linkText + ')?\\]\\]' +
+            regex: '\\|([^|~\\[{]*((~(.|(?=\\n)|$)|' +
+                   '(?:\\[\\[' + rx.link + '(\\|' + rx.linkText + ')?\\]\\][^|~\\[{]*)*' +
                    (options && options.strict ? '' : '|' + rx.img) +
                    '|[\\[{])[^|~]*)*)' },
 
         singleLine: { regex: /.+/, capture: 0 },
         paragraph: { tag: 'p', capture: 0,
-            regex: /(^|\n)([ \t]*\S.*(\n|$))+/ },
-        text: { capture: 0, regex: /(^|\n)([ \t]*[^\s].*(\n|$))+/ },
+            regex: /(^|\n)(\s*\S.*(\n|$))/ },
+        text: { capture: 0, regex: /(^|\n)(\s*[^\s].*(\n|$))+/ },
 
         strong: { tag: 'strong', capture: 1,
             regex: /\*\*([^*~]*((\*(?!\*)|~(.|(?=\n)|$))[^*~]*)*)(\*\*|\n|$)/ },
@@ -282,6 +283,8 @@ Parse.Simple.Creole = function(options) {
                 link.href = options && options.linkFormat
                     ? formatLink(r[1].replace(/~(.)/g, '$1'), options.linkFormat)
                     : r[1].replace(/~(.)/g, '$1');
+link.setAttribute('data-cke-saved-href', link.href);
+
                 this.apply(link, r[2], options);
                 
                 node.appendChild(link);

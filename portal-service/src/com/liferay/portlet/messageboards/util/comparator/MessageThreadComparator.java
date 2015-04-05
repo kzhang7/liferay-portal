@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -27,6 +27,15 @@ import java.util.Comparator;
 public class MessageThreadComparator
 	implements Comparator<MBMessage>, Serializable {
 
+	public MessageThreadComparator() {
+		this(true);
+	}
+
+	public MessageThreadComparator(boolean ascending) {
+		_ascending = ascending;
+	}
+
+	@Override
 	public int compare(MBMessage msg1, MBMessage msg2) {
 		Long parentMessageId1 = new Long(msg1.getParentMessageId());
 		Long parentMessageId2 = new Long(msg2.getParentMessageId());
@@ -45,7 +54,14 @@ public class MessageThreadComparator
 			value = messageId1.compareTo(messageId2);
 		}
 
-		return value;
+		if (_ascending) {
+			return value;
+		}
+		else {
+			return -value;
+		}
 	}
+
+	private final boolean _ascending;
 
 }

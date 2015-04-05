@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,18 +18,15 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.security.pacl.permission.PortalRuntimePermission;
-
-import java.util.Collections;
-import java.util.List;
+import com.liferay.registry.Registry;
+import com.liferay.registry.RegistryUtil;
+import com.liferay.registry.ServiceTracker;
 
 /**
  * @author Shuyang Zhou
  * @author Raymond Augé
  */
 public class ClusterLinkUtil {
-
-	public static final String CLUSTER_FORWARD_MESSAGE =
-		"CLUSTER_FORWARD_MESSAGE";
 
 	public static Address getAddress(Message message) {
 		return (Address)message.get(_ADDRESS);
@@ -38,7 +35,9 @@ public class ClusterLinkUtil {
 	public static ClusterLink getClusterLink() {
 		PortalRuntimePermission.checkGetBeanProperty(ClusterLinkUtil.class);
 
-		if ((_clusterLink == null) || !_clusterLink.isEnabled()) {
+		ClusterLink clusterLink = _instance._serviceTracker.getService();
+
+		if ((clusterLink == null) || !clusterLink.isEnabled()) {
 			if (_log.isWarnEnabled()) {
 				_log.warn("ClusterLinkUtil has not been initialized");
 			}
@@ -46,31 +45,7 @@ public class ClusterLinkUtil {
 			return null;
 		}
 
-		return _clusterLink;
-	}
-
-	public static List<Address> getLocalTransportAddresses() {
-		ClusterLink clusterLink = getClusterLink();
-
-		if (clusterLink == null) {
-			return Collections.emptyList();
-		}
-
-		return clusterLink.getLocalTransportAddresses();
-	}
-
-	public static List<Address> getTransportAddresses(Priority priority) {
-		ClusterLink clusterLink = getClusterLink();
-
-		if (clusterLink == null) {
-			return Collections.emptyList();
-		}
-
-		return clusterLink.getTransportAddresses(priority);
-	}
-
-	public static boolean isForwardMessage(Message message) {
-		return message.getBoolean(CLUSTER_FORWARD_MESSAGE);
+		return clusterLink;
 	}
 
 	public static void sendMulticastMessage(
@@ -111,20 +86,21 @@ public class ClusterLinkUtil {
 		return message;
 	}
 
-	public static void setForwardMessage(Message message) {
-		message.put(CLUSTER_FORWARD_MESSAGE, true);
-	}
+	private ClusterLinkUtil() {
+		Registry registry = RegistryUtil.getRegistry();
 
-	public void setClusterLink(ClusterLink clusterLink) {
-		PortalRuntimePermission.checkSetBeanProperty(getClass());
+		_serviceTracker = registry.trackServices(ClusterLink.class);
 
-		_clusterLink = clusterLink;
+		_serviceTracker.open();
 	}
 
 	private static final String _ADDRESS = "CLUSTER_ADDRESS";
 
-	private static Log _log = LogFactoryUtil.getLog(ClusterLinkUtil.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ClusterLinkUtil.class);
 
-	private static ClusterLink _clusterLink;
+	private static final ClusterLinkUtil _instance = new ClusterLinkUtil();
+
+	private final ServiceTracker<ClusterLink, ClusterLink> _serviceTracker;
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -19,8 +19,6 @@ package com.liferay.portal.util;
  */
 public class PortletKeys {
 
-	public static final String ACTIVITIES = "116";
-
 	public static final String ADMIN = "9";
 
 	public static final String ADMIN_INSTANCE = "135";
@@ -33,9 +31,7 @@ public class PortletKeys {
 
 	public static final String ANNOUNCEMENTS = "84";
 
-	public static final String ASSET_BROWSER = "172";
-
-	public static final String ASSET_PUBLISHER = "101";
+	public static final String BACKGROUND_TASK = "189";
 
 	public static final String BLOGS = "33";
 
@@ -43,17 +39,15 @@ public class PortletKeys {
 
 	public static final String BLOGS_AGGREGATOR = "115";
 
-	public static final String BOOKMARKS = "28";
-
 	public static final String CALENDAR = "8";
 
 	public static final String CHAT = "1_WAR_chatportlet";
 
+	public static final String COMMENTS = "196";
+
+	public static final String CONTROL_PANEL_HOME = "190";
+
 	public static final String CONTROL_PANEL_MENU = "160";
-
-	public static final String CURRENCY_CONVERTER = "16";
-
-	public static final String DICTIONARY = "23";
 
 	public static final String DIRECTORY = "11";
 
@@ -61,7 +55,12 @@ public class PortletKeys {
 
 	public static final String DOCUMENT_LIBRARY = "20";
 
+	public static final String DOCUMENT_LIBRARY_ADMIN = "199";
+
 	public static final String DOCUMENT_LIBRARY_DISPLAY = "110";
+
+	public static final String DOCUMENT_SELECTOR =
+		"com_liferay_document_selector_web_portlet_DocumentSelectorPortlet";
 
 	public static final String DYNAMIC_DATA_LIST_DISPLAY = "169";
 
@@ -75,26 +74,18 @@ public class PortletKeys {
 
 	public static final String FLAGS = "142";
 
+	public static final String FRIENDS_DIRECTORY = "186";
+
 	public static final String GROUP_PAGES = "156";
 
 	public static final String GROUP_STATISTICS = "181";
 
-	public static final String IFRAME = "48";
+	public static final String IMAGE_UPLOADER = "195";
 
-	public static final String INVITATION = "100";
+	public static final String JOURNAL =
+		"com_liferay_journal_web_portlet_JournalPortlet";
 
-	public static final String JOURNAL = "15";
-
-	public static final String JOURNAL_CONTENT = "56";
-
-	public static final String JOURNAL_CONTENT_SEARCH = "77";
-
-	public static final String KNOWLEDGE_BASE_ADMIN =
-		"1_WAR_knowledgebaseportlet";
-
-	public static final String LANGUAGE = "82";
-
-	public static final String LAYOUT_CONFIGURATION = "87";
+	public static final String LAYOUT_PROTOTYPE = "146";
 
 	public static final String LAYOUT_SET_PROTOTYPE = "149";
 
@@ -106,6 +97,9 @@ public class PortletKeys {
 
 	public static final String MAIL = "1_WAR_mailportlet";
 
+	public static final String MARKETPLACE_APP_MANAGER =
+		"3_WAR_marketplaceportlet";
+
 	public static final String MARKETPLACE_STORE = "1_WAR_marketplaceportlet";
 
 	public static final String MEDIA_GALLERY_DISPLAY = "31";
@@ -113,10 +107,6 @@ public class PortletKeys {
 	public static final String MESSAGE_BOARDS = "19";
 
 	public static final String MESSAGE_BOARDS_ADMIN = "162";
-
-	public static final String METADATA_SET_ADMIN = "171";
-
-	public static final String MOBILE_DEVICE_GLOBAL_ADMIN = "177";
 
 	public static final String MOBILE_DEVICE_SITE_ADMIN = "178";
 
@@ -126,15 +116,14 @@ public class PortletKeys {
 
 	public static final String MY_PAGES = "140";
 
-	public static final String MY_SITES = "29";
+	public static final String MY_SITES_DIRECTORY = "188";
 
 	public static final String MY_WORKFLOW_INSTANCES = "158";
 
 	public static final String MY_WORKFLOW_TASKS = "153";
 
-	public static final String NESTED_PORTLETS = "118";
-
-	public static final String ORGANIZATION_ADMIN = "80";
+	public static final String NESTED_PORTLETS =
+		"com_liferay_nested_portlets_web_portlet_NestedPortletsPortlet";
 
 	public static final String PAGE_COMMENTS = "107";
 
@@ -142,13 +131,7 @@ public class PortletKeys {
 
 	public static final String PASSWORD_POLICIES_ADMIN = "129";
 
-	public static final String PLUGIN_INSTALLER = "111";
-
 	public static final String PLUGINS_ADMIN = "132";
-
-	public static final String POLLS = "25";
-
-	public static final String POLLS_DISPLAY = "59";
 
 	public static final String PORTAL = "90";
 
@@ -159,6 +142,8 @@ public class PortletKeys {
 	public static final String PORTLET_CSS = "113";
 
 	public static final String PORTLET_DISPLAY_TEMPLATES = "183";
+
+	public static final String PORTLET_SHARING = "133";
 
 	public static final long PREFS_OWNER_ID_DEFAULT = 0;
 
@@ -178,31 +163,27 @@ public class PortletKeys {
 
 	public static final String RECENT_BLOGGERS = "114";
 
-	public static final String RECENT_CONTENT = "173";
-
 	public static final String RECENT_DOCUMENTS = "64";
-
-	public static final String RELATED_ASSETS = "175";
 
 	public static final String REQUESTS = "121";
 
 	public static final String ROLES_ADMIN = "128";
 
-	public static final String RSS = "39";
-
-	public static final String SEARCH = "3";
-
 	public static final String SHOPPING = "34";
 
-	public static final String SITE_MAP = "85";
+	public static final String SITE_MEMBERS_DIRECTORY = "187";
 
 	public static final String SITE_MEMBERSHIPS_ADMIN = "174";
 
-	public static final String SITE_REDIRECTOR = "49";
-
 	public static final String SITE_SETTINGS = "165";
 
+	public static final String SITE_TEAMS_ADMIN = "191";
+
+	public static final String SITE_TEMPLATE_SETTINGS = "192";
+
 	public static final String SITES_ADMIN = "134";
+
+	public static final String SOCIAL_ACTIVITY = "179";
 
 	public static final String SOFTWARE_CATALOG = "98";
 
@@ -210,35 +191,15 @@ public class PortletKeys {
 
 	public static final String STOCKS = "12";
 
-	public static final String TAGS_ADMIN = "99";
-
-	public static final String TAGS_CATEGORIES_NAVIGATION = "122";
-
-	public static final String TAGS_CLOUD = "148";
-
-	public static final String TAGS_COMPILER = "103";
-
-	public static final String TAGS_ENTRIES_NAVIGATION = "141";
-
 	public static final String TRANSLATOR = "26";
 
-	public static final String TRASH = "182";
-
 	public static final String UNIT_CONVERTER = "27";
-
-	public static final String UPDATE_MANAGER = "104";
 
 	public static final String USER_GROUPS_ADMIN = "127";
 
 	public static final String USER_STATISTICS = "180";
 
 	public static final String USERS_ADMIN = "125";
-
-	public static final String WIKI = "36";
-
-	public static final String WIKI_ADMIN = "154";
-
-	public static final String WIKI_DISPLAY = "54";
 
 	public static final String WORKFLOW_CONFIGURATION = "152";
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,7 @@
 
 package com.liferay.portal.kernel.messaging.proxy;
 
+import com.liferay.portal.kernel.messaging.Message;
 import com.liferay.portal.kernel.messaging.sender.SingleDestinationMessageSender;
 import com.liferay.portal.kernel.messaging.sender.SingleDestinationSynchronousMessageSender;
 
@@ -21,33 +22,56 @@ import com.liferay.portal.kernel.messaging.sender.SingleDestinationSynchronousMe
  * @author Micha Kiener
  * @author Michael C. Han
  * @author Brian Wing Shun Chan
+ * @author Shuyang Zhou
  */
 public abstract class BaseProxyBean {
 
-	public final SingleDestinationMessageSender
-		getSingleDestinationMessageSender() {
-
-		return _singleDestinationMessageSender;
+	public void send(ProxyRequest proxyRequest) {
+		_singleDestinationMessageSender.send(buildMessage(proxyRequest));
 	}
 
-	public final SingleDestinationSynchronousMessageSender
-		getSingleDestinationSynchronousMessageSender() {
-
-		return _singleDestinationSynchronousMessageSender;
-	}
-
-	public final void setSingleDestinationMessageSender(
+	public void setSingleDestinationMessageSender(
 		SingleDestinationMessageSender singleDestinationMessageSender) {
 
 		_singleDestinationMessageSender = singleDestinationMessageSender;
 	}
 
-	public final void setSingleDestinationSynchronousMessageSender(
+	public void setSingleDestinationSynchronousMessageSender(
 		SingleDestinationSynchronousMessageSender
-		singleDestinationSynchronousMessageSender) {
+			singleDestinationSynchronousMessageSender) {
 
 		_singleDestinationSynchronousMessageSender =
 			singleDestinationSynchronousMessageSender;
+	}
+
+	public Object synchronousSend(ProxyRequest proxyRequest) throws Exception {
+		ProxyResponse proxyResponse =
+			(ProxyResponse)_singleDestinationSynchronousMessageSender.send(
+				buildMessage(proxyRequest));
+
+		if (proxyResponse == null) {
+			return proxyRequest.execute(this);
+		}
+		else if (proxyResponse.hasError()) {
+			throw proxyResponse.getException();
+		}
+		else {
+			return proxyResponse.getResult();
+		}
+	}
+
+	protected Message buildMessage(ProxyRequest proxyRequest) {
+		Message message = new Message();
+
+		message.setPayload(proxyRequest);
+
+		MessageValuesThreadLocal.populateMessageFromThreadLocals(message);
+
+		if (proxyRequest.isLocal()) {
+			message.put(MessagingProxy.LOCAL_MESSAGE, Boolean.TRUE);
+		}
+
+		return message;
 	}
 
 	private SingleDestinationMessageSender _singleDestinationMessageSender;

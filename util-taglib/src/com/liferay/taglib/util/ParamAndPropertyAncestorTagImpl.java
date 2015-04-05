@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,8 +15,8 @@
 package com.liferay.taglib.util;
 
 import com.liferay.portal.kernel.servlet.DynamicServletRequest;
-import com.liferay.portal.kernel.servlet.taglib.BaseBodyTagSupport;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.taglib.BaseBodyTagSupport;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -35,6 +35,7 @@ public class ParamAndPropertyAncestorTagImpl
 	extends BaseBodyTagSupport
 	implements ParamAncestorTag, PropertyAncestorTag {
 
+	@Override
 	public void addParam(String name, String value) {
 		if (_dynamicServletRequest == null) {
 			_dynamicServletRequest = new DynamicServletRequest(request);
@@ -51,7 +52,7 @@ public class ParamAndPropertyAncestorTagImpl
 			params.remove(name);
 
 			if (_removedParameterNames == null) {
-				_removedParameterNames = new HashSet<String>();
+				_removedParameterNames = new HashSet<>();
 			}
 
 			_removedParameterNames.add(name);
@@ -77,9 +78,10 @@ public class ParamAndPropertyAncestorTagImpl
 		params.put(name, values);
 	}
 
+	@Override
 	public void addProperty(String name, String value) {
 		if (_properties == null) {
-			_properties = new LinkedHashMap<String, String[]>();
+			_properties = new LinkedHashMap<>();
 		}
 
 		String[] values = _properties.get(name);

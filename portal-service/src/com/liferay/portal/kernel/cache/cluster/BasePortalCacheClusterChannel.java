@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -32,10 +32,11 @@ public abstract class BasePortalCacheClusterChannel
 			this,
 			"PortalCacheClusterChannel dispatch thread-" +
 				_dispatchThreadCounter.getAndIncrement());
-		_eventQueue = new CoalescedPipe<PortalCacheClusterEvent>(
+		_eventQueue = new CoalescedPipe<>(
 			new PortalCacheClusterEventCoalesceComparator());
 	}
 
+	@Override
 	public void destroy() {
 		_destroy = true;
 
@@ -44,18 +45,22 @@ public abstract class BasePortalCacheClusterChannel
 
 	public abstract void dispatchEvent(PortalCacheClusterEvent event);
 
+	@Override
 	public long getCoalescedEventNumber() {
 		return _eventQueue.coalescedCount();
 	}
 
+	@Override
 	public int getPendingEventNumber() {
 		return _eventQueue.pendingCount();
 	}
 
+	@Override
 	public long getSentEventNumber() {
 		return _sentEventCounter.get();
 	}
 
+	@Override
 	public void run() {
 		while (true) {
 			try {
@@ -91,6 +96,7 @@ public abstract class BasePortalCacheClusterChannel
 		}
 	}
 
+	@Override
 	public void sendEvent(PortalCacheClusterEvent portalCacheClusterEvent) {
 		if (_started == false) {
 			synchronized (this) {
@@ -114,10 +120,11 @@ public abstract class BasePortalCacheClusterChannel
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		BasePortalCacheClusterChannel.class);
 
-	private static AtomicInteger _dispatchThreadCounter = new AtomicInteger(0);
+	private static final AtomicInteger _dispatchThreadCounter =
+		new AtomicInteger(0);
 
 	private volatile boolean _destroy = false;
 	private final Thread _dispatchThread;

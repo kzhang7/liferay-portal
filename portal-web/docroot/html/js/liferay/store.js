@@ -7,8 +7,6 @@ AUI.add(
 		var TOKEN_SERIALIZE = 'serialize://';
 
 		var Store = function(key, value) {
-			var instance = Store;
-
 			var method;
 
 			if (Lang.isFunction(value)) {
@@ -30,7 +28,7 @@ AUI.add(
 			}
 
 			if (method) {
-				instance[method].apply(Store, arguments);
+				Store[method].apply(Store, arguments);
 			}
 		};
 
@@ -104,6 +102,8 @@ AUI.add(
 
 				_ioRequest: function(config) {
 					var instance = this;
+
+					config.data.p_auth = Liferay.authToken;
 
 					A.io.request(
 						themeDisplay.getPathMain() + '/portal/session_click',

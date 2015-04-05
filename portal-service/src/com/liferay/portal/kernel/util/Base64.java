@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -61,11 +61,11 @@ public class Base64 {
 		return raw;
 	}
 
-	public static String encode(byte raw[]) {
+	public static String encode(byte[] raw) {
 		return encode(raw, 0, raw.length);
 	}
 
-	public static String encode(byte raw[], int offset, int length) {
+	public static String encode(byte[] raw, int offset, int length) {
 		int lastIndex = Math.min(raw.length, offset + length);
 
 		StringBuilder sb = new StringBuilder(
@@ -97,12 +97,8 @@ public class Base64 {
 		UnsyncByteArrayOutputStream ubaos = new UnsyncByteArrayOutputStream(
 			32000);
 
-		try {
-			ObjectOutputStream os = new ObjectOutputStream(ubaos);
-
-			os.flush();
+		try (ObjectOutputStream os = new ObjectOutputStream(ubaos)) {
 			os.writeObject(o);
-			os.flush();
 		}
 		catch (Exception e) {
 			_log.error(e, e);
@@ -140,7 +136,7 @@ public class Base64 {
 			});
 	}
 
-	protected static char[] encodeBlock(byte raw[], int offset, int lastIndex) {
+	protected static char[] encodeBlock(byte[] raw, int offset, int lastIndex) {
 		int block = 0;
 		int slack = lastIndex - offset - 1;
 		int end = slack < 2 ? slack : 2;
@@ -247,6 +243,6 @@ public class Base64 {
 		return null;
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(Base64.class);
+	private static final Log _log = LogFactoryUtil.getLog(Base64.class);
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -61,7 +61,7 @@ public class CMISRepositoryUtil {
 
 				repository.setTypeSettingsProperties(typeSettingsProperties);
 
-				RepositoryUtil.update(repository, false);
+				RepositoryUtil.update(repository);
 			}
 			catch (Exception e) {
 				throw new RepositoryException(e);
@@ -117,12 +117,12 @@ public class CMISRepositoryUtil {
 		return value;
 	}
 
-	private static OperationContext _operationContext;
-	private static SessionFactory _sessionFactory =
+	private static final OperationContext _operationContext;
+	private static final SessionFactory _sessionFactory =
 		SessionFactoryImpl.newInstance();
 
 	static {
-		Set<String> defaultFilterSet = new HashSet<String>();
+		Set<String> defaultFilterSet = new HashSet<>();
 
 		// Base
 

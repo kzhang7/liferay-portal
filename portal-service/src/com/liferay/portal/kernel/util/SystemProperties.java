@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -36,10 +36,19 @@ public class SystemProperties {
 	public static final String SYSTEM_PROPERTIES_LOAD =
 		"system.properties.load";
 
+	public static final String SYSTEM_PROPERTIES_QUIET =
+		"system.properties.quiet";
+
 	public static final String TMP_DIR = "java.io.tmpdir";
 
+	public static void clear(String key) {
+		System.clearProperty(key);
+
+		_properties.remove(key);
+	}
+
 	public static String get(String key) {
-		String value = _instance._properties.get(key);
+		String value = _properties.get(key);
 
 		if (value == null) {
 			value = System.getProperty(key);
@@ -60,35 +69,39 @@ public class SystemProperties {
 	}
 
 	public static Properties getProperties() {
-		return PropertiesUtil.fromMap(_instance._properties);
+		return PropertiesUtil.fromMap(_properties);
 	}
 
-	public static void set(String key, String value) {
-		System.setProperty(key, value);
+	public static void reload() {
+		if (_loaded) {
+			return;
+		}
 
-		_instance._properties.put(key, value);
-	}
-
-	private SystemProperties() {
 		Properties properties = new Properties();
 
 		Thread currentThread = Thread.currentThread();
 
 		ClassLoader classLoader = currentThread.getContextClassLoader();
 
+		boolean systemPropertiesQuiet = GetterUtil.getBoolean(
+			System.getProperty(SYSTEM_PROPERTIES_QUIET));
+
 		// system.properties
 
 		try {
-			URL url = classLoader.getResource("system.properties");
+			Enumeration<URL> enumeration = classLoader.getResources(
+				"system.properties");
 
-			if (url != null) {
-				InputStream inputStream = url.openStream();
+			while (enumeration.hasMoreElements()) {
+				URL url = enumeration.nextElement();
 
-				properties.load(inputStream);
+				try (InputStream inputStream = url.openStream()) {
+					properties.load(inputStream);
+				}
 
-				inputStream.close();
-
-				System.out.println("Loading " + url);
+				if (!systemPropertiesQuiet) {
+					System.out.println("Loading " + url);
+				}
 			}
 		}
 		catch (Exception e) {
@@ -98,16 +111,21 @@ public class SystemProperties {
 		// system-ext.properties
 
 		try {
-			URL url = classLoader.getResource("system-ext.properties");
+			Enumeration<URL> enumeration = classLoader.getResources(
+				"system-ext.properties");
 
-			if (url != null) {
-				InputStream inputStream = url.openStream();
+			while (enumeration.hasMoreElements()) {
+				URL url = enumeration.nextElement();
 
-				properties.load(inputStream);
+				_loaded = true;
 
-				inputStream.close();
+				try (InputStream inputStream = url.openStream()) {
+					properties.load(inputStream);
+				}
 
-				System.out.println("Loading " + url);
+				if (!systemPropertiesQuiet) {
+					System.out.println("Loading " + url);
+				}
 			}
 		}
 		catch (Exception e) {
@@ -141,7 +159,7 @@ public class SystemProperties {
 			}
 		}
 
-		_properties = new ConcurrentHashMap<String, String>();
+		_properties = new ConcurrentHashMap<>();
 
 		// Use a fast concurrent hash map implementation instead of the slower
 		// java.util.Properties
@@ -149,8 +167,17 @@ public class SystemProperties {
 		PropertiesUtil.fromProperties(properties, _properties);
 	}
 
-	private static SystemProperties _instance = new SystemProperties();
+	public static void set(String key, String value) {
+		System.setProperty(key, value);
 
-	private Map<String, String> _properties;
+		_properties.put(key, value);
+	}
+
+	private static boolean _loaded;
+	private static Map<String, String> _properties;
+
+	static {
+		reload();
+	}
 
 }

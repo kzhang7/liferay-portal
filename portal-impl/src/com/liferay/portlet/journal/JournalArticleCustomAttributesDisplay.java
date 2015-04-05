@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,6 +14,7 @@
 
 package com.liferay.portlet.journal;
 
+import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties;
 import com.liferay.portal.theme.ThemeDisplay;
 import com.liferay.portlet.expando.model.BaseCustomAttributesDisplay;
 import com.liferay.portlet.journal.model.JournalArticle;
@@ -21,13 +22,17 @@ import com.liferay.portlet.journal.model.JournalArticle;
 /**
  * @author Jorge Ferrer
  */
+@OSGiBeanProperties(
+	property = {
+		"model.class.name=com.liferay.portlet.journal.model.JournalArticle"
+	}
+)
 public class JournalArticleCustomAttributesDisplay
 	extends BaseCustomAttributesDisplay {
 
-	public static final String CLASS_NAME = JournalArticle.class.getName();
-
+	@Override
 	public String getClassName() {
-		return CLASS_NAME;
+		return JournalArticle.class.getName();
 	}
 
 	@Override

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -77,8 +77,9 @@ public class ClassLoaderProxy {
 	}
 
 	/**
-	 * @deprecated
+	 * @deprecated As of 6.1.0
 	 */
+	@Deprecated
 	public Object invoke(String methodName, Object[] args) throws Throwable {
 		Thread currentThread = Thread.currentThread();
 
@@ -89,7 +90,7 @@ public class ClassLoaderProxy {
 
 			Class<?> clazz = Class.forName(_className, true, _classLoader);
 
-			List<Class<?>> parameterTypes = new ArrayList<Class<?>>();
+			List<Class<?>> parameterTypes = new ArrayList<>();
 
 			for (int i = 0; i < args.length; i++) {
 				Object arg = args[i];
@@ -98,10 +99,9 @@ public class ClassLoaderProxy {
 					arg.getClass().getName(), true, _classLoader);
 
 				if (ClassUtil.isSubclass(argClass, PrimitiveWrapper.class)) {
-					MethodKey methodKey = new MethodKey(
-						argClass.getName(), "getValue");
+					MethodKey methodKey = new MethodKey(argClass, "getValue");
 
-					Method method = MethodCache.get(methodKey);
+					Method method = methodKey.getMethod();
 
 					args[i] = method.invoke(arg, (Object[])null);
 
@@ -185,27 +185,26 @@ public class ClassLoaderProxy {
 		try {
 			UnsyncByteArrayOutputStream unsyncByteArrayOutputStream =
 				new UnsyncByteArrayOutputStream();
-			ObjectOutputStream objectOutputStream = new ObjectOutputStream(
-				unsyncByteArrayOutputStream);
 
-			objectOutputStream.writeObject(throwable);
+			try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(
+					unsyncByteArrayOutputStream)) {
 
-			objectOutputStream.flush();
-			objectOutputStream.close();
+				objectOutputStream.writeObject(throwable);
+
+				objectOutputStream.flush();
+			}
 
 			UnsyncByteArrayInputStream unsyncByteArrayInputStream =
 				new UnsyncByteArrayInputStream(
 					unsyncByteArrayOutputStream.unsafeGetByteArray(), 0,
 					unsyncByteArrayOutputStream.size());
-			ObjectInputStream objectInputStream =
-				new ClassLoaderObjectInputStream(
-					unsyncByteArrayInputStream, contextClassLoader);
 
-			throwable = (Throwable)objectInputStream.readObject();
+			try (ObjectInputStream objectInputStream =
+					new ClassLoaderObjectInputStream(
+						unsyncByteArrayInputStream, contextClassLoader)) {
 
-			objectInputStream.close();
-
-			return throwable;
+				return (Throwable)objectInputStream.readObject();
+			}
 		}
 		catch (Throwable throwable2) {
 			_log.error(throwable2, throwable2);
@@ -219,8 +218,11 @@ public class ClassLoaderProxy {
 			return methodHandler.invoke(_obj);
 		}
 		catch (NoSuchMethodException nsme) {
-			String name = methodHandler.getMethodName();
-			Class<?>[] parameterTypes = methodHandler.getArgumentsClasses();
+			MethodKey methodKey = methodHandler.getMethodKey();
+
+			String name = methodKey.getMethodName();
+
+			Class<?>[] parameterTypes = methodKey.getParameterTypes();
 
 			Class<?> clazz = Class.forName(_className, true, _classLoader);
 
@@ -256,10 +258,11 @@ public class ClassLoaderProxy {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(ClassLoaderProxy.class);
+	private static final Log _log = LogFactoryUtil.getLog(
+		ClassLoaderProxy.class);
 
-	private ClassLoader _classLoader;
-	private String _className;
-	private Object _obj;
+	private final ClassLoader _classLoader;
+	private final String _className;
+	private final Object _obj;
 
 }

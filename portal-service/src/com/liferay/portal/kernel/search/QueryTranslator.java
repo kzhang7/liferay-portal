@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -17,9 +17,9 @@ package com.liferay.portal.kernel.search;
 /**
  * @author Raymond Augé
  */
-public interface QueryTranslator {
+public interface QueryTranslator<T> {
 
-	public Object translate(Query query) throws ParseException;
+	public T translate(Query query) throws ParseException;
 
 	public Object translateForSolr(Query query) throws ParseException;
 

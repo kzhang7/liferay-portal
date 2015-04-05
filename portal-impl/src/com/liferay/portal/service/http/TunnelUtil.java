@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,18 +14,23 @@
 
 package com.liferay.portal.service.http;
 
+import com.liferay.portal.kernel.log.Log;
+import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
+import com.liferay.portal.kernel.servlet.HttpMethods;
 import com.liferay.portal.kernel.util.Base64;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.MethodHandler;
-import com.liferay.portal.kernel.util.MethodWrapper;
 import com.liferay.portal.kernel.util.ObjectValuePair;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.security.auth.AuthException;
 import com.liferay.portal.security.auth.HttpPrincipal;
 import com.liferay.portal.security.auth.PrincipalException;
+import com.liferay.portal.util.PropsValues;
+import com.liferay.util.Encryptor;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -35,50 +40,107 @@ import java.io.ObjectOutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import java.security.Key;
+
+import javax.crypto.spec.SecretKeySpec;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
+
 /**
  * @author Brian Wing Shun Chan
  */
-@SuppressWarnings("deprecation")
 public class TunnelUtil {
+
+	public static Key getSharedSecretKey() throws AuthException {
+		String sharedSecret = PropsValues.TUNNELING_SERVLET_SHARED_SECRET;
+		boolean sharedSecretHex =
+			PropsValues.TUNNELING_SERVLET_SHARED_SECRET_HEX;
+
+		if (Validator.isNull(sharedSecret)) {
+			AuthException authException = new AuthException();
+
+			authException.setType(AuthException.NO_SHARED_SECRET);
+
+			throw authException;
+		}
+
+		byte[] key = null;
+
+		if (sharedSecretHex) {
+			try {
+				key = Hex.decodeHex(sharedSecret.toCharArray());
+			}
+			catch (DecoderException e) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(e, e);
+				}
+
+				AuthException authException = new AuthException();
+
+				authException.setType(AuthException.INVALID_SHARED_SECRET);
+
+				throw authException;
+			}
+		}
+		else {
+			key = sharedSecret.getBytes();
+		}
+
+		if (key.length < 8) {
+			AuthException authException = new AuthException();
+
+			authException.setType(AuthException.INVALID_SHARED_SECRET);
+
+			throw authException;
+		}
+
+		return new SecretKeySpec(
+			key, PropsValues.TUNNELING_SERVLET_ENCRYPTION_ALGORITHM);
+	}
 
 	public static Object invoke(
 			HttpPrincipal httpPrincipal, MethodHandler methodHandler)
 		throws Exception {
 
-		HttpURLConnection urlc = _getConnection(httpPrincipal);
+		String password = Encryptor.encrypt(
+			getSharedSecretKey(), httpPrincipal.getLogin());
 
-		ObjectOutputStream oos = new ObjectOutputStream(urlc.getOutputStream());
+		httpPrincipal.setPassword(password);
 
-		oos.writeObject(
-			new ObjectValuePair<HttpPrincipal, MethodHandler>(
-				httpPrincipal, methodHandler));
+		HttpURLConnection httpURLConnection = _getConnection(httpPrincipal);
 
-		oos.flush();
-		oos.close();
+		try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(
+				httpURLConnection.getOutputStream())) {
 
-		Object returnObj = null;
+			objectOutputStream.writeObject(
+				new ObjectValuePair<HttpPrincipal, MethodHandler>(
+					httpPrincipal, methodHandler));
+		}
 
-		try {
-			ObjectInputStream ois = new ObjectInputStream(
-				urlc.getInputStream());
+		Object returnObject = null;
 
-			returnObj = ois.readObject();
+		try (ObjectInputStream objectInputStream = new ObjectInputStream(
+				httpURLConnection.getInputStream())) {
 
-			ois.close();
+			returnObject = objectInputStream.readObject();
 		}
 		catch (EOFException eofe) {
+			if (_log.isDebugEnabled()) {
+				_log.debug("Unable to read object", eofe);
+			}
 		}
 		catch (IOException ioe) {
 			String ioeMessage = ioe.getMessage();
 
 			if ((ioeMessage != null) &&
-				(ioeMessage.indexOf("HTTP response code: 401") != -1)) {
+				ioeMessage.contains("HTTP response code: 401")) {
 
 				throw new PrincipalException(ioeMessage);
 			}
@@ -87,61 +149,11 @@ public class TunnelUtil {
 			}
 		}
 
-		if ((returnObj != null) && returnObj instanceof Exception) {
-			throw (Exception)returnObj;
+		if ((returnObject != null) && returnObject instanceof Exception) {
+			throw (Exception)returnObject;
 		}
 
-		return returnObj;
-	}
-
-	/**
-	 * @deprecated
-	 */
-	public static Object invoke(
-			HttpPrincipal httpPrincipal, MethodWrapper methodWrapper)
-		throws Exception {
-
-		HttpURLConnection urlc = _getConnection(httpPrincipal);
-
-		ObjectOutputStream oos = new ObjectOutputStream(urlc.getOutputStream());
-
-		oos.writeObject(
-			new ObjectValuePair<HttpPrincipal, MethodWrapper>(
-				httpPrincipal, methodWrapper));
-
-		oos.flush();
-		oos.close();
-
-		Object returnObj = null;
-
-		try {
-			ObjectInputStream ois = new ObjectInputStream(
-				urlc.getInputStream());
-
-			returnObj = ois.readObject();
-
-			ois.close();
-		}
-		catch (EOFException eofe) {
-		}
-		catch (IOException ioe) {
-			String ioeMessage = ioe.getMessage();
-
-			if ((ioeMessage != null) &&
-				(ioeMessage.indexOf("HTTP response code: 401") != -1)) {
-
-				throw new PrincipalException(ioeMessage);
-			}
-			else {
-				throw ioe;
-			}
-		}
-
-		if ((returnObj != null) && returnObj instanceof Exception) {
-			throw (Exception)returnObj;
-		}
-
-		return returnObj;
+		return returnObject;
 	}
 
 	private static HttpURLConnection _getConnection(HttpPrincipal httpPrincipal)
@@ -168,6 +180,7 @@ public class TunnelUtil {
 			httpsURLConnection.setHostnameVerifier(
 				new HostnameVerifier() {
 
+					@Override
 					public boolean verify(String hostname, SSLSession session) {
 						return true;
 					}
@@ -181,7 +194,7 @@ public class TunnelUtil {
 			ContentTypes.APPLICATION_X_JAVA_SERIALIZED_OBJECT);
 		httpURLConnection.setUseCaches(false);
 
-		httpURLConnection.setRequestMethod("POST");
+		httpURLConnection.setRequestMethod(HttpMethods.POST);
 
 		if (Validator.isNotNull(httpPrincipal.getLogin()) &&
 			Validator.isNotNull(httpPrincipal.getPassword())) {
@@ -201,5 +214,7 @@ public class TunnelUtil {
 
 	private static final boolean _VERIFY_SSL_HOSTNAME = GetterUtil.getBoolean(
 		PropsUtil.get(TunnelUtil.class.getName() + ".verify.ssl.hostname"));
+
+	private static final Log _log = LogFactoryUtil.getLog(TunnelUtil.class);
 
 }

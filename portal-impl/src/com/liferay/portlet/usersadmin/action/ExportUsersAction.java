@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -16,8 +16,10 @@ package com.liferay.portlet.usersadmin.action;
 
 import com.liferay.portal.kernel.bean.BeanPropertiesUtil;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.portlet.DynamicActionRequest;
 import com.liferay.portal.kernel.servlet.ServletResponseUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.CSVUtil;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.OrderByComparator;
@@ -25,7 +27,7 @@ import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.ProgressTracker;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
-import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.security.permission.ActionKeys;
 import com.liferay.portal.security.permission.PermissionChecker;
@@ -67,11 +69,23 @@ public class ExportUsersAction extends PortletAction {
 
 	@Override
 	public void processAction(
-			ActionMapping mapping, ActionForm form, PortletConfig portletConfig,
-			ActionRequest actionRequest, ActionResponse actionResponse)
+			ActionMapping actionMapping, ActionForm actionForm,
+			PortletConfig portletConfig, ActionRequest actionRequest,
+			ActionResponse actionResponse)
 		throws Exception {
 
 		try {
+			String keywords = ParamUtil.getString(actionRequest, "keywords");
+
+			if (Validator.isNotNull(keywords)) {
+				DynamicActionRequest dynamicActionRequest =
+					new DynamicActionRequest(actionRequest);
+
+				dynamicActionRequest.setParameter("keywords", StringPool.BLANK);
+
+				actionRequest = dynamicActionRequest;
+			}
+
 			String csv = getUsersCSV(actionRequest, actionResponse);
 
 			String fileName = "users.csv";
@@ -157,10 +171,7 @@ public class ExportUsersAction extends PortletAction {
 		UserSearchTerms searchTerms =
 			(UserSearchTerms)userSearch.getSearchTerms();
 
-		searchTerms.setStatus(WorkflowConstants.STATUS_APPROVED);
-
-		LinkedHashMap<String, Object> params =
-			new LinkedHashMap<String, Object>();
+		LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
 		long organizationId = searchTerms.getOrganizationId();
 
@@ -170,7 +181,8 @@ public class ExportUsersAction extends PortletAction {
 		else if (!exportAllUsers) {
 			User user = themeDisplay.getUser();
 
-			long[] organizationIds = user.getOrganizationIds(true);
+			Long[] organizationIds = ArrayUtil.toArray(
+				user.getOrganizationIds(true));
 
 			if (organizationIds.length > 0) {
 				params.put("usersOrgs", organizationIds);
@@ -189,19 +201,26 @@ public class ExportUsersAction extends PortletAction {
 			params.put("usersUserGroups", new Long(userGroupId));
 		}
 
+		if (PropsValues.USERS_INDEXER_ENABLED &&
+			PropsValues.USERS_SEARCH_WITH_INDEX) {
+
+			params.put("expandoAttributes", searchTerms.getKeywords());
+		}
+
 		if (searchTerms.isAdvancedSearch()) {
 			return UserLocalServiceUtil.search(
 				themeDisplay.getCompanyId(), searchTerms.getFirstName(),
 				searchTerms.getMiddleName(), searchTerms.getLastName(),
 				searchTerms.getScreenName(), searchTerms.getEmailAddress(),
 				searchTerms.getStatus(), params, searchTerms.isAndOperator(),
-				QueryUtil.ALL_POS, QueryUtil.ALL_POS, (OrderByComparator)null);
+				QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+				(OrderByComparator<User>)null);
 		}
 		else {
 			return UserLocalServiceUtil.search(
 				themeDisplay.getCompanyId(), searchTerms.getKeywords(),
 				searchTerms.getStatus(), params, QueryUtil.ALL_POS,
-				QueryUtil.ALL_POS, (OrderByComparator)null);
+				QueryUtil.ALL_POS, (OrderByComparator<User>)null);
 		}
 	}
 
@@ -218,10 +237,9 @@ public class ExportUsersAction extends PortletAction {
 		String exportProgressId = ParamUtil.getString(
 			actionRequest, "exportProgressId");
 
-		ProgressTracker progressTracker = new ProgressTracker(
-			actionRequest, exportProgressId);
+		ProgressTracker progressTracker = new ProgressTracker(exportProgressId);
 
-		progressTracker.start();
+		progressTracker.start(actionRequest);
 
 		int percentage = 10;
 		int total = users.size();
@@ -240,7 +258,7 @@ public class ExportUsersAction extends PortletAction {
 			progressTracker.setPercent(percentage);
 		}
 
-		progressTracker.finish();
+		progressTracker.finish(actionRequest);
 
 		return sb.toString();
 	}

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -15,21 +15,26 @@
 package com.liferay.portlet.shopping.util;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.portlet.LiferayWindowState;
 import com.liferay.portal.kernel.util.CharPool;
 import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HtmlUtil;
 import com.liferay.portal.kernel.util.HttpUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MathUtil;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.StringBundler;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.theme.PortletDisplay;
 import com.liferay.portal.theme.ThemeDisplay;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.shopping.NoSuchCartException;
+import com.liferay.portlet.shopping.ShoppingGroupServiceSettings;
 import com.liferay.portlet.shopping.model.ShoppingCart;
 import com.liferay.portlet.shopping.model.ShoppingCartItem;
 import com.liferay.portlet.shopping.model.ShoppingCategory;
@@ -51,15 +56,14 @@ import com.liferay.portlet.shopping.util.comparator.ItemMinQuantityComparator;
 import com.liferay.portlet.shopping.util.comparator.ItemNameComparator;
 import com.liferay.portlet.shopping.util.comparator.ItemPriceComparator;
 import com.liferay.portlet.shopping.util.comparator.ItemSKUComparator;
-import com.liferay.portlet.shopping.util.comparator.OrderDateComparator;
 
 import java.text.NumberFormat;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -70,10 +74,11 @@ import javax.portlet.RenderRequest;
 import javax.portlet.RenderResponse;
 import javax.portlet.WindowState;
 
-import javax.servlet.jsp.PageContext;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author Brian Wing Shun Chan
+ * @author Eduardo Garcia
  */
 public class ShoppingUtil {
 
@@ -82,7 +87,7 @@ public class ShoppingUtil {
 	}
 
 	public static double calculateActualPrice(ShoppingItem item, int count)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return calculatePrice(item, count) -
 			calculateDiscountPrice(item, count);
@@ -106,30 +111,31 @@ public class ShoppingUtil {
 
 	public static double calculateActualSubtotal(
 			Map<ShoppingCartItem, Integer> items)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return calculateSubtotal(items) - calculateDiscountSubtotal(items);
 	}
 
 	public static double calculateAlternativeShipping(
 			Map<ShoppingCartItem, Integer> items, int altShipping)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		double shipping = calculateShipping(items);
 		double alternativeShipping = shipping;
 
-		ShoppingPreferences preferences = null;
+		ShoppingGroupServiceSettings shoppingGroupServiceSettings = null;
 
 		for (Map.Entry<ShoppingCartItem, Integer> entry : items.entrySet()) {
 			ShoppingCartItem cartItem = entry.getKey();
 
 			ShoppingItem item = cartItem.getItem();
 
-			if (preferences == null) {
+			if (shoppingGroupServiceSettings == null) {
 				ShoppingCategory category = item.getCategory();
 
-				preferences = ShoppingPreferences.getInstance(
-					category.getCompanyId(), category.getGroupId());
+				shoppingGroupServiceSettings =
+					ShoppingGroupServiceSettings.getInstance(
+						category.getGroupId());
 
 				break;
 			}
@@ -138,14 +144,16 @@ public class ShoppingUtil {
 		// Calculate alternative shipping if shopping is configured to use
 		// alternative shipping and shipping price is greater than 0
 
-		if ((preferences != null) &&
-			preferences.useAlternativeShipping() && (shipping > 0)) {
+		if ((shoppingGroupServiceSettings != null) &&
+			shoppingGroupServiceSettings.useAlternativeShipping() &&
+			(shipping > 0)) {
 
 			double altShippingDelta = 0.0;
 
 			try {
 				altShippingDelta = GetterUtil.getDouble(
-					preferences.getAlternativeShipping()[1][altShipping]);
+					shoppingGroupServiceSettings.getAlternativeShipping()
+						[1][altShipping]);
 			}
 			catch (Exception e) {
 				return alternativeShipping;
@@ -161,7 +169,7 @@ public class ShoppingUtil {
 
 	public static double calculateCouponDiscount(
 			Map<ShoppingCartItem, Integer> items, ShoppingCoupon coupon)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		return calculateCouponDiscount(items, null, coupon);
 	}
@@ -169,7 +177,7 @@ public class ShoppingUtil {
 	public static double calculateCouponDiscount(
 			Map<ShoppingCartItem, Integer> items, String stateId,
 			ShoppingCoupon coupon)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		double discount = 0.0;
 
@@ -179,24 +187,35 @@ public class ShoppingUtil {
 			return discount;
 		}
 
-		String[] categoryIds = StringUtil.split(coupon.getLimitCategories());
+		String[] categoryNames = StringUtil.split(coupon.getLimitCategories());
+
+		Set<Long> categoryIds = new HashSet<>();
+
+		for (String categoryName : categoryNames) {
+			ShoppingCategory category =
+				ShoppingCategoryLocalServiceUtil.getCategory(
+					coupon.getGroupId(), categoryName);
+
+			List<Long> subcategoryIds = new ArrayList<>();
+
+			ShoppingCategoryLocalServiceUtil.getSubcategoryIds(
+				subcategoryIds, category.getGroupId(),
+				category.getCategoryId());
+
+			categoryIds.add(category.getCategoryId());
+			categoryIds.addAll(subcategoryIds);
+		}
+
 		String[] skus = StringUtil.split(coupon.getLimitSkus());
 
-		if ((categoryIds.length > 0) || (skus.length > 0)) {
-			Set<String> categoryIdsSet = new HashSet<String>();
-
-			for (String categoryId : categoryIds) {
-				categoryIdsSet.add(categoryId);
-			}
-
-			Set<String> skusSet = new HashSet<String>();
+		if ((categoryIds.size() > 0) || (skus.length > 0)) {
+			Set<String> skusSet = new HashSet<>();
 
 			for (String sku : skus) {
 				skusSet.add(sku);
 			}
 
-			Map<ShoppingCartItem, Integer> newItems =
-				new HashMap<ShoppingCartItem, Integer>();
+			Map<ShoppingCartItem, Integer> newItems = new HashMap<>();
 
 			for (Map.Entry<ShoppingCartItem, Integer> entry :
 					items.entrySet()) {
@@ -206,10 +225,9 @@ public class ShoppingUtil {
 
 				ShoppingItem item = cartItem.getItem();
 
-				if (((categoryIdsSet.size() > 0) &&
-					 categoryIdsSet.contains(
-						 String.valueOf(item.getCategoryId()))) ||
-					((skusSet.size() > 0) && skusSet.contains(item.getSku()))) {
+				if ((!categoryIds.isEmpty() &&
+					 categoryIds.contains(item.getCategoryId())) ||
+					(!skusSet.isEmpty() && skusSet.contains(item.getSku()))) {
 
 					newItems.put(cartItem, count);
 				}
@@ -250,7 +268,7 @@ public class ShoppingUtil {
 
 	public static double calculateDiscountPercent(
 			Map<ShoppingCartItem, Integer> items)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		double discount = calculateDiscountSubtotal(
 			items) / calculateSubtotal(items);
@@ -267,7 +285,7 @@ public class ShoppingUtil {
 	}
 
 	public static double calculateDiscountPrice(ShoppingItem item, int count)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		ShoppingItemPrice itemPrice = _getItemPrice(item, count);
 
@@ -280,7 +298,7 @@ public class ShoppingUtil {
 
 	public static double calculateDiscountSubtotal(
 			Map<ShoppingCartItem, Integer> items)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		double subtotal = 0.0;
 
@@ -298,12 +316,12 @@ public class ShoppingUtil {
 
 	public static double calculateInsurance(
 			Map<ShoppingCartItem, Integer> items)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		double insurance = 0.0;
 		double subtotal = 0.0;
 
-		ShoppingPreferences preferences = null;
+		ShoppingGroupServiceSettings shoppingGroupServiceSettings = null;
 
 		for (Map.Entry<ShoppingCartItem, Integer> entry : items.entrySet()) {
 			ShoppingCartItem cartItem = entry.getKey();
@@ -311,11 +329,12 @@ public class ShoppingUtil {
 
 			ShoppingItem item = cartItem.getItem();
 
-			if (preferences == null) {
+			if (shoppingGroupServiceSettings == null) {
 				ShoppingCategory category = item.getCategory();
 
-				preferences = ShoppingPreferences.getInstance(
-					category.getCompanyId(), category.getGroupId());
+				shoppingGroupServiceSettings =
+					ShoppingGroupServiceSettings.getInstance(
+						category.getGroupId());
 			}
 
 			ShoppingItemPrice itemPrice = _getItemPrice(item, count.intValue());
@@ -323,38 +342,41 @@ public class ShoppingUtil {
 			subtotal += calculateActualPrice(itemPrice) * count.intValue();
 		}
 
-		if ((preferences != null) && (subtotal > 0)) {
-			double insuranceRate = 0.0;
+		if ((shoppingGroupServiceSettings == null) || (subtotal == 0)) {
+			return insurance;
+		}
 
-			double[] range = ShoppingPreferences.INSURANCE_RANGE;
+		double insuranceRate = 0.0;
 
-			for (int i = 0; i < range.length - 1; i++) {
-				if ((subtotal > range[i]) && (subtotal <= range[i + 1])) {
-					int rangeId = i / 2;
-					if (MathUtil.isOdd(i)) {
-						rangeId = (i + 1) / 2;
-					}
+		double[] range = ShoppingGroupServiceSettings.INSURANCE_RANGE;
 
-					insuranceRate = GetterUtil.getDouble(
-						preferences.getInsurance()[rangeId]);
+		for (int i = 0; i < range.length - 1; i++) {
+			if ((subtotal > range[i]) && (subtotal <= range[i + 1])) {
+				int rangeId = i / 2;
+
+				if (MathUtil.isOdd(i)) {
+					rangeId = (i + 1) / 2;
 				}
-			}
 
-			String formula = preferences.getInsuranceFormula();
+				insuranceRate = GetterUtil.getDouble(
+					shoppingGroupServiceSettings.getInsurance()[rangeId]);
+			}
+		}
 
-			if (formula.equals("flat")) {
-				insurance += insuranceRate;
-			}
-			else if (formula.equals("percentage")) {
-				insurance += subtotal * insuranceRate;
-			}
+		String formula = shoppingGroupServiceSettings.getInsuranceFormula();
+
+		if (formula.equals("flat")) {
+			insurance += insuranceRate;
+		}
+		else if (formula.equals("percentage")) {
+			insurance += subtotal * insuranceRate;
 		}
 
 		return insurance;
 	}
 
 	public static double calculatePrice(ShoppingItem item, int count)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		ShoppingItemPrice itemPrice = _getItemPrice(item, count);
 
@@ -362,12 +384,12 @@ public class ShoppingUtil {
 	}
 
 	public static double calculateShipping(Map<ShoppingCartItem, Integer> items)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		double shipping = 0.0;
 		double subtotal = 0.0;
 
-		ShoppingPreferences preferences = null;
+		ShoppingGroupServiceSettings shoppingGroupServiceSettings = null;
 
 		for (Map.Entry<ShoppingCartItem, Integer> entry : items.entrySet()) {
 			ShoppingCartItem cartItem = entry.getKey();
@@ -375,11 +397,12 @@ public class ShoppingUtil {
 
 			ShoppingItem item = cartItem.getItem();
 
-			if (preferences == null) {
+			if (shoppingGroupServiceSettings == null) {
 				ShoppingCategory category = item.getCategory();
 
-				preferences = ShoppingPreferences.getInstance(
-					category.getCompanyId(), category.getGroupId());
+				shoppingGroupServiceSettings =
+					ShoppingGroupServiceSettings.getInstance(
+						category.getGroupId());
 			}
 
 			if (item.isRequiresShipping()) {
@@ -396,38 +419,41 @@ public class ShoppingUtil {
 			}
 		}
 
-		if ((preferences != null) && (subtotal > 0)) {
-			double shippingRate = 0.0;
+		if ((shoppingGroupServiceSettings == null) || (subtotal == 0)) {
+			return shipping;
+		}
 
-			double[] range = ShoppingPreferences.SHIPPING_RANGE;
+		double shippingRate = 0.0;
 
-			for (int i = 0; i < range.length - 1; i++) {
-				if ((subtotal > range[i]) && (subtotal <= range[i + 1])) {
-					int rangeId = i / 2;
-					if (MathUtil.isOdd(i)) {
-						rangeId = (i + 1) / 2;
-					}
+		double[] range = ShoppingGroupServiceSettings.SHIPPING_RANGE;
 
-					shippingRate = GetterUtil.getDouble(
-						preferences.getShipping()[rangeId]);
+		for (int i = 0; i < range.length - 1; i++) {
+			if ((subtotal > range[i]) && (subtotal <= range[i + 1])) {
+				int rangeId = i / 2;
+
+				if (MathUtil.isOdd(i)) {
+					rangeId = (i + 1) / 2;
 				}
-			}
 
-			String formula = preferences.getShippingFormula();
+				shippingRate = GetterUtil.getDouble(
+					shoppingGroupServiceSettings.getShipping()[rangeId]);
+			}
+		}
 
-			if (formula.equals("flat")) {
-				shipping += shippingRate;
-			}
-			else if (formula.equals("percentage")) {
-				shipping += subtotal * shippingRate;
-			}
+		String formula = shoppingGroupServiceSettings.getShippingFormula();
+
+		if (formula.equals("flat")) {
+			shipping += shippingRate;
+		}
+		else if (formula.equals("percentage")) {
+			shipping += subtotal * shippingRate;
 		}
 
 		return shipping;
 	}
 
 	public static double calculateSubtotal(Map<ShoppingCartItem, Integer> items)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		double subtotal = 0.0;
 
@@ -445,29 +471,30 @@ public class ShoppingUtil {
 
 	public static double calculateTax(
 			Map<ShoppingCartItem, Integer> items, String stateId)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		double tax = 0.0;
 
-		ShoppingPreferences preferences = null;
+		ShoppingGroupServiceSettings shoppingGroupServiceSettings = null;
 
 		for (Map.Entry<ShoppingCartItem, Integer> entry : items.entrySet()) {
 			ShoppingCartItem cartItem = entry.getKey();
 
 			ShoppingItem item = cartItem.getItem();
 
-			if (preferences == null) {
+			if (shoppingGroupServiceSettings == null) {
 				ShoppingCategory category = item.getCategory();
 
-				preferences = ShoppingPreferences.getInstance(
-					category.getCompanyId(), category.getGroupId());
+				shoppingGroupServiceSettings =
+					ShoppingGroupServiceSettings.getInstance(
+						category.getGroupId());
 
 				break;
 			}
 		}
 
-		if ((preferences != null) &&
-			preferences.getTaxState().equals(stateId)) {
+		if ((shoppingGroupServiceSettings != null) &&
+			shoppingGroupServiceSettings.getTaxState().equals(stateId)) {
 
 			double subtotal = 0.0;
 
@@ -484,7 +511,7 @@ public class ShoppingUtil {
 				}
 			}
 
-			tax = preferences.getTaxRate() * subtotal;
+			tax = shoppingGroupServiceSettings.getTaxRate() * subtotal;
 		}
 
 		return tax;
@@ -493,13 +520,14 @@ public class ShoppingUtil {
 	public static double calculateTotal(
 			Map<ShoppingCartItem, Integer> items, String stateId,
 			ShoppingCoupon coupon, int altShipping, boolean insure)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		double actualSubtotal = calculateActualSubtotal(items);
 		double tax = calculateTax(items, stateId);
 		double shipping = calculateAlternativeShipping(items, altShipping);
 
 		double insurance = 0.0;
+
 		if (insure) {
 			insurance = calculateInsurance(items);
 		}
@@ -516,9 +544,7 @@ public class ShoppingUtil {
 		return total;
 	}
 
-	public static double calculateTotal(ShoppingOrder order)
-		throws SystemException {
-
+	public static double calculateTotal(ShoppingOrder order) {
 		List<ShoppingOrderItem> orderItems =
 			ShoppingOrderItemLocalServiceUtil.getOrderItems(order.getOrderId());
 
@@ -535,8 +561,8 @@ public class ShoppingUtil {
 	}
 
 	public static String getBreadcrumbs(
-			long categoryId, PageContext pageContext,
-			RenderRequest renderRequest, RenderResponse renderResponse)
+			long categoryId, RenderRequest renderRequest,
+			RenderResponse renderResponse)
 		throws Exception {
 
 		ShoppingCategory category = null;
@@ -547,13 +573,12 @@ public class ShoppingUtil {
 		catch (Exception e) {
 		}
 
-		return getBreadcrumbs(
-			category, pageContext, renderRequest, renderResponse);
+		return getBreadcrumbs(category, renderRequest, renderResponse);
 	}
 
 	public static String getBreadcrumbs(
-			ShoppingCategory category, PageContext pageContext,
-			RenderRequest renderRequest, RenderResponse renderResponse)
+			ShoppingCategory category, RenderRequest renderRequest,
+			RenderResponse renderResponse)
 		throws Exception {
 
 		PortletURL categoriesURL = renderResponse.createRenderURL();
@@ -561,21 +586,22 @@ public class ShoppingUtil {
 		WindowState windowState = renderRequest.getWindowState();
 
 		if (windowState.equals(LiferayWindowState.POP_UP)) {
-			categoriesURL.setWindowState(LiferayWindowState.POP_UP);
-
 			categoriesURL.setParameter(
 				"struts_action", "/shopping/select_category");
+			categoriesURL.setWindowState(LiferayWindowState.POP_UP);
 		}
 		else {
-			//categoriesURL.setWindowState(WindowState.MAXIMIZED);
-
 			categoriesURL.setParameter("struts_action", "/shopping/view");
 			categoriesURL.setParameter("tabs1", "categories");
+			//categoriesURL.setWindowState(WindowState.MAXIMIZED);
 		}
+
+		HttpServletRequest request = PortalUtil.getHttpServletRequest(
+			renderRequest);
 
 		String categoriesLink =
 			"<a href=\"" + categoriesURL.toString() + "\">" +
-				LanguageUtil.get(pageContext, "categories") + "</a>";
+				LanguageUtil.get(request, "categories") + "</a>";
 
 		if (category == null) {
 			return "<span class=\"first last\">" + categoriesLink + "</span>";
@@ -590,20 +616,18 @@ public class ShoppingUtil {
 				PortletURL portletURL = renderResponse.createRenderURL();
 
 				if (windowState.equals(LiferayWindowState.POP_UP)) {
-					portletURL.setWindowState(LiferayWindowState.POP_UP);
-
 					portletURL.setParameter(
 						"struts_action", "/shopping/select_category");
 					portletURL.setParameter(
 						"categoryId", String.valueOf(category.getCategoryId()));
+					portletURL.setWindowState(LiferayWindowState.POP_UP);
 				}
 				else {
-					//portletURL.setWindowState(WindowState.MAXIMIZED);
-
 					portletURL.setParameter("struts_action", "/shopping/view");
 					portletURL.setParameter("tabs1", "categories");
 					portletURL.setParameter(
 						"categoryId", String.valueOf(category.getCategoryId()));
+					//portletURL.setWindowState(WindowState.MAXIMIZED);
 				}
 
 				String categoryLink =
@@ -635,7 +659,7 @@ public class ShoppingUtil {
 	}
 
 	public static ShoppingCart getCart(PortletRequest portletRequest)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		PortletSession portletSession = portletRequest.getPortletSession();
 
@@ -678,18 +702,17 @@ public class ShoppingUtil {
 
 			return cart;
 		}
-		else {
-			ShoppingCart cart = (ShoppingCart)portletSession.getAttribute(
-				sessionCartId);
 
-			if (cart == null) {
-				cart = getCart(themeDisplay);
+		ShoppingCart cart = (ShoppingCart)portletSession.getAttribute(
+			sessionCartId);
 
-				portletSession.setAttribute(sessionCartId, cart);
-			}
+		if (cart == null) {
+			cart = getCart(themeDisplay);
 
-			return cart;
+			portletSession.setAttribute(sessionCartId, cart);
 		}
+
+		return cart;
 	}
 
 	public static ShoppingCart getCart(ThemeDisplay themeDisplay) {
@@ -706,23 +729,74 @@ public class ShoppingUtil {
 		return cart;
 	}
 
+	public static Map<String, String> getEmailDefinitionTerms(
+		PortletRequest portletRequest, String emailFromAddress,
+		String emailFromName) {
+
+		ThemeDisplay themeDisplay = (ThemeDisplay)portletRequest.getAttribute(
+			WebKeys.THEME_DISPLAY);
+
+		Map<String, String> definitionTerms = new LinkedHashMap<>();
+
+		definitionTerms.put(
+			"[$FROM_ADDRESS$]", HtmlUtil.escape(emailFromAddress));
+		definitionTerms.put("[$FROM_NAME$]", HtmlUtil.escape(emailFromName));
+		definitionTerms.put(
+			"[$ORDER_BILLING_ADDRESS$]",
+			LanguageUtil.get(
+				themeDisplay.getLocale(), "the-order-billing-address"));
+		definitionTerms.put(
+			"[$ORDER_CURRENCY$]",
+			LanguageUtil.get(themeDisplay.getLocale(), "the-order-currency"));
+		definitionTerms.put(
+			"[$ORDER_NUMBER$]",
+			LanguageUtil.get(themeDisplay.getLocale(), "the-order-id"));
+		definitionTerms.put(
+			"[$ORDER_SHIPPING_ADDRESS$]",
+			LanguageUtil.get(
+				themeDisplay.getLocale(), "the-order-shipping-address"));
+		definitionTerms.put(
+			"[$ORDER_TOTAL$]",
+			LanguageUtil.get(themeDisplay.getLocale(), "the-order-total"));
+
+		Company company = themeDisplay.getCompany();
+
+		definitionTerms.put("[$PORTAL_URL$]", company.getVirtualHostname());
+
+		PortletDisplay portletDisplay = themeDisplay.getPortletDisplay();
+
+		definitionTerms.put(
+			"[$PORTLET_NAME$]", HtmlUtil.escape(portletDisplay.getTitle()));
+
+		definitionTerms.put(
+			"[$TO_ADDRESS$]",
+			LanguageUtil.get(
+				themeDisplay.getLocale(),
+				"the-address-of-the-email-recipient"));
+		definitionTerms.put(
+			"[$TO_NAME$]",
+			LanguageUtil.get(
+				themeDisplay.getLocale(), "the-name-of-the-email-recipient"));
+
+		return definitionTerms;
+	}
+
 	public static int getFieldsQuantitiesPos(
 		ShoppingItem item, ShoppingItemField[] itemFields,
 		String[] fieldsArray) {
 
-		Set<String> fieldsValues = new HashSet<String>();
+		Set<String> fieldsValues = new HashSet<>();
 
 		for (String fields : fieldsArray) {
 			int pos = fields.indexOf("=");
 
-			String fieldValue = fields.substring(
-				pos + 1, fields.length()).trim();
+			String fieldValue = fields.substring(pos + 1, fields.length());
 
-			fieldsValues.add(fieldValue);
+			fieldsValues.add(fieldValue.trim());
 		}
 
-		List<String> names = new ArrayList<String>();
-		List<String[]> values = new ArrayList<String[]>();
+		List<String> names = new ArrayList<>();
+		List<String[]> values = new ArrayList<>();
 
 		for (int i = 0; i < itemFields.length; i++) {
 			names.add(itemFields[i].getName());
@@ -752,9 +826,9 @@ public class ShoppingUtil {
 				String[] vArray = values.get(j);
 
 				int arrayPos;
-				for (arrayPos = i / numOfRepeats;
-					arrayPos >= vArray.length;
-					arrayPos = arrayPos - vArray.length) {
+
+				for (arrayPos = i / numOfRepeats; arrayPos >= vArray.length;
+					 arrayPos = arrayPos - vArray.length) {
 				}
 
 				if (!fieldsValues.contains(vArray[arrayPos].trim())) {
@@ -795,7 +869,7 @@ public class ShoppingUtil {
 		return GetterUtil.getLong(itemId);
 	}
 
-	public static OrderByComparator getItemOrderByComparator(
+	public static OrderByComparator<ShoppingItem> getItemOrderByComparator(
 		String orderByCol, String orderByType) {
 
 		boolean orderByAsc = false;
@@ -804,7 +878,7 @@ public class ShoppingUtil {
 			orderByAsc = true;
 		}
 
-		OrderByComparator orderByComparator = null;
+		OrderByComparator<ShoppingItem> orderByComparator = null;
 
 		if (orderByCol.equals("min-qty")) {
 			orderByComparator = new ItemMinQuantityComparator(orderByAsc);
@@ -818,16 +892,11 @@ public class ShoppingUtil {
 		else if (orderByCol.equals("sku")) {
 			orderByComparator = new ItemSKUComparator(orderByAsc);
 		}
-		else if (orderByCol.equals("order-date")) {
-			orderByComparator = new OrderDateComparator(orderByAsc);
-		}
 
 		return orderByComparator;
 	}
 
-	public static int getMinQuantity(ShoppingItem item)
-		throws PortalException, SystemException {
-
+	public static int getMinQuantity(ShoppingItem item) throws PortalException {
 		int minQuantity = item.getMinQuantity();
 
 		List<ShoppingItemPrice> itemPrices = item.getItemPrices();
@@ -847,14 +916,14 @@ public class ShoppingUtil {
 	}
 
 	public static String getPayPalRedirectURL(
-		ShoppingPreferences preferences, ShoppingOrder order, double total,
-		String returnURL, String notifyURL) {
+		ShoppingGroupServiceSettings shoppingGroupServiceSettings,
+		ShoppingOrder order, double total, String returnURL, String notifyURL) {
 
 		String payPalEmailAddress = HttpUtil.encodeURL(
-			preferences.getPayPalEmailAddress());
+			shoppingGroupServiceSettings.getPayPalEmailAddress());
 
 		NumberFormat doubleFormat = NumberFormat.getNumberInstance(
-			Locale.ENGLISH);
+			LocaleUtil.ENGLISH);
 
 		doubleFormat.setMaximumFractionDigits(2);
 		doubleFormat.setMinimumFractionDigits(2);
@@ -871,7 +940,7 @@ public class ShoppingUtil {
 		String state = HttpUtil.encodeURL(order.getBillingState());
 		String zip = HttpUtil.encodeURL(order.getBillingZip());
 
-		String currencyCode = preferences.getCurrencyId();
+		String currencyCode = shoppingGroupServiceSettings.getCurrencyId();
 
 		StringBundler sb = new StringBundler(45);
 
@@ -907,7 +976,7 @@ public class ShoppingUtil {
 	}
 
 	public static String getPpPaymentStatus(
-		ShoppingOrder order, PageContext pageContext) {
+		ShoppingOrder order, HttpServletRequest request) {
 
 		String ppPaymentStatus = order.getPpPaymentStatus();
 
@@ -915,10 +984,10 @@ public class ShoppingUtil {
 			ppPaymentStatus = "checkout";
 		}
 		else {
-			ppPaymentStatus = ppPaymentStatus.toLowerCase();
+			ppPaymentStatus = StringUtil.toLowerCase(ppPaymentStatus);
 		}
 
-		return LanguageUtil.get(pageContext, ppPaymentStatus);
+		return LanguageUtil.get(request, HtmlUtil.escape(ppPaymentStatus));
 	}
 
 	public static String getPpPaymentStatus(String ppPaymentStatus) {
@@ -934,6 +1003,10 @@ public class ShoppingUtil {
 	}
 
 	public static boolean isInStock(ShoppingItem item) {
+		if (item.isInfiniteStock()) {
+			return true;
+		}
+
 		if (!item.isFields()) {
 			if (item.getStockQuantity() > 0) {
 				return true;
@@ -958,6 +1031,10 @@ public class ShoppingUtil {
 	public static boolean isInStock(
 		ShoppingItem item, ShoppingItemField[] itemFields, String[] fieldsArray,
 		Integer orderedQuantity) {
+
+		if (item.isInfiniteStock()) {
+			return true;
+		}
 
 		if (!item.isFields()) {
 			int stockQuantity = item.getStockQuantity();
@@ -998,12 +1075,13 @@ public class ShoppingUtil {
 	}
 
 	public static boolean meetsMinOrder(
-			ShoppingPreferences preferences,
+			ShoppingGroupServiceSettings shoppingGroupServiceSettings,
 			Map<ShoppingCartItem, Integer> items)
-		throws PortalException, SystemException {
+		throws PortalException {
 
-		if ((preferences.getMinOrder() > 0) &&
-			(calculateSubtotal(items) < preferences.getMinOrder())) {
+		if ((shoppingGroupServiceSettings.getMinOrder() > 0) &&
+			(calculateSubtotal(items) <
+				shoppingGroupServiceSettings.getMinOrder())) {
 
 			return false;
 		}
@@ -1013,7 +1091,7 @@ public class ShoppingUtil {
 	}
 
 	private static ShoppingItemPrice _getItemPrice(ShoppingItem item, int count)
-		throws PortalException, SystemException {
+		throws PortalException {
 
 		ShoppingItemPrice itemPrice = null;
 

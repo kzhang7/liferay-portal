@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -43,18 +43,22 @@ public class ShardDataSourceTargetSource implements TargetSource {
 		return _dataSources;
 	}
 
+	@Override
 	public Object getTarget() throws Exception {
 		return getDataSource();
 	}
 
+	@Override
 	public Class<DataSource> getTargetClass() {
 		return DataSource.class;
 	}
 
+	@Override
 	public boolean isStatic() {
 		return false;
 	}
 
+	@Override
 	public void releaseTarget(Object target) throws Exception {
 	}
 
@@ -86,12 +90,12 @@ public class ShardDataSourceTargetSource implements TargetSource {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		ShardDataSourceTargetSource.class);
 
 	private static String[] _availableShardNames;
 
-	private static ThreadLocal<DataSource> _dataSource =
+	private static final ThreadLocal<DataSource> _dataSource =
 		new CentralizedThreadLocal<DataSource>(false) {
 
 		@Override

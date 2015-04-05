@@ -19,6 +19,7 @@
 	<target name="clean">
 		<delete dir="classes" />
 		<delete dir="test-classes" />
+		<delete dir="test-coverage" />
 		<delete dir="test-results" />
 		<delete dir="woven-classes" />
 		<delete dir="${doc.dir}/${ant.project.name}/javadocs" />
@@ -27,7 +28,38 @@
 		<delete file="${jar.file}-sources.jar" failonerror="false" />
 	</target>
 
-	<target name="compile">
+	<target name="check-compile-uptodate">
+		<uptodate property="compile.uptodate" targetfile="classes/.touch">
+			<srcfiles dir="${basedir}" includes="bnd.bnd,build.xml,ivy.xml,src/**/*.*" />
+		</uptodate>
+
+		<condition property="jar.uptodate" value="false">
+			<not>
+				<equals arg1="${compile.uptodate}" arg2="true" />
+			</not>
+		</condition>
+	</target>
+
+	<target name="check-deploy-uptodate" depends="check-jar-uptodate">
+		<if>
+			<available file="${jar.file}.jar" />
+			<then>
+				<uptodate property="deploy.uptodate" srcfile="${jar.file}.jar" targetfile="${deploy.dir}/${jar.file}.jar" />
+			</then>
+		</if>
+	</target>
+
+	<target name="check-jar-uptodate" depends="check-compile-uptodate">
+		<uptodate property="jar.uptodate" srcfile="classes/.touch" targetfile="${jar.file}.jar" />
+
+		<condition property="deploy.uptodate" value="false">
+			<not>
+				<equals arg1="${jar.uptodate}" arg2="true" />
+			</not>
+		</condition>
+	</target>
+
+	<target name="compile" depends="check-compile-uptodate" unless="${compile.uptodate}">
 		<if>
 			<available file="$${javac.destdir}" />
 			<then>
@@ -51,9 +83,16 @@
 	</target>
 
 	<target name="compile-java">
-		<copy todir="${javac.destdir}">
+		<copy todir="${javac.destdir}" preservelastmodified="true">
 			<fileset dir="${javac.srcdir}" excludes="**/*.java" />
 		</copy>
+
+		<if>
+			<equals arg1="${javac.deprecation}" arg2="on" />
+			<then>
+				<record action="start" name="${project.dir}/${ant.project.name}/javac.output.txt" />
+			</then>
+		</if>
 
 		<javac
 			classpathref="${javac.classpathref}"
@@ -66,13 +105,37 @@
 			nowarn="${javac.nowarn}"
 			srcdir="${javac.srcdir}"
 		/>
+
+		<if>
+			<equals arg1="${javac.deprecation}" arg2="on" />
+			<then>
+				<record action="stop" name="${project.dir}/${ant.project.name}/javac.output.txt" />
+
+				<loadfile property="javac.output.txt.content" srcfile="${project.dir}/${ant.project.name}/javac.output.txt" />
+
+				<delete file="${project.dir}/${ant.project.name}/javac.output.txt" />
+
+				<if>
+					<or>
+						<contains string="${javac.output.txt.content}" substring="a deprecated API" />
+						<contains string="${javac.output.txt.content}" substring="[deprecation]" />
+					</or>
+					<then>
+						<echo append="true" file="${project.dir}/javac.output.txt" message="${line.separator}${ant.project.name}${line.separator}" />
+						<echo append="true" file="${project.dir}/javac.output.txt" message="${javac.output.txt.content}" />
+					</then>
+				</if>
+			</then>
+		</if>
+
+		<echo file="${javac.destdir}/.touch"></echo>
 	</target>
 
-	<target name="deploy" depends="jar">
-		<copy file="${jar.file}.jar" todir="${deploy.dir}" />
+	<target name="deploy" depends="check-deploy-uptodate,jar" unless="${deploy.uptodate}">
+		<copy file="${jar.file}.jar" todir="${deploy.dir}" preservelastmodified="true" />
 	</target>
 
-	<target name="jar" depends="compile">
+	<target name="jar" depends="check-jar-uptodate,compile" unless="${jar.uptodate}">
 		<if>
 			<available file="bnd.bnd" />
 			<then>
@@ -80,19 +143,23 @@
 
 				<bndexpand propertyfile="${project.dir}/common.bnd" />
 
-				<bnd
-					eclipse="false"
-					exceptions="true"
-					failok="false"
-					inherit="true"
-					output="."
-					sourcepath="."
-				>
-					<bndfiles path="bnd.bnd" />
+				<bnd eclipse="false" exceptions="true" failok="false" inherit="true" output="${jar.file}.jar">
+					<bndfiles>
+						<fileset dir=".">
+							<include name="bnd.bnd" />
+						</fileset>
+					</bndfiles>
 					<classpath>
 						<pathelement location="classes" />
 					</classpath>
+					<property name="-sourcepath" value="." />
 				</bnd>
+
+				<baseline-jar
+					bndFile="bnd.bnd"
+					bndRootFile="${project.dir}/common.bnd"
+					newJarFile="${jar.file}.jar"
+				/>
 			</then>
 			<else>
 				<antcall target="manifest" />
@@ -127,7 +194,8 @@
 			breakiterator="yes"
 			classpathref="project.classpath"
 			destdir="${doc.dir}/${ant.project.name}/javadocs"
-			maxmemory="768m"
+			encoding="UTF-8"
+			maxmemory="2048m"
 			packagenames="*.*"
 			sourcepath="src"
 			stylesheetfile="${project.dir}/tools/javadoc.css"
@@ -186,6 +254,31 @@
 						</manifest>
 					</then>
 				</if>
+
+				<if>
+					<isset property="manifest.premain.class" />
+					<then>
+						<manifest file="classes/META-INF/MANIFEST.MF" mode="update">
+							<attribute name="Can-Redefine-Classes" value="${manifest.can.redefine.classes}" />
+							<attribute name="Can-Retransform-Classes" value="${manifest.can.retransform.classes}" />
+							<attribute name="Premain-Class" value="${manifest.premain.class}" />
+						</manifest>
+					</then>
+				</if>
+			</then>
+		</if>
+	</target>
+
+	<target name="release" depends="jar">
+		<if>
+			<available file="bnd.bnd" />
+			<then>
+				<bndexpand propertyfile="${project.dir}/common.bnd" />
+
+				<release-to-repo
+					bndRootFile="${project.dir}/common.bnd"
+					file="${jar.file}.jar"
+				/>
 			</then>
 		</if>
 	</target>

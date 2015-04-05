@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -31,7 +31,8 @@ import java.sql.ResultSet;
  */
 public class QuartzLocalServiceImpl extends QuartzLocalServiceBaseImpl {
 
-	public void checkQuartzTables() throws SystemException {
+	@Override
+	public void checkQuartzTables() {
 		Connection con = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -67,7 +68,7 @@ public class QuartzLocalServiceImpl extends QuartzLocalServiceBaseImpl {
 		}
 	}
 
-	private static Log _log = LogFactoryUtil.getLog(
+	private static final Log _log = LogFactoryUtil.getLog(
 		QuartzLocalServiceImpl.class);
 
 }

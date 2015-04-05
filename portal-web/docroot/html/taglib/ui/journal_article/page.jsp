@@ -1,6 +1,6 @@
 <%--
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -14,32 +14,15 @@
  */
 --%>
 
-<%@ include file="/html/taglib/init.jsp" %>
-
-<%@ page import="com.liferay.portlet.journal.model.JournalArticleDisplay" %>
-<%@ page import="com.liferay.portlet.journal.model.JournalArticleResource" %>
-<%@ page import="com.liferay.portlet.journal.service.JournalArticleResourceLocalServiceUtil" %>
-<%@ page import="com.liferay.portlet.journalcontent.util.JournalContentUtil" %>
-<%@ page import="com.liferay.portlet.layoutconfiguration.util.RuntimePageUtil" %>
-
-<portlet:defineObjects />
+<%@ include file="/html/taglib/ui/journal_article/init.jsp" %>
 
 <%
 long articleResourcePrimKey = GetterUtil.getLong((String)request.getAttribute("liferay-ui:journal-article:articleResourcePrimKey"));
 long groupId = GetterUtil.getLong((String)request.getAttribute("liferay-ui:journal-article:groupId"));
 String articleId = GetterUtil.getString((String)request.getAttribute("liferay-ui:journal-article:articleId"));
-String templateId = GetterUtil.getString((String)request.getAttribute("liferay-ui:journal-article:templateId"));
+String ddmTemplateKey = GetterUtil.getString((String)request.getAttribute("liferay-ui:journal-article:ddmTemplateKey"));
 String languageId = GetterUtil.getString((String)request.getAttribute("liferay-ui:journal-article:languageId"), LanguageUtil.getLanguageId(request));
 int articlePage = GetterUtil.getInteger((String)request.getAttribute("liferay-ui:journal-article:articlePage"));
-
-String xmlRequest = GetterUtil.getString((String)request.getAttribute("liferay-ui:journal-article:xmlRequest"));
-
-if (Validator.isNull(xmlRequest) && (portletRequest != null) && (portletResponse != null)) {
-	xmlRequest = PortletRequestUtil.toXML(portletRequest, portletResponse);
-}
-
-boolean showTitle = GetterUtil.getBoolean((String)request.getAttribute("liferay-ui:journal-article:showTitle"));
-boolean showAvailableLocales = GetterUtil.getBoolean((String)request.getAttribute("liferay-ui:journal-article:showAvailableLocales"));
 
 if (articleResourcePrimKey > 0) {
 	JournalArticleResource articleResource = JournalArticleResourceLocalServiceUtil.getArticleResource(articleResourcePrimKey);
@@ -48,13 +31,28 @@ if (articleResourcePrimKey > 0) {
 	articleId = articleResource.getArticleId();
 }
 
-JournalArticleDisplay articleDisplay = JournalContentUtil.getDisplay(groupId, articleId, templateId, null, languageId, themeDisplay, articlePage, xmlRequest);
+PortletRequestModel portletRequestModel = (PortletRequestModel)request.getAttribute("liferay-ui:journal-article:portletRequestModel");
+
+if ((portletRequestModel == null) && (portletRequest != null) && (portletResponse != null)) {
+	portletRequestModel = new PortletRequestModel(portletRequest, portletResponse);
+}
+
+JournalArticleDisplay articleDisplay = JournalContentUtil.getDisplay(groupId, articleId, ddmTemplateKey, null, languageId, articlePage, portletRequestModel, themeDisplay);
 %>
 
 <c:if test="<%= articleDisplay != null %>">
+
+	<%
+	boolean showTitle = GetterUtil.getBoolean((String)request.getAttribute("liferay-ui:journal-article:showTitle"));
+	%>
+
 	<c:if test="<%= showTitle %>">
 		<h3 class="journal-content-title"><%= articleDisplay.getTitle() %></h3>
 	</c:if>
+
+	<%
+	boolean showAvailableLocales = GetterUtil.getBoolean((String)request.getAttribute("liferay-ui:journal-article:showAvailableLocales"));
+	%>
 
 	<c:if test="<%= showAvailableLocales %>">
 
@@ -66,7 +64,7 @@ JournalArticleDisplay articleDisplay = JournalContentUtil.getDisplay(groupId, ar
 			<div>
 				<br />
 
-				<liferay-ui:language displayStyle="<%= 0 %>" languageIds="<%= availableLocales %>" />
+				<liferay-ui:language formAction="<%= currentURL %>" languageId="<%= LanguageUtil.getLanguageId(request) %>" languageIds="<%= availableLocales %>" />
 			</div>
 		</c:if>
 	</c:if>

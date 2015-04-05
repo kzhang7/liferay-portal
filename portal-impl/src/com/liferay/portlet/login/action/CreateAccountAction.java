@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -18,11 +18,11 @@ import com.liferay.portal.AddressCityException;
 import com.liferay.portal.AddressStreetException;
 import com.liferay.portal.AddressZipException;
 import com.liferay.portal.CompanyMaxUsersException;
+import com.liferay.portal.ContactBirthdayException;
 import com.liferay.portal.ContactFirstNameException;
 import com.liferay.portal.ContactFullNameException;
 import com.liferay.portal.ContactLastNameException;
-import com.liferay.portal.DuplicateUserEmailAddressException;
-import com.liferay.portal.DuplicateUserScreenNameException;
+import com.liferay.portal.DuplicateOpenIdException;
 import com.liferay.portal.EmailAddressException;
 import com.liferay.portal.GroupFriendlyURLException;
 import com.liferay.portal.NoSuchCountryException;
@@ -30,13 +30,10 @@ import com.liferay.portal.NoSuchLayoutException;
 import com.liferay.portal.NoSuchListTypeException;
 import com.liferay.portal.NoSuchOrganizationException;
 import com.liferay.portal.NoSuchRegionException;
-import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.OrganizationParentException;
 import com.liferay.portal.PhoneNumberException;
 import com.liferay.portal.RequiredFieldException;
 import com.liferay.portal.RequiredUserException;
-import com.liferay.portal.ReservedUserEmailAddressException;
-import com.liferay.portal.ReservedUserScreenNameException;
 import com.liferay.portal.TermsOfUseException;
 import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.UserIdException;
@@ -50,7 +47,10 @@ import com.liferay.portal.kernel.captcha.CaptchaUtil;
 import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.util.Constants;
+import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.ParamUtil;
+import com.liferay.portal.kernel.util.PwdGenerator;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.model.Company;
@@ -95,8 +95,9 @@ public class CreateAccountAction extends PortletAction {
 
 	@Override
 	public void processAction(
-			ActionMapping mapping, ActionForm form, PortletConfig portletConfig,
-			ActionRequest actionRequest, ActionResponse actionResponse)
+			ActionMapping actionMapping, ActionForm actionForm,
+			PortletConfig portletConfig, ActionRequest actionRequest,
+			ActionResponse actionResponse)
 		throws Exception {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)actionRequest.getAttribute(
@@ -126,60 +127,55 @@ public class CreateAccountAction extends PortletAction {
 			}
 		}
 		catch (Exception e) {
-			if (e instanceof DuplicateUserEmailAddressException ||
-				e instanceof DuplicateUserScreenNameException) {
+			if (e instanceof AddressCityException ||
+				e instanceof AddressStreetException ||
+				e instanceof AddressZipException ||
+				e instanceof CaptchaMaxChallengesException ||
+				e instanceof CaptchaTextException ||
+				e instanceof CompanyMaxUsersException ||
+				e instanceof ContactBirthdayException ||
+				e instanceof ContactFirstNameException ||
+				e instanceof ContactFullNameException ||
+				e instanceof ContactLastNameException ||
+				e instanceof DuplicateOpenIdException ||
+				e instanceof EmailAddressException ||
+				e instanceof GroupFriendlyURLException ||
+				e instanceof NoSuchCountryException ||
+				e instanceof NoSuchListTypeException ||
+				e instanceof NoSuchOrganizationException ||
+				e instanceof NoSuchRegionException ||
+				e instanceof OrganizationParentException ||
+				e instanceof PhoneNumberException ||
+				e instanceof RequiredFieldException ||
+				e instanceof RequiredUserException ||
+				e instanceof TermsOfUseException ||
+				e instanceof UserEmailAddressException ||
+				e instanceof UserIdException ||
+				e instanceof UserPasswordException ||
+				e instanceof UserScreenNameException ||
+				e instanceof UserSmsException ||
+				e instanceof WebsiteURLException) {
+
+				SessionErrors.add(actionRequest, e.getClass(), e);
+			}
+			else if (e instanceof
+						UserEmailAddressException.MustNotBeDuplicate ||
+					 e instanceof UserScreenNameException.MustNotBeDuplicate) {
 
 				String emailAddress = ParamUtil.getString(
 					actionRequest, "emailAddress");
 
-				try {
-					User user = UserLocalServiceUtil.getUserByEmailAddress(
-						themeDisplay.getCompanyId(), emailAddress);
+				User user = UserLocalServiceUtil.fetchUserByEmailAddress(
+					themeDisplay.getCompanyId(), emailAddress);
 
-					if (user.getStatus() !=
-							WorkflowConstants.STATUS_INCOMPLETE) {
+				if ((user == null) ||
+					(user.getStatus() != WorkflowConstants.STATUS_INCOMPLETE)) {
 
-						SessionErrors.add(actionRequest, e.getClass(), e);
-					}
-					else {
-						setForward(
-							actionRequest, "portlet.login.update_account");
-					}
-				}
-				catch (NoSuchUserException nsue) {
 					SessionErrors.add(actionRequest, e.getClass(), e);
 				}
-			}
-			else if (e instanceof AddressCityException ||
-					 e instanceof AddressStreetException ||
-					 e instanceof AddressZipException ||
-					 e instanceof CaptchaMaxChallengesException ||
-					 e instanceof CaptchaTextException ||
-					 e instanceof CompanyMaxUsersException ||
-					 e instanceof ContactFirstNameException ||
-					 e instanceof ContactFullNameException ||
-					 e instanceof ContactLastNameException ||
-					 e instanceof EmailAddressException ||
-					 e instanceof GroupFriendlyURLException ||
-					 e instanceof NoSuchCountryException ||
-					 e instanceof NoSuchListTypeException ||
-					 e instanceof NoSuchOrganizationException ||
-					 e instanceof NoSuchRegionException ||
-					 e instanceof OrganizationParentException ||
-					 e instanceof PhoneNumberException ||
-					 e instanceof RequiredFieldException ||
-					 e instanceof RequiredUserException ||
-					 e instanceof ReservedUserEmailAddressException ||
-					 e instanceof ReservedUserScreenNameException ||
-					 e instanceof TermsOfUseException ||
-					 e instanceof UserEmailAddressException ||
-					 e instanceof UserIdException ||
-					 e instanceof UserPasswordException ||
-					 e instanceof UserScreenNameException ||
-					 e instanceof UserSmsException ||
-					 e instanceof WebsiteURLException) {
-
-				SessionErrors.add(actionRequest, e.getClass(), e);
+				else {
+					setForward(actionRequest, "portlet.login.update_account");
+				}
 			}
 			else {
 				throw e;
@@ -205,8 +201,9 @@ public class CreateAccountAction extends PortletAction {
 
 	@Override
 	public ActionForward render(
-			ActionMapping mapping, ActionForm form, PortletConfig portletConfig,
-			RenderRequest renderRequest, RenderResponse renderResponse)
+			ActionMapping actionMapping, ActionForm actionForm,
+			PortletConfig portletConfig, RenderRequest renderRequest,
+			RenderResponse renderResponse)
 		throws Exception {
 
 		ThemeDisplay themeDisplay = (ThemeDisplay)renderRequest.getAttribute(
@@ -215,12 +212,12 @@ public class CreateAccountAction extends PortletAction {
 		Company company = themeDisplay.getCompany();
 
 		if (!company.isStrangers()) {
-			return mapping.findForward("portlet.login.login");
+			return actionMapping.findForward("portlet.login.login");
 		}
 
 		renderResponse.setTitle(themeDisplay.translate("create-account"));
 
-		return mapping.findForward(
+		return actionMapping.findForward(
 			getForward(renderRequest, "portlet.login.create_account"));
 	}
 
@@ -246,11 +243,12 @@ public class CreateAccountAction extends PortletAction {
 			actionRequest, "emailAddress");
 		long facebookId = ParamUtil.getLong(actionRequest, "facebookId");
 		String openId = ParamUtil.getString(actionRequest, "openId");
+		String languageId = ParamUtil.getString(actionRequest, "languageId");
 		String firstName = ParamUtil.getString(actionRequest, "firstName");
 		String middleName = ParamUtil.getString(actionRequest, "middleName");
 		String lastName = ParamUtil.getString(actionRequest, "lastName");
-		int prefixId = ParamUtil.getInteger(actionRequest, "prefixId");
-		int suffixId = ParamUtil.getInteger(actionRequest, "suffixId");
+		long prefixId = ParamUtil.getInteger(actionRequest, "prefixId");
+		long suffixId = ParamUtil.getInteger(actionRequest, "suffixId");
 		boolean male = ParamUtil.getBoolean(actionRequest, "male", true);
 		int birthdayMonth = ParamUtil.getInteger(
 			actionRequest, "birthdayMonth");
@@ -288,10 +286,10 @@ public class CreateAccountAction extends PortletAction {
 		User user = UserServiceUtil.addUserWithWorkflow(
 			company.getCompanyId(), autoPassword, password1, password2,
 			autoScreenName, screenName, emailAddress, facebookId, openId,
-			themeDisplay.getLocale(), firstName, middleName, lastName, prefixId,
-			suffixId, male, birthdayMonth, birthdayDay, birthdayYear, jobTitle,
-			groupIds, organizationIds, roleIds, userGroupIds, sendEmail,
-			serviceContext);
+			LocaleUtil.fromLanguageId(languageId), firstName, middleName,
+			lastName, prefixId, suffixId, male, birthdayMonth, birthdayDay,
+			birthdayYear, jobTitle, groupIds, organizationIds, roleIds,
+			userGroupIds, sendEmail, serviceContext);
 
 		if (openIdPending) {
 			session.setAttribute(
@@ -305,14 +303,14 @@ public class CreateAccountAction extends PortletAction {
 
 			if (user.getStatus() == WorkflowConstants.STATUS_APPROVED) {
 				SessionMessages.add(
-					request, "user_added", user.getEmailAddress());
+					request, "userAdded", user.getEmailAddress());
 				SessionMessages.add(
-					request, "user_added_password",
+					request, "userAddedPassword",
 					user.getPasswordUnencrypted());
 			}
 			else {
 				SessionMessages.add(
-					request, "user_pending", user.getEmailAddress());
+					request, "userPending", user.getEmailAddress());
 			}
 		}
 
@@ -320,10 +318,12 @@ public class CreateAccountAction extends PortletAction {
 
 		String login = null;
 
-		if (company.getAuthType().equals(CompanyConstants.AUTH_TYPE_ID)) {
+		String authType = company.getAuthType();
+
+		if (authType.equals(CompanyConstants.AUTH_TYPE_ID)) {
 			login = String.valueOf(user.getUserId());
 		}
-		else if (company.getAuthType().equals(CompanyConstants.AUTH_TYPE_SN)) {
+		else if (authType.equals(CompanyConstants.AUTH_TYPE_SN)) {
 			login = user.getScreenName();
 		}
 		else {
@@ -356,6 +356,10 @@ public class CreateAccountAction extends PortletAction {
 
 		User anonymousUser = UserLocalServiceUtil.getUserByEmailAddress(
 			themeDisplay.getCompanyId(), emailAddress);
+
+		if (anonymousUser.getStatus() != WorkflowConstants.STATUS_INCOMPLETE) {
+			throw new PrincipalException();
+		}
 
 		UserLocalServiceUtil.deleteUser(anonymousUser.getUserId());
 
@@ -408,13 +412,23 @@ public class CreateAccountAction extends PortletAction {
 		String screenName = ParamUtil.getString(actionRequest, "screenName");
 		String emailAddress = ParamUtil.getString(
 			actionRequest, "emailAddress");
-		long facebookId = ParamUtil.getLong(actionRequest, "facebookId");
+
+		HttpSession session = request.getSession();
+
+		long facebookId = GetterUtil.getLong(
+			session.getAttribute(WebKeys.FACEBOOK_INCOMPLETE_USER_ID));
+
+		if (facebookId > 0) {
+			password1 = PwdGenerator.getPassword();
+			password2 = password1;
+		}
+
 		String openId = ParamUtil.getString(actionRequest, "openId");
 		String firstName = ParamUtil.getString(actionRequest, "firstName");
 		String middleName = ParamUtil.getString(actionRequest, "middleName");
 		String lastName = ParamUtil.getString(actionRequest, "lastName");
-		int prefixId = ParamUtil.getInteger(actionRequest, "prefixId");
-		int suffixId = ParamUtil.getInteger(actionRequest, "suffixId");
+		long prefixId = ParamUtil.getInteger(actionRequest, "prefixId");
+		long suffixId = ParamUtil.getInteger(actionRequest, "suffixId");
 		boolean male = ParamUtil.getBoolean(actionRequest, "male", true);
 		int birthdayMonth = ParamUtil.getInteger(
 			actionRequest, "birthdayMonth");
@@ -434,16 +448,50 @@ public class CreateAccountAction extends PortletAction {
 			suffixId, male, birthdayMonth, birthdayDay, birthdayYear, jobTitle,
 			sendEmail, updateUserInformation, serviceContext);
 
+		if (facebookId > 0) {
+			UserLocalServiceUtil.updateLastLogin(
+				user.getUserId(), user.getLoginIP());
+
+			UserLocalServiceUtil.updatePasswordReset(user.getUserId(), false);
+
+			UserLocalServiceUtil.updateEmailAddressVerified(
+				user.getUserId(), true);
+
+			session.removeAttribute(WebKeys.FACEBOOK_INCOMPLETE_USER_ID);
+
+			Company company = themeDisplay.getCompany();
+
+			// Send redirect
+
+			String login = null;
+
+			String authType = company.getAuthType();
+
+			if (authType.equals(CompanyConstants.AUTH_TYPE_ID)) {
+				login = String.valueOf(user.getUserId());
+			}
+			else if (authType.equals(CompanyConstants.AUTH_TYPE_SN)) {
+				login = user.getScreenName();
+			}
+			else {
+				login = user.getEmailAddress();
+			}
+
+			sendRedirect(
+				actionRequest, actionResponse, themeDisplay, login, password1);
+
+			return;
+		}
+
 		// Session messages
 
 		if (user.getStatus() == WorkflowConstants.STATUS_APPROVED) {
-			SessionMessages.add(request, "user_added", user.getEmailAddress());
+			SessionMessages.add(request, "userAdded", user.getEmailAddress());
 			SessionMessages.add(
-				request, "user_added_password", user.getPasswordUnencrypted());
+				request, "userAddedPassword", user.getPasswordUnencrypted());
 		}
 		else {
-			SessionMessages.add(
-				request, "user_pending", user.getEmailAddress());
+			SessionMessages.add(request, "userPending", user.getEmailAddress());
 		}
 
 		// Send redirect
@@ -452,10 +500,12 @@ public class CreateAccountAction extends PortletAction {
 
 		Company company = themeDisplay.getCompany();
 
-		if (company.getAuthType().equals(CompanyConstants.AUTH_TYPE_ID)) {
+		String authType = company.getAuthType();
+
+		if (authType.equals(CompanyConstants.AUTH_TYPE_ID)) {
 			login = String.valueOf(user.getUserId());
 		}
-		else if (company.getAuthType().equals(CompanyConstants.AUTH_TYPE_SN)) {
+		else if (authType.equals(CompanyConstants.AUTH_TYPE_SN)) {
 			login = user.getScreenName();
 		}
 		else {

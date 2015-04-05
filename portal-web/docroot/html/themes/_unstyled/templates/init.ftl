@@ -6,7 +6,8 @@
 <#assign theme_timestamp = themeDisplay.getTheme().getTimestamp() />
 <#assign theme_settings = themeDisplay.getThemeSettings() />
 
-<#assign css_class = theme_display.getColorScheme().getCssClass() + " yui3-skin-sam" />
+<#assign root_css_class = languageUtil.get(locale, "lang.dir") />
+<#assign css_class = htmlUtil.escape(theme_display.getColorScheme().getCssClass()) + " yui3-skin-sam" />
 
 <#assign liferay_toggle_controls = sessionClicks.get(request, "liferay_toggle_controls", "visible") />
 
@@ -83,6 +84,7 @@
 <#assign user_login_ip = user.getLoginIP() />
 <#assign user_last_login_ip = user.getLastLoginIP() />
 
+<#assign is_login_redirect_required = portalUtil.isLoginRedirectRequired(request) />
 <#assign is_signed_in = theme_display.isSignedIn() />
 
 <#assign group_id = theme_display.getScopeGroupId() />
@@ -121,7 +123,10 @@
 
 <#if show_my_account>
 	<#assign my_account_text = languageUtil.get(locale, "my-account") />
-	<#assign my_account_url = htmlUtil.escape(theme_display.getURLMyAccount().toString()) />
+
+	<#if theme_display.getURLMyAccount()??>
+		<#assign my_account_url = htmlUtil.escape(theme_display.getURLMyAccount().toString()) />
+	</#if>
 </#if>
 
 <#assign show_page_settings = theme_display.isShowPageSettingsIcon() />
@@ -129,7 +134,10 @@
 
 <#if show_page_settings>
 	<#assign page_settings_text = languageUtil.get(locale, "manage-pages") />
-	<#assign page_settings_url = htmlUtil.escape(theme_display.getURLPageSettings().toString()) />
+
+	<#if theme_display.getURLPageSettings()??>
+		<#assign page_settings_url = htmlUtil.escape(theme_display.getURLPageSettings().toString()) />
+	</#if>
 </#if>
 
 <#assign show_sign_in = theme_display.isShowSignInIcon() />
@@ -201,7 +209,7 @@
 
 	<#assign community_name = site_name />
 
-	<#assign is_guest_group = page_group.getName() == "Guest" />
+	<#assign is_guest_group = page_group.isGuest() />
 
 	<#if is_guest_group>
 		<#assign css_class = css_class + " guest-site" />
@@ -239,24 +247,11 @@
 
 	<#assign css_class = css_class + " " + site_type />
 
-	<#assign my_sites_portlet_url = portletURLFactory.create(request, "49", page.getPlid(), "ACTION_PHASE") />
-
-	<#assign my_places_portlet_url = my_sites_portlet_url />
-
-	${my_sites_portlet_url.setWindowState("normal")}
-	${my_sites_portlet_url.setPortletMode("view")}
-
-	${my_sites_portlet_url.setParameter("struts_action", "/my_sites/view")}
-	${my_sites_portlet_url.setParameter("groupId", "${page.getGroupId()}")}
-	${my_sites_portlet_url.setParameter("privateLayout", "false")}
-
-	<#assign site_default_public_url = htmlUtil.escape(my_sites_portlet_url.toString()) />
+	<#assign site_default_public_url = htmlUtil.escape(page_group.getDisplayURL(theme_display, false)) />
 
 	<#assign community_default_public_url = site_default_public_url />
 
-	${my_sites_portlet_url.setParameter("privateLayout", "true")}
-
-	<#assign site_default_private_url = htmlUtil.escape(my_sites_portlet_url.toString()) />
+	<#assign site_default_private_url = htmlUtil.escape(page_group.getDisplayURL(theme_display, true)) />
 
 	<#assign community_default_private_url = site_default_private_url />
 
@@ -290,11 +285,15 @@
 </#if>
 
 <#if page_group.isLayoutPrototype()>
-	<#assign the_title = page_group.getDescriptiveName() />
+	<#assign the_title = page_group.getDescriptiveName(locale) />
 </#if>
 
-<#if (tilesTitle == "") && !pageTitle??>
+<#if tilesTitle == "">
 	<#assign the_title = htmlUtil.escape(the_title) />
+</#if>
+
+<#if the_title != "" && company_name != site_name && !page_group.isLayoutPrototype()>
+	<#assign the_title = the_title + " - " + site_name />
 </#if>
 
 <#if layouts??>
@@ -314,18 +313,19 @@
 	<#assign logo_css_class = logo_css_class + " custom-logo" />
 </#if>
 
-<#if is_guest_group>
-	<#assign show_site_name = false />
-<#else>
-	<#assign show_site_name_supported = getterUtil.getBoolean(theme_settings["show-site-name-supported"]!"", true) />
+<#assign show_site_name_supported = getterUtil.getBoolean(theme_settings["show-site-name-supported"]!"", true) />
 
-	<#assign show_site_name_default = getterUtil.getBoolean(theme_settings["show-site-name-default"]!"", show_site_name_supported) />
+<#assign show_site_name_default = getterUtil.getBoolean(theme_settings["show-site-name-default"]!"", show_site_name_supported) />
 
-	<#assign show_site_name = getterUtil.getBoolean(layout.layoutSet.getSettingsProperty("showSiteName"), show_site_name_default) />
-</#if>
+<#assign show_site_name = getterUtil.getBoolean(layout.layoutSet.getSettingsProperty("showSiteName"), show_site_name_default) />
 
 <#assign site_logo = company_logo />
-<#assign logo_description = htmlUtil.escape(site_name) />
+
+<#assign logo_description = "" />
+
+<#if !show_site_name>
+	<#assign logo_description = htmlUtil.escape(site_name) />
+</#if>
 
 <#-- ---------- Navigation ---------- -->
 
@@ -339,7 +339,7 @@
 <#assign nav_css_class = "sort-pages modify-pages" />
 
 <#if !has_navigation>
-	<#assign nav_css_class = nav_css_class + " aui-helper-hidden" />
+	<#assign nav_css_class = nav_css_class + " hide" />
 </#if>
 
 <#-- ---------- Staging ---------- -->
@@ -381,6 +381,7 @@
 <#-- ---------- Date ---------- -->
 
 <#assign date = dateUtil />
+
 <#assign current_time = date.newDate() />
 <#assign the_year = current_time?date?string("yyyy") />
 

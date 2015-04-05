@@ -10,15 +10,16 @@ AUI.add(
 
 			var nameB = b.substring(pos);
 
+			var retVal = 0;
+
 			if (nameA < nameB) {
-				return -1;
+				retVal = -1;
 			}
 			else if (nameA > nameB) {
-				return 1;
+				retVal = 1;
 			}
-			else {
-				return 0;
-			}
+
+			return retVal;
 		};
 
 		/**
@@ -42,7 +43,7 @@ AUI.add(
 
 			A.each(
 				array,
-				function(item, index, collection) {
+				function(item, index) {
 					var id = item.select;
 					var select = A.one('#' + id);
 					var selectData = item.selectData;
@@ -63,7 +64,9 @@ AUI.add(
 							prevSelectVal
 						);
 
-						select.attr('name', id);
+						if (!select.attr('name')) {
+							select.attr('name', id);
+						}
 
 						select.on(
 							'change',
@@ -115,7 +118,7 @@ AUI.add(
 
 				A.each(
 					list,
-					function(item, index, collection) {
+					function(item, index) {
 						var key = item[selectId];
 						var value = item[selectDesc];
 
@@ -131,10 +134,6 @@ AUI.add(
 
 				if (select) {
 					select.empty().append(selectOptions).val(selectVal);
-
-					if (Liferay.Browser.isIe()) {
-						select.setStyle('width', 'auto');
-					}
 				}
 			}
 		};

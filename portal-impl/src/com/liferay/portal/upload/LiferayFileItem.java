@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2000-2012 Liferay, Inc. All rights reserved.
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
  *
  * This library is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the Free
@@ -33,7 +33,7 @@ import org.apache.commons.fileupload.disk.DiskFileItem;
  */
 public class LiferayFileItem extends DiskFileItem implements FileItem {
 
-	public static final int THRESHOLD_SIZE = GetterUtil.getInteger(
+	public static final long THRESHOLD_SIZE = GetterUtil.getLong(
 		PropsUtil.get(LiferayFileItem.class.getName() + ".threshold.size"));
 
 	public LiferayFileItem(
@@ -49,10 +49,12 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 		_repository = repository;
 	}
 
+	@Override
 	public String getEncodedString() {
 		return _encodedString;
 	}
 
+	@Override
 	public String getFileName() {
 		if (_fileName == null) {
 			return null;
@@ -72,14 +74,17 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 		}
 	}
 
+	@Override
 	public String getFileNameExtension() {
 		return FileUtil.getExtension(_fileName);
 	}
 
+	@Override
 	public String getFullFileName() {
 		return _fileName;
 	}
 
+	@Override
 	public int getSizeThreshold() {
 		return _sizeThreshold;
 	}
@@ -101,6 +106,7 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 		}
 	}
 
+	@Override
 	public void setString(String encode) {
 		try {
 			_encodedString = getString(encode);
@@ -122,7 +128,8 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 		File tempFile = new File(_repository, tempFileName);
 
 		FinalizeManager.register(
-			tempFile, new DeleteFileFinalizeAction(tempFile.getAbsolutePath()));
+			tempFile, new DeleteFileFinalizeAction(tempFile.getAbsolutePath()),
+			FinalizeManager.PHANTOM_REFERENCE_FACTORY);
 
 		return tempFile;
 	}
@@ -147,7 +154,7 @@ public class LiferayFileItem extends DiskFileItem implements FileItem {
 
 	private String _encodedString;
 	private String _fileName;
-	private File _repository;
-	private int _sizeThreshold;
+	private final File _repository;
+	private final int _sizeThreshold;
 
 }
